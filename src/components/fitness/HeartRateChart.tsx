@@ -73,7 +73,7 @@ export function HeartRateChart() {
                 borderRadius: '8px',
                 fontSize: '12px',
               }}
-              formatter={(v: number, name: string) => [
+              formatter={(v, name) => [
                 `${v} bpm`,
                 name === 'fcMedia' ? 'FC Media' : 'FC Max',
               ]}

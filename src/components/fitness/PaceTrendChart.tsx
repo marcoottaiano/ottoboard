@@ -119,8 +119,8 @@ export function PaceTrendChart() {
                 borderRadius: '8px',
                 fontSize: '12px',
               }}
-              formatter={(v: number, name: string) => [
-                formatPaceLabel(v),
+              formatter={(v, name) => [
+                formatPaceLabel(Number(v)),
                 name === 'pace' ? 'Pace reale' : 'Tendenza',
               ]}
             />
