@@ -92,7 +92,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white flex">
+    <div className="min-h-screen w-full overflow-x-hidden bg-[#0a0a0f] text-white flex">
       {/* Ambient background blobs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-orange-600/5 blur-3xl" />
@@ -263,14 +263,12 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
       {/* ── Main content ─────────────────────────────────────── */}
       <main
         className={[
-          'flex-1 min-h-screen transition-all duration-300',
+          'flex-1 min-h-screen overflow-x-hidden transition-all duration-300',
           'pt-14 pb-16 md:pt-0 md:pb-0',
           collapsed ? 'md:ml-[72px]' : 'md:ml-[220px]',
         ].join(' ')}
       >
-        <div className="p-6 md:p-8">
-          {children}
-        </div>
+        {children}
       </main>
     </div>
   )

@@ -52,7 +52,7 @@ export function WeekStatsCard() {
   return (
     <div className="rounded-xl bg-white/5 border border-white/10 p-5 h-full flex flex-col">
       <h3 className="text-sm font-medium text-gray-400 mb-3">Questa settimana</h3>
-      <div className="grid grid-cols-3 gap-3 flex-1">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 flex-1">
 
         {/* Allenamenti con breakdown tipi */}
         <div className="col-span-1 flex flex-col gap-1 p-3 rounded-lg bg-white/5">

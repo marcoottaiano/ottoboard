@@ -76,18 +76,18 @@ export function LastActivityCard() {
   const distanceKm = activity.distance ? (activity.distance / 1000).toFixed(1) : null
 
   return (
-    <div className="rounded-xl bg-white/5 border border-white/10 p-5 h-full">
-      <div className="flex gap-4 h-full">
+    <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+      <div className="flex gap-3">
         {/* Contenuto principale */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between">
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <ActivityBadge type={activity.type} />
               <span className="text-xs text-gray-500 truncate">{formatDate(activity.start_date)}</span>
             </div>
-            <h3 className="text-lg font-semibold text-white truncate mb-4">{activity.name}</h3>
+            <h3 className="text-lg font-semibold text-white truncate mb-2">{activity.name}</h3>
 
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="grid grid-cols-2 gap-x-2 gap-y-2">
               <Stat
                 label="Durata"
                 value={formatDuration(activity.moving_time)}
@@ -99,13 +99,13 @@ export function LastActivityCard() {
               {(activity.average_heartrate || activity.max_heartrate) && (
                 <Stat
                   label="FC media / max"
-                  value={`${activity.average_heartrate ? Math.round(activity.average_heartrate) : '—'} / ${activity.max_heartrate ? Math.round(activity.max_heartrate) : '—'} bpm`}
+                  value={`${activity.average_heartrate ? Math.round(activity.average_heartrate) : '—'} / ${activity.max_heartrate ? Math.round(activity.max_heartrate) : '—'}`}
                   icon={<Heart size={11} />}
                 />
               )}
               {activity.average_pace && distanceKm && (
                 <Stat
-                  label="Pace medio"
+                  label="Pace"
                   value={formatPace(activity.average_pace)}
                   icon={<TrendingUp size={11} />}
                 />
@@ -117,7 +117,7 @@ export function LastActivityCard() {
             href={`https://www.strava.com/activities/${activity.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-4 text-xs text-orange-400 hover:text-orange-300 transition-colors"
+            className="inline-flex items-center gap-1 mt-2 text-xs text-orange-400 hover:text-orange-300 transition-colors"
           >
             Vedi su Strava <ExternalLink size={11} />
           </a>
