@@ -1,0 +1,8 @@
+export default function FinancePage() {
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-emerald-400/90 mb-2">Finanze</h1>
+      <p className="text-white/40 text-sm">Modulo finanze — coming in Fase 3</p>
+    </div>
+  )
+}
