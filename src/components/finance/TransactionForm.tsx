@@ -2,6 +2,7 @@
 
 import { useCategories } from '@/hooks/useCategories'
 import { useCreateTransaction, useCreateCategory } from '@/hooks/useFinanceMutations'
+import { Select, SelectOption } from '@/components/ui/Select'
 import { TransactionType, CategoryType, SpendingType } from '@/types'
 import { PlusCircle, Plus } from 'lucide-react'
 import { useState } from 'react'
@@ -16,6 +17,12 @@ const PRESET_COLORS = [
 ]
 
 const QUICK_ICONS = ['🏠', '🍔', '🚗', '💊', '🎬', '📱', '🛍️', '✈️', '💰', '🎓']
+
+const SPENDING_TYPE_OPTIONS: SelectOption[] = [
+  { value: 'needs', label: 'Necessaria — 50%' },
+  { value: 'wants', label: 'Accessoria — 30%' },
+  { value: 'savings', label: 'Risparmio — 20%' },
+]
 
 export function TransactionForm() {
   const { data: categories } = useCategories()
@@ -33,11 +40,16 @@ export function TransactionForm() {
   const [newCatName, setNewCatName] = useState('')
   const [newCatIcon, setNewCatIcon] = useState('')
   const [newCatColor, setNewCatColor] = useState(PRESET_COLORS[0])
-  const [newCatSpendingType, setNewCatSpendingType] = useState<SpendingType | ''>('')
+  const [newCatSpendingType, setNewCatSpendingType] = useState('')
 
   const filteredCategories = categories?.filter(
     (c) => c.type === type || c.type === 'both'
   ) ?? []
+
+  const categoryOptions: SelectOption[] = filteredCategories.map((c) => ({
+    value: c.id,
+    label: `${c.icon ?? ''} ${c.name}`,
+  }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,7 +76,7 @@ export function TransactionForm() {
         icon: newCatIcon.trim() || undefined,
         color: newCatColor,
         type: catType,
-        spending_type: newCatSpendingType || null,
+        spending_type: (newCatSpendingType as SpendingType) || null,
       })
       if (newId) setCategoryId(newId)
       setShowNewCat(false)
@@ -116,16 +128,13 @@ export function TransactionForm() {
 
           {/* Categoria + bottone crea nuova */}
           <div className="flex items-center gap-1">
-            <select
+            <Select
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/30 min-w-[140px] [color-scheme:dark]"
-            >
-              <option value="">Categoria...</option>
-              {filteredCategories.map((c) => (
-                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-              ))}
-            </select>
+              onChange={setCategoryId}
+              options={categoryOptions}
+              placeholder="Categoria..."
+              className="min-w-[160px]"
+            />
             <button
               type="button"
               onClick={() => setShowNewCat((v) => !v)}
@@ -141,7 +150,7 @@ export function TransactionForm() {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/30 [color-scheme:dark]"
+            className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/30"
           />
 
           {/* Descrizione */}
@@ -204,16 +213,13 @@ export function TransactionForm() {
                 className="flex-1 min-w-[160px] bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-white/30"
               />
               {type === 'expense' && (
-                <select
+                <Select
                   value={newCatSpendingType}
-                  onChange={(e) => setNewCatSpendingType(e.target.value as SpendingType | '')}
-                  className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-300 focus:outline-none [color-scheme:dark]"
-                >
-                  <option value="">Tipo spesa (50/30/20)...</option>
-                  <option value="needs">Necessaria — 50%</option>
-                  <option value="wants">Accessoria — 30%</option>
-                  <option value="savings">Risparmio — 20%</option>
-                </select>
+                  onChange={setNewCatSpendingType}
+                  options={SPENDING_TYPE_OPTIONS}
+                  placeholder="Tipo spesa (50/30/20)..."
+                  className="min-w-[200px]"
+                />
               )}
             </div>
 

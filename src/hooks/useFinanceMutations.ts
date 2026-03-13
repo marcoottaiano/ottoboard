@@ -98,6 +98,21 @@ export function useCreateCategory() {
   })
 }
 
+export function useDeleteCategory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('categories').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+}
+
 // ─── Budgets ───────────────────────────────────────────────────────────────────
 
 interface UpsertBudgetInput {
@@ -121,6 +136,20 @@ export function useUpsertBudget() {
     },
     onSuccess: (_, { month }) => {
       queryClient.invalidateQueries({ queryKey: ['budgets', month] })
+    },
+  })
+}
+
+export function useDeleteBudget() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('budgets').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budgets'] })
     },
   })
 }

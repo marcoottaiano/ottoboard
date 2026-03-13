@@ -3,9 +3,10 @@
 import { useBudgets } from '@/hooks/useBudgets'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useCategories } from '@/hooks/useCategories'
-import { useUpsertBudget } from '@/hooks/useFinanceMutations'
+import { useUpsertBudget, useDeleteBudget } from '@/hooks/useFinanceMutations'
+import { Select } from '@/components/ui/Select'
 import { useState } from 'react'
-import { HelpCircle } from 'lucide-react'
+import { HelpCircle, Trash2 } from 'lucide-react'
 
 function formatEur(n: number) {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n)
@@ -20,10 +21,12 @@ export function BudgetTracker({ month }: Props) {
   const { data: transactions, isLoading: loadingTx } = useTransactions({ month, type: 'expense' })
   const { data: categories } = useCategories()
   const upsertBudget = useUpsertBudget()
+  const deleteBudget = useDeleteBudget()
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState('')
   const [showHelp, setShowHelp] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // New budget form
   const [addingBudget, setAddingBudget] = useState(false)
@@ -43,7 +46,6 @@ export function BudgetTracker({ month }: Props) {
     )
   }
 
-  // Calcola spesa per categoria
   const spentByCategory = new Map<string, number>()
   for (const t of transactions ?? []) {
     if (t.category_id) {
@@ -67,11 +69,20 @@ export function BudgetTracker({ month }: Props) {
     setNewBudgetAmount('')
   }
 
-  // Categorie di spesa senza budget impostato
+  const handleDeleteBudget = (id: string) => {
+    deleteBudget.mutate(id)
+    setDeletingId(null)
+  }
+
   const budgetedCategoryIds = new Set((budgets ?? []).map((b) => b.category_id))
   const unbudgetedCategories = (categories ?? []).filter(
     (c) => (c.type === 'expense' || c.type === 'both') && !budgetedCategoryIds.has(c.id)
   )
+
+  const categoryOptions = unbudgetedCategories.map((c) => ({
+    value: c.id,
+    label: `${c.icon ?? ''} ${c.name}`,
+  }))
 
   return (
     <div className="rounded-xl bg-white/5 border border-white/10 p-5">
@@ -101,34 +112,29 @@ export function BudgetTracker({ month }: Props) {
         <div className="mb-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
           <p className="text-xs text-blue-300 leading-relaxed">
             I <strong>budget</strong> ti permettono di impostare un limite mensile per ogni categoria di spesa.
-            La barra ti mostra quanto hai già speso rispetto al limite: <span className="text-emerald-400">verde</span> = ok,{' '}
+            La barra mostra quanto hai già speso: <span className="text-emerald-400">verde</span> = ok,{' '}
             <span className="text-yellow-400">giallo</span> = quasi al limite,{' '}
-            <span className="text-red-400">rosso</span> = sforato.
-            Clicca sull&apos;importo del budget per modificarlo.
+            <span className="text-red-400">rosso</span> = sforato. Clicca l&apos;importo per modificarlo.
           </p>
         </div>
       )}
 
-      {/* Form aggiungi budget */}
       {addingBudget && (
         <div className="mb-3 p-3 bg-black/20 border border-white/10 rounded-lg flex flex-wrap items-center gap-2">
-          <select
+          <Select
             value={newBudgetCategoryId}
-            onChange={(e) => setNewBudgetCategoryId(e.target.value)}
-            className="flex-1 min-w-[140px] bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-gray-300 focus:outline-none [color-scheme:dark]"
-          >
-            <option value="">Seleziona categoria...</option>
-            {unbudgetedCategories.map((c) => (
-              <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
-            ))}
-          </select>
+            onChange={setNewBudgetCategoryId}
+            options={categoryOptions}
+            placeholder="Seleziona categoria..."
+            className="flex-1 min-w-[140px]"
+          />
           <div className="flex items-center gap-1">
             <input
               type="number"
               placeholder="0.00"
               value={newBudgetAmount}
               onChange={(e) => setNewBudgetAmount(e.target.value)}
-              className="w-24 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+              className="w-24 bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-white/30"
             />
             <span className="text-xs text-gray-500">€/mese</span>
           </div>
@@ -136,7 +142,7 @@ export function BudgetTracker({ month }: Props) {
             type="button"
             onClick={handleAddBudget}
             disabled={!newBudgetCategoryId || !newBudgetAmount}
-            className="px-3 py-1.5 text-xs rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+            className="px-3 py-2 text-xs rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
           >
             Salva
           </button>
@@ -153,7 +159,9 @@ export function BudgetTracker({ month }: Props) {
       {!budgets || budgets.length === 0 ? (
         <div className="py-6 text-center space-y-2">
           <p className="text-gray-600 text-sm">Nessun budget impostato</p>
-          <p className="text-gray-700 text-xs">Clicca &quot;+ Aggiungi&quot; per impostare un limite mensile per le tue categorie di spesa</p>
+          <p className="text-gray-700 text-xs">
+            Clicca &quot;+ Aggiungi&quot; per impostare un limite mensile per le tue categorie di spesa
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -162,9 +170,10 @@ export function BudgetTracker({ month }: Props) {
             const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0
             const barColor = pct < 80 ? 'bg-emerald-500' : pct < 100 ? 'bg-yellow-500' : 'bg-red-500'
             const isEditing = editingId === budget.category_id
+            const isConfirmingDelete = deletingId === budget.id
 
             return (
-              <div key={budget.id}>
+              <div key={budget.id} className="group">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm text-white">
                     {budget.category?.icon} {budget.category?.name}
@@ -178,7 +187,10 @@ export function BudgetTracker({ month }: Props) {
                           type="number"
                           value={editAmount}
                           onChange={(e) => setEditAmount(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') handleSaveEdit(budget.category_id); if (e.key === 'Escape') setEditingId(null) }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit(budget.category_id)
+                            if (e.key === 'Escape') setEditingId(null)
+                          }}
                           className="w-20 bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-white text-xs focus:outline-none"
                           autoFocus
                         />
@@ -196,6 +208,33 @@ export function BudgetTracker({ month }: Props) {
                     )}
                     {pct > 100 && (
                       <span className="text-red-400 font-medium">+{formatEur(spent - budget.amount)}</span>
+                    )}
+
+                    {/* Delete confirm */}
+                    {isConfirmingDelete ? (
+                      <div className="flex items-center gap-1 ml-1">
+                        <span className="text-gray-500">Elimina?</span>
+                        <button
+                          onClick={() => handleDeleteBudget(budget.id)}
+                          className="text-red-400 hover:text-red-300 font-medium"
+                        >
+                          Sì
+                        </button>
+                        <button
+                          onClick={() => setDeletingId(null)}
+                          className="text-gray-500 hover:text-gray-400"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setDeletingId(budget.id)}
+                        className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all ml-1"
+                        title="Elimina budget"
+                      >
+                        <Trash2 size={12} />
+                      </button>
                     )}
                   </div>
                 </div>

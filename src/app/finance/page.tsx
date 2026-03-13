@@ -1,6 +1,7 @@
 'use client'
 
 import { BudgetTracker } from '@/components/finance/BudgetTracker'
+import { CategoryManager } from '@/components/finance/CategoryManager'
 import { CSVImport } from '@/components/finance/CSVImport'
 import { FirstTimeSetup } from '@/components/finance/FirstTimeSetup'
 import { MonthlyBarChart } from '@/components/finance/MonthlyBarChart'
@@ -67,6 +68,8 @@ export default function FinancePage() {
       <TransactionList month={selectedMonth} />
 
       <CSVImport month={selectedMonth} />
+
+      <CategoryManager />
     </main>
   )
 }
