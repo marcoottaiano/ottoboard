@@ -22,6 +22,7 @@ export interface Activity {
 
 export type TransactionType = 'income' | 'expense'
 export type CategoryType = 'income' | 'expense' | 'both'
+export type SpendingType = 'needs' | 'wants' | 'savings'
 
 export interface Category {
   id: string
@@ -29,6 +30,7 @@ export interface Category {
   icon: string | null
   color: string | null
   type: CategoryType
+  spending_type: SpendingType | null
 }
 
 export interface Transaction {
@@ -48,6 +50,26 @@ export interface Budget {
   category_id: string
   amount: number
   month: string
+}
+
+export interface TransactionWithCategory extends Omit<Transaction, 'category'> {
+  category: Category | null
+}
+
+export interface BudgetWithCategory extends Budget {
+  category: Category
+}
+
+export interface MonthStats {
+  totalIncome: number
+  totalExpense: number
+  balance: number
+}
+
+export interface MonthStatsDelta {
+  income: number   // percentuale delta vs mese precedente
+  expense: number
+  balance: number
 }
 
 export type ProjectStatus = 'active' | 'archived'
