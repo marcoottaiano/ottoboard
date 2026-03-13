@@ -23,8 +23,9 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
       if (filters.month) {
         const [year, month] = filters.month.split('-').map(Number)
-        const start = new Date(year, month - 1, 1).toISOString().slice(0, 10)
-        const end = new Date(year, month, 0).toISOString().slice(0, 10)
+        const start = `${filters.month}-01`
+        const lastDay = new Date(year, month, 0).getDate()
+        const end = `${filters.month}-${String(lastDay).padStart(2, '0')}`
         query = query.gte('date', start).lte('date', end)
       }
       if (filters.type) {
