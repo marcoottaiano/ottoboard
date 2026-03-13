@@ -81,7 +81,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    const client = createClient()
+    await client.auth.signOut()
     router.push('/auth/login')
   }
 
