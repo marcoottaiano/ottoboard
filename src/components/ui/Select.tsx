@@ -13,11 +13,12 @@ interface Props {
   onChange: (value: string) => void
   options: SelectOption[]
   placeholder?: string
+  showPlaceholder?: boolean
   className?: string
   disabled?: boolean
 }
 
-export function Select({ value, onChange, options, placeholder = 'Seleziona...', className = '', disabled = false }: Props) {
+export function Select({ value, onChange, options, placeholder = 'Seleziona...', showPlaceholder = true, className = '', disabled = false }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -55,14 +56,16 @@ export function Select({ value, onChange, options, placeholder = 'Seleziona...',
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full mt-1 w-full min-w-max bg-[#12121f] border border-white/15 rounded-lg shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
-          <button
-            type="button"
-            onClick={() => { onChange(''); setOpen(false) }}
-            className="w-full px-3 py-2 text-sm text-left text-gray-600 hover:bg-white/5 transition-colors"
-          >
-            {placeholder}
-          </button>
+        <div className="absolute z-50 top-full mt-1 w-full bg-[#12121f] border border-white/15 rounded-lg shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+          {showPlaceholder && (
+            <button
+              type="button"
+              onClick={() => { onChange(''); setOpen(false) }}
+              className="w-full px-3 py-2 text-sm text-left text-gray-600 hover:bg-white/5 transition-colors"
+            >
+              {placeholder}
+            </button>
+          )}
           {options.map((opt) => (
             <button
               key={opt.value}

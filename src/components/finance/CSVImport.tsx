@@ -3,6 +3,7 @@
 import { useCategories } from '@/hooks/useCategories'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useCreateTransaction } from '@/hooks/useFinanceMutations'
+import { Select, SelectOption } from '@/components/ui/Select'
 import { TransactionType } from '@/types'
 import { Upload, ChevronDown, ChevronUp } from 'lucide-react'
 import { useRef, useState } from 'react'
@@ -122,7 +123,19 @@ export function CSVImport({ month }: Props) {
 
   const reset = () => { setStep('upload'); setRows([]); setHeaders([]); setReport(null) }
 
-  const colOptions = headers.map((h, i) => ({ label: h || `Colonna ${i + 1}`, value: i }))
+  // Convert headers to SelectOption with string values
+  const colOptions: SelectOption[] = headers.map((h, i) => ({
+    label: h || `Colonna ${i + 1}`,
+    value: String(i),
+  }))
+
+  const FIELDS: { key: keyof ColMapping; label: string; required: boolean }[] = [
+    { key: 'date', label: 'Data *', required: true },
+    { key: 'amount', label: 'Importo *', required: true },
+    { key: 'type', label: 'Tipo (entrata/uscita)', required: false },
+    { key: 'description', label: 'Descrizione', required: false },
+    { key: 'categoryName', label: 'Categoria', required: false },
+  ]
 
   return (
     <div className="rounded-xl bg-white/5 border border-white/10">
@@ -156,25 +169,22 @@ export function CSVImport({ month }: Props) {
             <div className="mt-4 space-y-3">
               <p className="text-xs text-gray-500">{rows.length} righe trovate. Mappa le colonne:</p>
               <div className="grid grid-cols-2 gap-2">
-                {[
-                  { key: 'date', label: 'Data *', required: true },
-                  { key: 'amount', label: 'Importo *', required: true },
-                  { key: 'type', label: 'Tipo (entrata/uscita)', required: false },
-                  { key: 'description', label: 'Descrizione', required: false },
-                  { key: 'categoryName', label: 'Categoria', required: false },
-                ].map(({ key, label, required }) => (
-                  <div key={key}>
-                    <label className="text-xs text-gray-500 block mb-1">{label}</label>
-                    <select
-                      value={(mapping as unknown as Record<string, number | null>)[key] ?? ''}
-                      onChange={(e) => setMapping((m) => ({ ...m, [key]: e.target.value === '' ? null : Number(e.target.value) }))}
-                      className="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs text-gray-300 focus:outline-none"
-                    >
-                      {!required && <option value="">— Non mappare</option>}
-                      {colOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </div>
-                ))}
+                {FIELDS.map(({ key, label, required }) => {
+                  const currentVal = mapping[key]
+                  const strVal = currentVal !== null ? String(currentVal) : ''
+                  return (
+                    <div key={key}>
+                      <label className="text-xs text-gray-500 block mb-1">{label}</label>
+                      <Select
+                        value={strVal}
+                        onChange={(v) => setMapping((m) => ({ ...m, [key]: v === '' ? null : Number(v) }))}
+                        options={colOptions}
+                        placeholder="— Non mappare"
+                        showPlaceholder={!required}
+                      />
+                    </div>
+                  )
+                })}
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setStep('preview')} className="flex-1 py-2 text-xs rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors">

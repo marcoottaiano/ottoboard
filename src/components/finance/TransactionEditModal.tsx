@@ -2,6 +2,7 @@
 
 import { useCategories } from '@/hooks/useCategories'
 import { useDeleteTransaction, useUpdateTransaction } from '@/hooks/useFinanceMutations'
+import { Select, SelectOption } from '@/components/ui/Select'
 import { TransactionWithCategory, TransactionType } from '@/types'
 import { X } from 'lucide-react'
 import { useState } from 'react'
@@ -25,6 +26,10 @@ export function TransactionEditModal({ transaction, onClose }: Props) {
   const [error, setError] = useState<string | null>(null)
 
   const filteredCategories = categories?.filter((c) => c.type === type || c.type === 'both') ?? []
+  const categoryOptions: SelectOption[] = filteredCategories.map((c) => ({
+    value: c.id,
+    label: `${c.icon ?? ''} ${c.name}`,
+  }))
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,10 +84,13 @@ export function TransactionEditModal({ transaction, onClose }: Props) {
 
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Categoria</label>
-            <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/30">
-              <option value="">Seleziona...</option>
-              {filteredCategories.map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-            </select>
+            <Select
+              value={categoryId}
+              onChange={setCategoryId}
+              options={categoryOptions}
+              placeholder="Seleziona..."
+              className="w-full"
+            />
           </div>
 
           <div>

@@ -1,11 +1,18 @@
 'use client'
 
 import { useTransactions } from '@/hooks/useTransactions'
+import { Select, SelectOption } from '@/components/ui/Select'
 import { TransactionType, TransactionWithCategory } from '@/types'
 import { useState } from 'react'
 import { TransactionEditModal } from './TransactionEditModal'
 
 const PAGE_SIZE = 20
+
+const TYPE_OPTIONS: SelectOption[] = [
+  { value: 'all', label: 'Tutte' },
+  { value: 'income', label: 'Entrate' },
+  { value: 'expense', label: 'Uscite' },
+]
 
 function formatEur(n: number) {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n)
@@ -42,18 +49,16 @@ export function TransactionList({ month }: Props) {
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(0) }}
           placeholder="Cerca..."
-          className="text-xs bg-white/5 border border-white/10 rounded px-2 py-1.5 text-gray-300 placeholder:text-gray-600 focus:outline-none w-32"
+          className="text-xs bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-gray-300 placeholder:text-gray-600 focus:outline-none w-32"
         />
 
-        <select
+        <Select
           value={typeFilter}
-          onChange={(e) => { setTypeFilter(e.target.value as TransactionType | 'all'); setPage(0) }}
-          className="text-xs bg-white/5 border border-white/10 rounded px-2 py-1.5 text-gray-300 focus:outline-none"
-        >
-          <option value="all">Tutte</option>
-          <option value="income">Entrate</option>
-          <option value="expense">Uscite</option>
-        </select>
+          onChange={(v) => { setTypeFilter(v as TransactionType | 'all'); setPage(0) }}
+          options={TYPE_OPTIONS}
+          showPlaceholder={false}
+          className="w-28"
+        />
       </div>
 
       {isLoading ? (

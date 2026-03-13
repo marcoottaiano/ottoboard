@@ -98,6 +98,28 @@ export function useCreateCategory() {
   })
 }
 
+interface UpdateCategoryInput {
+  id: string
+  name?: string
+  icon?: string
+  color?: string
+  spending_type?: SpendingType | null
+}
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: UpdateCategoryInput) => {
+      const supabase = createClient()
+      const { error } = await supabase.from('categories').update(updates).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    },
+  })
+}
+
 export function useDeleteCategory() {
   const queryClient = useQueryClient()
   return useMutation({

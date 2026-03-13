@@ -2,6 +2,7 @@
 
 import { useActivities } from '@/hooks/useActivities'
 import { Activity, ActivityType } from '@/types'
+import { Select, SelectOption } from '@/components/ui/Select'
 import { useState } from 'react'
 import {
   Bar,
@@ -13,7 +14,7 @@ import {
   YAxis,
 } from 'recharts'
 
-const ACTIVITY_TYPES: { value: ActivityType | 'all'; label: string }[] = [
+const ACTIVITY_TYPE_OPTIONS: SelectOption[] = [
   { value: 'all', label: 'Tutti' },
   { value: 'Run', label: 'Corsa' },
   { value: 'WeightTraining', label: 'Palestra' },
@@ -67,17 +68,13 @@ export function WeeklyVolumeChart() {
     <div className="rounded-xl bg-white/5 border border-white/10 p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-400">Volume settimanale</h3>
-        <select
+        <Select
           value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value as ActivityType | 'all')}
-          className="text-xs bg-white/5 border border-white/10 rounded px-2 py-1 text-gray-300 focus:outline-none"
-        >
-          {ACTIVITY_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setTypeFilter(v as ActivityType | 'all')}
+          options={ACTIVITY_TYPE_OPTIONS}
+          showPlaceholder={false}
+          className="w-32"
+        />
       </div>
 
       {isLoading ? (

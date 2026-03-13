@@ -2,6 +2,7 @@
 
 import { useActivities, ActivityFilters } from '@/hooks/useActivities'
 import { Activity, ActivityType } from '@/types'
+import { Select, SelectOption } from '@/components/ui/Select'
 import { ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { ActivityBadge } from './ActivityBadge'
@@ -9,7 +10,7 @@ import { ActivityModal } from './ActivityModal'
 
 const PAGE_SIZE = 20
 
-const TYPE_OPTIONS: { value: ActivityType | 'all'; label: string }[] = [
+const TYPE_OPTIONS: SelectOption[] = [
   { value: 'all', label: 'Tutti' },
   { value: 'Run', label: 'Corsa' },
   { value: 'WeightTraining', label: 'Palestra' },
@@ -18,12 +19,12 @@ const TYPE_OPTIONS: { value: ActivityType | 'all'; label: string }[] = [
   { value: 'Ski', label: 'Sci' },
 ]
 
-const PERIOD_OPTIONS = [
-  { value: 0, label: 'Sempre' },
-  { value: 30, label: '30 giorni' },
-  { value: 90, label: '3 mesi' },
-  { value: 180, label: '6 mesi' },
-  { value: 365, label: '1 anno' },
+const PERIOD_OPTIONS: SelectOption[] = [
+  { value: '0', label: 'Sempre' },
+  { value: '30', label: '30 giorni' },
+  { value: '90', label: '3 mesi' },
+  { value: '180', label: '6 mesi' },
+  { value: '365', label: '1 anno' },
 ]
 
 function formatDuration(seconds: number) {
@@ -64,24 +65,20 @@ export function ActivityList() {
     <div className="rounded-xl bg-white/5 border border-white/10 p-5">
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <h3 className="text-sm font-medium text-gray-400 flex-1">Attività</h3>
-        <select
+        <Select
           value={typeFilter}
-          onChange={(e) => { setTypeFilter(e.target.value as ActivityType | 'all'); setPage(0) }}
-          className="text-xs bg-white/5 border border-white/10 rounded px-2 py-1 text-gray-300 focus:outline-none"
-        >
-          {TYPE_OPTIONS.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
-        <select
-          value={periodDays}
-          onChange={(e) => { setPeriodDays(Number(e.target.value)); setPage(0) }}
-          className="text-xs bg-white/5 border border-white/10 rounded px-2 py-1 text-gray-300 focus:outline-none"
-        >
-          {PERIOD_OPTIONS.map((p) => (
-            <option key={p.value} value={p.value}>{p.label}</option>
-          ))}
-        </select>
+          onChange={(v) => { setTypeFilter(v as ActivityType | 'all'); setPage(0) }}
+          options={TYPE_OPTIONS}
+          showPlaceholder={false}
+          className="w-32"
+        />
+        <Select
+          value={String(periodDays)}
+          onChange={(v) => { setPeriodDays(Number(v)); setPage(0) }}
+          options={PERIOD_OPTIONS}
+          showPlaceholder={false}
+          className="w-28"
+        />
       </div>
 
       {isLoading ? (
