@@ -1,10 +1,69 @@
+import { ActivityHeatmap } from '@/components/fitness/ActivityHeatmap'
+import { ActivityList } from '@/components/fitness/ActivityList'
+import { HeartRateChart } from '@/components/fitness/HeartRateChart'
+import { LastActivityCard } from '@/components/fitness/LastActivityCard'
+import { PaceTrendChart } from '@/components/fitness/PaceTrendChart'
+import { StravaConnect } from '@/components/fitness/StravaConnect'
+import { WeekStatsCard } from '@/components/fitness/WeekStatsCard'
+import { WeeklyVolumeChart } from '@/components/fitness/WeeklyVolumeChart'
+import { createClient } from '@/lib/supabase/server'
+
 export const dynamic = 'force-dynamic'
 
-export default function FitnessPage() {
+async function isStravaConnected(userId: string): Promise<boolean> {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('strava_tokens')
+    .select('user_id')
+    .eq('user_id', userId)
+    .single()
+  return !!data
+}
+
+export default async function FitnessPage() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  const connected = await isStravaConnected(user.id)
+
+  if (!connected) {
+    return (
+      <main className="flex-1 p-6">
+        <StravaConnect mode="full" />
+      </main>
+    )
+  }
+
   return (
-    <div>
-      <h1 className="text-2xl font-bold text-orange-400/90 mb-2">Fitness</h1>
-      <p className="text-white/40 text-sm">Modulo allenamento — coming in Fase 2</p>
-    </div>
+    <main className="flex-1 p-6 space-y-5">
+      {/* Header con sync compatto */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-white">Fitness</h1>
+        <StravaConnect mode="compact" />
+      </div>
+
+      {/* Hero: ultima attività + stats settimanali */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <LastActivityCard />
+        <WeekStatsCard />
+      </div>
+
+      {/* Grafici volume e pace */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <WeeklyVolumeChart />
+        <PaceTrendChart />
+      </div>
+
+      {/* Grafici FC e heatmap */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <HeartRateChart />
+        <ActivityHeatmap />
+      </div>
+
+      {/* Lista attività paginata */}
+      <ActivityList />
+    </main>
   )
 }
