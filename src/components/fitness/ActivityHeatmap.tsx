@@ -87,7 +87,7 @@ export function ActivityHeatmap() {
     <div className="rounded-xl bg-white/5 border border-white/10 p-5">
       <h3 className="text-sm font-medium text-gray-400 mb-3">Attività {new Date().getFullYear()}</h3>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-white/5 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
         <div className="inline-flex flex-col gap-1 min-w-max">
           {/* Label mesi */}
           <div className="flex gap-1 pl-6 mb-1 relative" style={{ height: '14px' }}>

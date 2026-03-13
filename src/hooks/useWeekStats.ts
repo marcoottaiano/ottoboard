@@ -7,14 +7,13 @@ export interface WeekStats {
   count: number
   distanceKm: number
   durationHours: number
-  calories: number
+  typeCounts: Record<string, number>
 }
 
 export interface WeekStatsDelta {
   count: number
   distanceKm: number
   durationHours: number
-  calories: number
 }
 
 function getWeekBounds(weeksAgo: number): { start: Date; end: Date } {
@@ -30,15 +29,17 @@ function getWeekBounds(weeksAgo: number): { start: Date; end: Date } {
 }
 
 function calcStats(activities: Activity[]): WeekStats {
-  return activities.reduce(
-    (acc, a) => ({
-      count: acc.count + 1,
-      distanceKm: acc.distanceKm + (a.distance ?? 0) / 1000,
-      durationHours: acc.durationHours + a.moving_time / 3600,
-      calories: acc.calories + (a.calories ?? 0),
-    }),
-    { count: 0, distanceKm: 0, durationHours: 0, calories: 0 }
-  )
+  const typeCounts: Record<string, number> = {}
+  let distanceKm = 0
+  let durationHours = 0
+
+  for (const a of activities) {
+    distanceKm += (a.distance ?? 0) / 1000
+    durationHours += a.moving_time / 3600
+    typeCounts[a.type] = (typeCounts[a.type] ?? 0) + 1
+  }
+
+  return { count: activities.length, distanceKm, durationHours, typeCounts }
 }
 
 function calcDelta(current: WeekStats, previous: WeekStats): WeekStatsDelta {
@@ -49,7 +50,6 @@ function calcDelta(current: WeekStats, previous: WeekStats): WeekStatsDelta {
     count: pct(current.count, previous.count),
     distanceKm: pct(current.distanceKm, previous.distanceKm),
     durationHours: pct(current.durationHours, previous.durationHours),
-    calories: pct(current.calories, previous.calories),
   }
 }
 
@@ -57,7 +57,6 @@ export function useWeekStats() {
   const currentBounds = getWeekBounds(0)
   const previousBounds = getWeekBounds(1)
 
-  // Fetch le ultime 2 settimane in un'unica query
   const { data: activities, isLoading } = useActivities({
     after: previousBounds.start.toISOString().slice(0, 10),
   })

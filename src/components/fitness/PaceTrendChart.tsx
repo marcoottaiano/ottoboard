@@ -7,7 +7,6 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -68,6 +67,11 @@ export function PaceTrendChart() {
 
   const chartData = activities ? buildChartData(activities) : []
 
+  // Calcola dominio Y adattivo con buffer di 30 secondi
+  const paceValues = chartData.flatMap((d) => [d.pace, d.trend].filter(Boolean))
+  const minPace = paceValues.length > 0 ? Math.min(...paceValues) - 30 : 0
+  const maxPace = paceValues.length > 0 ? Math.max(...paceValues) + 30 : 600
+
   return (
     <div className="rounded-xl bg-white/5 border border-white/10 p-5">
       <div className="flex items-center justify-between mb-4">
@@ -102,17 +106,43 @@ export function PaceTrendChart() {
             <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#6b7280' }} tickLine={false} axisLine={false} />
             <YAxis
               reversed
+              domain={[minPace, maxPace]}
               tick={{ fontSize: 10, fill: '#6b7280' }}
               tickLine={false}
               axisLine={false}
               tickFormatter={formatPaceLabel}
             />
             <Tooltip
-              contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-              formatter={(v: number) => [formatPaceLabel(v), 'Pace']}
+              contentStyle={{
+                background: '#1a1a2e',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                fontSize: '12px',
+              }}
+              formatter={(v: number, name: string) => [
+                formatPaceLabel(v),
+                name === 'pace' ? 'Pace reale' : 'Tendenza',
+              ]}
             />
-            <Line type="monotone" dataKey="pace" stroke="#f97316" strokeWidth={2} dot={{ r: 3, fill: '#f97316' }} />
-            <Line type="monotone" dataKey="trend" stroke="#f9731650" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+            <Line
+              type="monotone"
+              dataKey="pace"
+              name="pace"
+              stroke="#f97316"
+              strokeWidth={2}
+              dot={{ r: 3, fill: '#f97316' }}
+              activeDot={{ r: 5 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="trend"
+              name="trend"
+              stroke="#f9731660"
+              strokeWidth={1.5}
+              dot={false}
+              strokeDasharray="4 2"
+              activeDot={false}
+            />
           </LineChart>
         </ResponsiveContainer>
       )}
