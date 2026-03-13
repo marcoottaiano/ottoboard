@@ -8,8 +8,8 @@ import {
   Activity,
   Wallet,
   Kanban,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
   LogOut,
   User,
 } from 'lucide-react'
@@ -66,12 +66,17 @@ function getActiveModule(pathname: string) {
   return 'home'
 }
 
+function getPageLabel(module: string) {
+  return NAV_ITEMS.find((i) => i.module === module)?.label ?? 'Ottoboard'
+}
+
 export default function Sidebar({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const [userName, setUserName] = useState<string | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const activeModule = getActiveModule(pathname)
+  const activeItem = NAV_ITEMS.find((i) => i.module === activeModule)
 
   useEffect(() => {
     const client = createClient()
@@ -105,19 +110,31 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
           collapsed ? 'w-[72px]' : 'w-[220px]',
         ].join(' ')}
       >
-        {/* Logo */}
+        {/* Logo + collapse toggle */}
         <div className={[
-          'flex items-center h-16 px-4 border-b border-white/[0.06]',
-          collapsed ? 'justify-center' : 'gap-3',
+          'flex items-center h-16 px-3 border-b border-white/[0.06] gap-2',
+          collapsed ? 'justify-center' : '',
         ].join(' ')}>
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-purple-500 to-emerald-500 flex-shrink-0 flex items-center justify-center">
-            <span className="text-[11px] font-black text-white tracking-tight">OB</span>
-          </div>
           {!collapsed && (
-            <span className="text-sm font-semibold tracking-wide text-white/90">
-              Ottoboard
-            </span>
+            <>
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-purple-500 to-emerald-500 flex-shrink-0 flex items-center justify-center">
+                <span className="text-[11px] font-black text-white tracking-tight">OB</span>
+              </div>
+              <span className="text-sm font-semibold tracking-wide text-white/90 flex-1">
+                Ottoboard
+              </span>
+            </>
           )}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-200 flex-shrink-0"
+            title={collapsed ? 'Espandi sidebar' : 'Chiudi sidebar'}
+          >
+            {collapsed
+              ? <PanelLeftOpen size={16} />
+              : <PanelLeftClose size={16} />
+            }
+          </button>
         </div>
 
         {/* Nav */}
@@ -160,7 +177,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
         </nav>
 
         {/* User + logout */}
-        <div className="px-3 pb-4 space-y-2 border-t border-white/[0.06] pt-3">
+        <div className="px-3 pb-4 space-y-1 border-t border-white/[0.06] pt-3">
           <div className={[
             'flex items-center rounded-xl px-2 py-2',
             collapsed ? 'justify-center' : 'gap-2.5',
@@ -185,15 +202,37 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
             {!collapsed && <span className="text-xs font-medium">Logout</span>}
           </button>
         </div>
-
-        {/* Collapse toggle */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-[72px] w-6 h-6 rounded-full bg-[#0a0a0f] border border-white/10 flex items-center justify-center text-white/40 hover:text-white/80 hover:border-white/20 transition-all duration-200 z-50"
-        >
-          {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-        </button>
       </aside>
+
+      {/* ── Top navbar (mobile) ───────────────────────────────── */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 flex items-center justify-between px-4 border-b border-white/[0.06] bg-[#0a0a0f]/80 backdrop-blur-2xl">
+        {/* Logo + page title */}
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 via-purple-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+            <span className="text-[10px] font-black text-white">OB</span>
+          </div>
+          <span className={['text-sm font-semibold', activeItem?.color ?? 'text-white/80'].join(' ')}>
+            {getPageLabel(activeModule)}
+          </span>
+        </div>
+
+        {/* User + logout */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
+              <User size={11} className="text-white/60" />
+            </div>
+            <span className="text-xs text-white/40 max-w-[80px] truncate">{userName ?? '…'}</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+            title="Logout"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
+      </header>
 
       {/* ── Bottom nav (mobile) ───────────────────────────────── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around h-16 border-t border-white/[0.06] bg-[#0a0a0f]/80 backdrop-blur-2xl px-2">
@@ -225,7 +264,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
       <main
         className={[
           'flex-1 min-h-screen transition-all duration-300',
-          'pb-16 md:pb-0',
+          'pt-14 pb-16 md:pt-0 md:pb-0',
           collapsed ? 'md:ml-[72px]' : 'md:ml-[220px]',
         ].join(' ')}
       >
