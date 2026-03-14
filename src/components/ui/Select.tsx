@@ -16,9 +16,10 @@ interface Props {
   showPlaceholder?: boolean
   className?: string
   disabled?: boolean
+  dropUp?: boolean
 }
 
-export function Select({ value, onChange, options, placeholder = 'Seleziona...', showPlaceholder = true, className = '', disabled = false }: Props) {
+export function Select({ value, onChange, options, placeholder = 'Seleziona...', showPlaceholder = true, className = '', disabled = false, dropUp = false }: Props) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -56,7 +57,7 @@ export function Select({ value, onChange, options, placeholder = 'Seleziona...',
       </button>
 
       {open && (
-        <div className="absolute z-50 top-full mt-1 w-full bg-[#12121f] border border-white/15 rounded-lg shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+        <div className={`absolute z-50 w-full bg-[#12121f] border border-white/15 rounded-lg shadow-2xl overflow-hidden max-h-60 overflow-y-auto ${dropUp ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
           {showPlaceholder && (
             <button
               type="button"

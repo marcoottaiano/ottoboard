@@ -10,6 +10,7 @@ import { RuleCard5030 } from '@/components/finance/RuleCard5030'
 import { SpendingPieChart } from '@/components/finance/SpendingPieChart'
 import { TransactionForm } from '@/components/finance/TransactionForm'
 import { TransactionList } from '@/components/finance/TransactionList'
+import { TotalBalanceWidget } from '@/components/home/TotalBalanceWidget'
 import { useCategories } from '@/hooks/useCategories'
 import { useState } from 'react'
 
@@ -52,6 +53,8 @@ export default function FinancePage() {
       </div>
 
       <MonthlyHeader selectedMonth={selectedMonth} onMonthChange={setSelectedMonth} />
+
+      <TotalBalanceWidget />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
         <SpendingPieChart month={selectedMonth} />

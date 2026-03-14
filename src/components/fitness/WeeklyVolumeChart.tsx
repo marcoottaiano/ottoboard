@@ -88,6 +88,11 @@ export function WeeklyVolumeChart() {
             <Tooltip
               contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
               labelStyle={{ color: '#9ca3af' }}
+              formatter={(value, name) => {
+                const n = Number(value) || 0
+                const label = name === 'km' ? `${n.toFixed(2)} km` : `${Math.floor(n)}h ${Math.round((n % 1) * 60)}m`
+                return [label, name === 'km' ? 'Distanza' : 'Durata']
+              }}
             />
             <Bar dataKey="km" name="km" fill="#f97316" radius={[3, 3, 0, 0]} maxBarSize={20} />
             <Bar dataKey="ore" name="ore" fill="#fb923c80" radius={[3, 3, 0, 0]} maxBarSize={20} />

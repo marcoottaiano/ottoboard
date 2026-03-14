@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import ConditionalSidebar from "@/components/ui/ConditionalSidebar";
+import { GlobalLoadingBar } from "@/components/ui/GlobalLoadingBar";
 import { Providers } from "./providers";
 
 const geistSans = localFont({
@@ -31,6 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0a0f]`}
       >
         <Providers>
+          <GlobalLoadingBar />
           <ConditionalSidebar>{children}</ConditionalSidebar>
         </Providers>
       </body>

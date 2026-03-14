@@ -77,8 +77,14 @@ export function useReorderColumns() {
   return useMutation({
     mutationFn: async ({ columns }: ReorderColumnsInput) => {
       const supabase = createClient()
-      const { error } = await supabase.from('columns').upsert(columns)
-      if (error) throw error
+      // Use individual UPDATE calls — upsert would overwrite other fields with NULL
+      for (const { id, position } of columns) {
+        const { error } = await supabase
+          .from('columns')
+          .update({ position })
+          .eq('id', id)
+        if (error) throw error
+      }
     },
     onSuccess: (_, input) => {
       queryClient.invalidateQueries({ queryKey: ['columns', input.projectId] })
