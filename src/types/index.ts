@@ -72,6 +72,22 @@ export interface MonthStatsDelta {
   balance: number
 }
 
+export type RecurringFrequency = 'weekly' | 'monthly' | 'yearly'
+
+export interface RecurringTransaction {
+  id: string
+  user_id: string
+  amount: number
+  type: TransactionType
+  category_id: string
+  description: string | null
+  frequency: RecurringFrequency
+  next_due_date: string  // DATE: YYYY-MM-DD
+  is_active: boolean
+  created_at: string
+  category?: Category
+}
+
 export type ProjectStatus = 'active' | 'archived'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
 
