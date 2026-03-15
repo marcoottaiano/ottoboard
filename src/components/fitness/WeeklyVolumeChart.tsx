@@ -27,23 +27,31 @@ function getWeekLabel(date: Date) {
   return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })
 }
 
+function getMondayOf(date: Date): Date {
+  const d = new Date(date)
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 function buildWeeklyData(activities: Activity[]) {
-  const now = new Date()
+  const thisMonday = getMondayOf(new Date())
   const weeks: { label: string; km: number; ore: number }[] = []
 
   for (let i = 11; i >= 0; i--) {
-    const end = new Date(now)
-    end.setDate(now.getDate() - i * 7)
-    const start = new Date(end)
-    start.setDate(end.getDate() - 6)
+    const weekStart = new Date(thisMonday)
+    weekStart.setDate(thisMonday.getDate() - i * 7)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 6)
+    weekEnd.setHours(23, 59, 59, 999)
 
     const weekActivities = activities.filter((a) => {
       const d = new Date(a.start_date)
-      return d >= start && d <= end
+      return d >= weekStart && d <= weekEnd
     })
 
     weeks.push({
-      label: getWeekLabel(start),
+      label: getWeekLabel(weekStart),
       km: weekActivities.reduce((acc, a) => acc + (a.distance ?? 0) / 1000, 0),
       ore: weekActivities.reduce((acc, a) => acc + a.moving_time / 3600, 0),
     })
