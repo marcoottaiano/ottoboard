@@ -8,11 +8,14 @@ function formatEur(n: number) {
 }
 
 function Delta({ value }: { value: number }) {
-  if (value === 0) return <span className="text-gray-500 text-xs">→ 0%</span>
+  if (value === 0) return (
+    <span className="text-xs text-gray-500">→ 0% <span className="text-gray-600">vs media</span></span>
+  )
   const isPositive = value > 0
   return (
     <span className={`text-xs ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-      {isPositive ? '↑' : '↓'} {Math.abs(value)}%
+      {isPositive ? '↑' : '↓'} {Math.abs(value)}%{' '}
+      <span className="text-gray-600">vs media</span>
     </span>
   )
 }

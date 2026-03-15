@@ -50,7 +50,7 @@ export function KanbanColumn({ column, tasks, isDragging = false, onTaskClick, o
       ref={setNodeRef}
       style={style}
       className={`
-        w-72 flex-shrink-0 flex flex-col rounded-xl bg-white/5 border border-white/10
+        group w-72 flex-shrink-0 flex flex-col rounded-xl bg-white/5 border border-white/10
         ${isSortableDragging ? 'opacity-40' : ''}
         ${isDragging ? 'shadow-2xl ring-1 ring-purple-500/30' : ''}
       `}
@@ -83,7 +83,7 @@ export function KanbanColumn({ column, tasks, isDragging = false, onTaskClick, o
         <span className="text-xs text-gray-600 flex-shrink-0">{tasks.length}</span>
 
         {!editing && (
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+          <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             {confirming ? (
               <div className="flex items-center gap-1 text-xs">
                 <button
@@ -111,7 +111,7 @@ export function KanbanColumn({ column, tasks, isDragging = false, onTaskClick, o
       </div>
 
       {/* Task list */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[48px] group">
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[48px]">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} onClick={onTaskClick} />
