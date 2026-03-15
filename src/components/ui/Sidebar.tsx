@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
@@ -128,9 +129,13 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
         ].join(' ')}>
           {!collapsed && (
             <>
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 via-purple-500 to-emerald-500 flex-shrink-0 flex items-center justify-center">
-                <span className="text-[11px] font-black text-white tracking-tight">OB</span>
-              </div>
+              <Image
+                src="/icons/icon-192x192.png"
+                alt="Ottoboard"
+                width={32}
+                height={32}
+                className="rounded-lg flex-shrink-0"
+              />
               <span className="text-sm font-semibold tracking-wide text-white/90 flex-1">
                 Ottoboard
               </span>
@@ -219,9 +224,13 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
       <header className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 flex items-center justify-between px-4 border-b border-white/[0.06] bg-[#0a0a0f]/80 backdrop-blur-2xl">
         {/* Logo + page title */}
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 via-purple-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
-            <span className="text-[10px] font-black text-white">OB</span>
-          </div>
+          <Image
+            src="/icons/icon-192x192.png"
+            alt="Ottoboard"
+            width={28}
+            height={28}
+            className="rounded-lg flex-shrink-0"
+          />
           <span className={['text-sm font-semibold', activeItem?.color ?? 'text-white/80'].join(' ')}>
             {getPageLabel(activeModule)}
           </span>

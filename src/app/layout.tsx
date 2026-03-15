@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import ConditionalSidebar from "@/components/ui/ConditionalSidebar";
@@ -19,6 +19,23 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Ottoboard",
   description: "Personal life dashboard — fitness, finanze, progetti",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Ottoboard",
+  },
+  formatDetection: { telephone: false },
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1a5f6b",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

@@ -292,9 +292,10 @@ Wrapper DnD per ogni widget: drag handle, "Vai alla sezione", configura (solo ka
 | **Fase 3** | Finanze     | ✅    | Schema DB, form inserimento, grafici, import CSV, budget                   |
 | **Fase 4** | Progetti    | ✅    | Kanban board, drag & drop, task modal, mobile UX                           |
 | **Fase 5** | Home        | ✅    | Widget dashboard configurabile, DnD reorder, add/remove widget             |
-| **Fase 6** | Profilo     | 🔜    | Pagina profilo: cambio password, gestione integrazione Strava multi-utente |
-| **Fase 7** | Auth        | 🔜    | Registrazione, reset password, onboarding nuovo utente, test multi-account |
-| **Fase 8** | Calendario  | 🔜    | Integrazione Timetree: visualizzazione eventi nel dashboard                |
+| **Fase 6** | Profilo     | ✅    | Pagina profilo: cambio password, gestione integrazione Strava multi-utente |
+| **Fase 7** | Auth        | ✅    | Registrazione, reset password, onboarding nuovo utente, test multi-account |
+| **Fase 8** | PWA         | 🔜    | App installabile: manifest, service worker, icone, offline fallback         |
+| **Fase 9** | Calendario  | 🔜    | Integrazione Timetree: visualizzazione eventi nel dashboard                |
 
 ---
 
@@ -339,7 +340,33 @@ Rendere l'app usabile da chiunque senza intervento del developer.
 
 ---
 
-## Fase 8 — Integrazione Timetree
+## Fase 8 — PWA (Progressive Web App)
+
+### Obiettivo
+Rendere Ottoboard installabile come app nativa su mobile e desktop, con supporto offline.
+
+### Funzionalità
+- **Web App Manifest** — icona, nome, theme color, display standalone
+- **Service Worker** — cache asset statici, offline fallback page
+- **Icone** — 192×192 e 512×512 da logo ufficiale, apple-touch-icon per iOS
+- **Install prompt** — Chrome/Safari mostrano banner "Aggiungi alla schermata home"
+
+### Architettura
+- `@ducanh2912/next-pwa` (Workbox) — genera SW automaticamente al build
+- `public/manifest.json` — Web App Manifest
+- `public/icons/` — icone PNG in varie dimensioni
+- `src/app/offline/page.tsx` — pagina fallback quando offline e route non cachata
+- `next.config.mjs` — wrappato con `withPWA(...)`
+
+### Note tecniche
+- SW disabilitato in `NODE_ENV=development` per evitare interferenze
+- `public/sw.js` e `public/workbox-*.js` generati al build → aggiunti a `.gitignore`
+- Icone con `purpose: "any"` (non maskable — logo ha già bordi arrotondati)
+- `theme_color: "#1a5f6b"` corrisponde al colore di sfondo del logo
+
+---
+
+## Fase 9 — Integrazione Timetree
 
 ### Obiettivo
 Visualizzare gli eventi del calendario Timetree nella dashboard.
