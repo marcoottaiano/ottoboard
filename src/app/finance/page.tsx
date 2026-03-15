@@ -6,12 +6,14 @@ import { CSVImport } from '@/components/finance/CSVImport'
 import { FirstTimeSetup } from '@/components/finance/FirstTimeSetup'
 import { MonthlyBarChart } from '@/components/finance/MonthlyBarChart'
 import { MonthlyHeader } from '@/components/finance/MonthlyHeader'
+import { RecurringTransactionManager } from '@/components/finance/RecurringTransactionManager'
 import { RuleCard5030 } from '@/components/finance/RuleCard5030'
 import { SpendingPieChart } from '@/components/finance/SpendingPieChart'
 import { TransactionForm } from '@/components/finance/TransactionForm'
 import { TransactionList } from '@/components/finance/TransactionList'
 import { TotalBalanceWidget } from '@/components/home/TotalBalanceWidget'
 import { useCategories } from '@/hooks/useCategories'
+import { useProcessDueRecurring } from '@/hooks/useRecurringTransactions'
 import { useState } from 'react'
 
 export const dynamic = 'force-dynamic'
@@ -26,6 +28,7 @@ export default function FinancePage() {
   const [setupDone, setSetupDone] = useState(false)
 
   const { data: categories, isLoading } = useCategories()
+  useProcessDueRecurring()
 
   if (isLoading) {
     return (
@@ -65,6 +68,8 @@ export default function FinancePage() {
         <BudgetTracker month={selectedMonth} />
         <RuleCard5030 month={selectedMonth} />
       </div>
+
+      <RecurringTransactionManager />
 
       <TransactionForm />
 
