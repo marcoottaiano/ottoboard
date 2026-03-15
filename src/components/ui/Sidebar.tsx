@@ -56,6 +56,16 @@ const NAV_ITEMS = [
     activeBg: 'bg-purple-500/10',
     border: 'border-purple-400/40',
   },
+  {
+    href: '/profile',
+    label: 'Profilo',
+    icon: User,
+    module: 'profile',
+    color: 'text-sky-400',
+    glow: 'shadow-sky-500/40',
+    activeBg: 'bg-sky-500/10',
+    border: 'border-sky-400/40',
+  },
 ]
 
 function getActiveModule(pathname: string) {
@@ -63,6 +73,7 @@ function getActiveModule(pathname: string) {
   if (pathname.startsWith('/fitness')) return 'fitness'
   if (pathname.startsWith('/finance')) return 'finance'
   if (pathname.startsWith('/projects')) return 'projects'
+  if (pathname.startsWith('/profile')) return 'profile'
   return 'home'
 }
 
