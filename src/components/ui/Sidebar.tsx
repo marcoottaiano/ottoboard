@@ -283,7 +283,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
       {/* ── Main content ─────────────────────────────────────── */}
       <main
         className={[
-          'flex-1 min-h-screen overflow-x-hidden transition-all duration-300',
+          'flex-1 min-h-screen overflow-x-clip transition-all duration-300',
           'pt-14 pb-16 md:pt-0 md:pb-0',
           collapsed ? 'md:ml-[72px]' : 'md:ml-[220px]',
         ].join(' ')}

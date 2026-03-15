@@ -241,9 +241,9 @@ function RecurringRow({ item, onEdit }: { item: RecurringTransaction; onEdit: (i
         onClick={() => toggle.mutate({ id: item.id, is_active: !item.is_active })}
         disabled={toggle.isPending}
         title={item.is_active ? 'Disattiva' : 'Attiva'}
-        className={`w-8 h-4 rounded-full transition-colors flex-shrink-0 relative ${item.is_active ? 'bg-emerald-500/40' : 'bg-white/10'}`}
+        className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 p-0 ${item.is_active ? 'bg-emerald-500/50' : 'bg-white/15'}`}
       >
-        <span className={`absolute top-0.5 w-3 h-3 rounded-full transition-transform bg-white/80 ${item.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
+        <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform bg-white ${item.is_active ? 'translate-x-4' : 'translate-x-0'}`} />
       </button>
 
       {/* Edit */}
@@ -323,7 +323,7 @@ export function RecurringTransactionManager() {
   const activeCount = items.filter((i) => i.is_active).length
 
   return (
-    <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
+    <div className="rounded-xl bg-white/5 border border-white/10">
       {/* Header */}
       <button
         onClick={() => setOpen((v) => !v)}

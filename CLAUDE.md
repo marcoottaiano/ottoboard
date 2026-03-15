@@ -30,10 +30,10 @@
 
 ### API Esterne
 
-| Servizio  | Auth      | Note                                          |
-| --------- | --------- | --------------------------------------------- |
-| Strava    | OAuth 2.0 | Fetch attività e stats atleta (100 req/15min) |
-| Timetree  | OAuth 2.0 | Integrazione calendario personale (Fase 8)    |
+| Servizio | Auth      | Note                                          |
+| -------- | --------- | --------------------------------------------- |
+| Strava   | OAuth 2.0 | Fetch attività e stats atleta (100 req/15min) |
+| Timetree | OAuth 2.0 | Integrazione calendario personale (Fase 8)    |
 
 ---
 
@@ -112,19 +112,21 @@ raw_data          JSONB                  -- Dati originali Strava completi
 ### UI — Componenti implementati
 
 **Hero Section:**
+
 - `LastActivityCard` — nome, tipo (badge colorato), data, durata, distanza (2 decimali), FC media/max, pace, calorie. Nessuna mappa. Prop `bare` per uso dentro `WidgetShell`.
 - `WeekStatsCard` — n° allenamenti, km (2 decimali), durata ("X h X min"), calorie, delta vs settimana precedente. Prop `bare`.
 
 **Grafici (Recharts):**
 
-| Grafico             | Tipo             | Dettaglio                                                              |
-| ------------------- | ---------------- | ---------------------------------------------------------------------- |
-| Volume Settimanale  | Bar Chart        | Ore/km per settimana, ultime 12 settimane. Filtro per tipo sport.      |
-| Pace Trend          | Line Chart       | Pace medio per uscita (solo Run). Trendline + filtro periodo.          |
-| Frequenza Cardiaca  | Area Chart       | FC media nel tempo. Ultime 30 attività.                                |
-| Heatmap Attività    | Calendar Heatmap | Griglia anno tipo GitHub. Arancione = allenamento, intensità = durata. |
+| Grafico            | Tipo             | Dettaglio                                                              |
+| ------------------ | ---------------- | ---------------------------------------------------------------------- |
+| Volume Settimanale | Bar Chart        | Ore/km per settimana, ultime 12 settimane. Filtro per tipo sport.      |
+| Pace Trend         | Line Chart       | Pace medio per uscita (solo Run). Trendline + filtro periodo.          |
+| Frequenza Cardiaca | Area Chart       | FC media nel tempo. Ultime 30 attività.                                |
+| Heatmap Attività   | Calendar Heatmap | Griglia anno tipo GitHub. Arancione = allenamento, intensità = durata. |
 
 **ActivityHeatmap — note tecniche:**
+
 - Navigazione anno (←/→), celle future trasparenti al 25%
 - Tooltip custom con data formattata (es. "Lun 15 Gen 2026") + nome attività
 - **IMPORTANTE:** usare `toLocalDateStr()` (non `toISOString()`) per evitare sfasamento UTC (+1h in CET)
@@ -222,13 +224,13 @@ config    JSONB           -- { projectId, columnId } per kanban-column
 
 ### Widget disponibili
 
-| Tipo             | Componente            | Link sezione |
-| ---------------- | --------------------- | ------------ |
-| `last-activity`  | `LastActivityCard`    | `/fitness`   |
-| `week-stats`     | `WeekStatsCard`       | `/fitness`   |
-| `month-finance`  | `MonthFinanceWidget`  | `/finance`   |
-| `total-balance`  | `TotalBalanceWidget`  | `/finance`   |
-| `kanban-column`  | `KanbanColumnWidget`  | `/projects`  |
+| Tipo            | Componente           | Link sezione |
+| --------------- | -------------------- | ------------ |
+| `last-activity` | `LastActivityCard`   | `/fitness`   |
+| `week-stats`    | `WeekStatsCard`      | `/fitness`   |
+| `month-finance` | `MonthFinanceWidget` | `/finance`   |
+| `total-balance` | `TotalBalanceWidget` | `/finance`   |
+| `kanban-column` | `KanbanColumnWidget` | `/projects`  |
 
 ### Pattern `bare`
 
@@ -263,46 +265,52 @@ Wrapper DnD per ogni widget: drag handle, "Vai alla sezione", configura (solo ka
 ## Gotcha Tecnici & Pattern Appresi
 
 ### Supabase RLS
+
 - Le policy di INSERT richiedono `WITH CHECK (auth.uid() = user_id)` oltre a `USING`
 - Se `user_id` non ha `DEFAULT auth.uid()`, l'INSERT client-side passa `user_id = null` → RLS 403
 - `upsert` con subset di campi sovrascrive i campi non passati con NULL → usare `update()` individuale
 
 ### Date & Timezone
+
 - Non usare `date.toISOString().slice(0, 10)` per date locali — in UTC+1, mezzanotte locale = 23:00 UTC del giorno prima → la data risulta sfasata di -1 giorno
 - Usare sempre `toLocalDateStr(date)` (anno/mese/giorno locali con `getFullYear()`, `getMonth()`, `getDate()`)
 
 ### CSS Overflow
+
 - `overflow-x: auto` su un elemento imposta implicitamente `overflow-y: auto` (CSS spec) → scroll verticale indesiderato. Risolvere con `overflow-y-hidden` esplicito.
 
 ### Select con dropdown
+
 - Il componente `Select` ha prop `dropUp?: boolean` — usarlo quando la select è vicino al fondo dello schermo (apre il menu verso l'alto con `bottom-full mb-1`)
 - Non mettere `overflow-hidden` su container che contengono `Select` — il dropdown viene tagliato
 
 ### Allineamento griglia calendario
+
 - Posizionare le label di intestazione colonna **dentro** la stessa colonna strutturale (non con `position: absolute` + calcolo pixel) — il layout si allinea automaticamente e non dipende da valori hardcoded
 
 ---
 
 ## Roadmap
 
-| Fase       | Modulo      | Stato | Deliverable                                                                |
-| ---------- | ----------- | ----- | -------------------------------------------------------------------------- |
-| **Fase 1** | Setup       | ✅    | Scaffolding Next.js, Supabase, Auth, layout shell                          |
-| **Fase 2** | Fitness     | ✅    | OAuth Strava, sync attività, grafici, lista, heatmap                       |
-| **Fase 3** | Finanze     | ✅    | Schema DB, form inserimento, grafici, import CSV, budget                   |
-| **Fase 4** | Progetti    | ✅    | Kanban board, drag & drop, task modal, mobile UX                           |
-| **Fase 5** | Home        | ✅    | Widget dashboard configurabile, DnD reorder, add/remove widget             |
-| **Fase 6** | Profilo     | ✅    | Pagina profilo: cambio password, gestione integrazione Strava multi-utente |
-| **Fase 7** | Auth        | ✅    | Registrazione, reset password, onboarding nuovo utente, test multi-account |
-| **Fase 8** | PWA         | 🔜    | App installabile: manifest, service worker, icone, offline fallback         |
-| **Fase 9** | Calendario  | 🔜    | Integrazione Timetree: visualizzazione eventi nel dashboard                |
+| Fase       | Modulo   | Stato | Deliverable                                                                |
+| ---------- | -------- | ----- | -------------------------------------------------------------------------- |
+| **Fase 1** | Setup    | ✅    | Scaffolding Next.js, Supabase, Auth, layout shell                          |
+| **Fase 2** | Fitness  | ✅    | OAuth Strava, sync attività, grafici, lista, heatmap                       |
+| **Fase 3** | Finanze  | ✅    | Schema DB, form inserimento, grafici, import CSV, budget                   |
+| **Fase 4** | Progetti | ✅    | Kanban board, drag & drop, task modal, mobile UX                           |
+| **Fase 5** | Home     | ✅    | Widget dashboard configurabile, DnD reorder, add/remove widget             |
+| **Fase 6** | Profilo  | ✅    | Pagina profilo: cambio password, gestione integrazione Strava multi-utente |
+| **Fase 7** | Auth     | ✅    | Registrazione, reset password, onboarding nuovo utente, test multi-account |
+| **Fase 8** | PWA      | ✅    | App installabile: manifest, service worker, icone, offline fallback        |
 
 ---
 
 ## Fase 6 — Profilo & Strava Multi-Utente
 
 ### Obiettivo
+
 Pagina `/profile` che permetta di:
+
 1. Cambiare password
 2. Vedere e gestire la connessione Strava
 3. Permettere a nuovi utenti di collegare il proprio account Strava
@@ -329,9 +337,11 @@ Limiti da considerare: 100 req/15min **per app** (condiviso tra tutti gli utenti
 ## Fase 7 — Auth Completa
 
 ### Obiettivo
+
 Rendere l'app usabile da chiunque senza intervento del developer.
 
 ### Funzionalità
+
 - **Registrazione** — form email + password, validazione, welcome email via Supabase
 - **Reset password** — flow "Forgot password" → email → link → nuova password
 - **Login page** — tab Login / Registrati
@@ -343,15 +353,18 @@ Rendere l'app usabile da chiunque senza intervento del developer.
 ## Fase 8 — PWA (Progressive Web App)
 
 ### Obiettivo
+
 Rendere Ottoboard installabile come app nativa su mobile e desktop, con supporto offline.
 
 ### Funzionalità
+
 - **Web App Manifest** — icona, nome, theme color, display standalone
 - **Service Worker** — cache asset statici, offline fallback page
 - **Icone** — 192×192 e 512×512 da logo ufficiale, apple-touch-icon per iOS
 - **Install prompt** — Chrome/Safari mostrano banner "Aggiungi alla schermata home"
 
 ### Architettura
+
 - `@ducanh2912/next-pwa` (Workbox) — genera SW automaticamente al build
 - `public/manifest.json` — Web App Manifest
 - `public/icons/` — icone PNG in varie dimensioni
@@ -359,25 +372,8 @@ Rendere Ottoboard installabile come app nativa su mobile e desktop, con supporto
 - `next.config.mjs` — wrappato con `withPWA(...)`
 
 ### Note tecniche
+
 - SW disabilitato in `NODE_ENV=development` per evitare interferenze
 - `public/sw.js` e `public/workbox-*.js` generati al build → aggiunti a `.gitignore`
 - Icone con `purpose: "any"` (non maskable — logo ha già bordi arrotondati)
 - `theme_color: "#1a5f6b"` corrisponde al colore di sfondo del logo
-
----
-
-## Fase 9 — Integrazione Timetree
-
-### Obiettivo
-Visualizzare gli eventi del calendario Timetree nella dashboard.
-
-### Architettura prevista
-- OAuth 2.0 Timetree → token salvato su Supabase (stesso pattern Strava)
-- Fetch eventi via Timetree API → cache in Supabase o fetch real-time
-- Widget calendario nella home (nuovo tipo widget `calendar-events`)
-- Vista eventi nella sidebar o sezione dedicata
-
-### Note
-- Timetree API: `https://timetreeapis.com/` — richiede app registrata
-- Scopes necessari: `read_calendar`, `read_event`
-- Valutare se mostrare solo "oggi/domani" o vista settimanale completa
