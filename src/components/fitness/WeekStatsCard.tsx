@@ -61,8 +61,8 @@ export function WeekStatsCard({ bare = false }: { bare?: boolean }) {
   const typeEntries = Object.entries(current.typeCounts).sort((a, b) => b[1] - a[1])
 
   const outerClass = bare
-    ? 'p-5 h-full flex flex-col'
-    : 'rounded-xl bg-white/5 border border-white/10 p-5 h-full flex flex-col'
+    ? 'p-5 h-full flex flex-col overflow-hidden'
+    : 'rounded-xl bg-white/5 border border-white/10 p-5 h-full flex flex-col overflow-hidden'
 
   return (
     <div className={outerClass}>
@@ -70,7 +70,7 @@ export function WeekStatsCard({ bare = false }: { bare?: boolean }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 flex-1">
 
         {/* Allenamenti con breakdown tipi */}
-        <div className="col-span-1 flex flex-col gap-1 p-3 rounded-lg bg-white/5">
+        <div className="col-span-1 flex flex-col gap-1 p-3 rounded-lg bg-white/5 min-w-0 overflow-hidden">
           <div className="flex items-center gap-1.5 text-gray-500 text-xs">
             <Dumbbell size={12} />
             Allenamenti
@@ -80,7 +80,7 @@ export function WeekStatsCard({ bare = false }: { bare?: boolean }) {
           {typeEntries.length > 0 && (
             <div className="flex flex-col gap-0.5 mt-1">
               {typeEntries.map(([type, n]) => (
-                <span key={type} className="text-[10px] text-gray-500">
+                <span key={type} className="text-[10px] text-gray-500 truncate">
                   {n}× {TYPE_LABELS[type] ?? type}
                 </span>
               ))}
@@ -89,7 +89,7 @@ export function WeekStatsCard({ bare = false }: { bare?: boolean }) {
         </div>
 
         {/* Distanza */}
-        <div className="flex flex-col gap-1 p-3 rounded-lg bg-white/5">
+        <div className="flex flex-col gap-1 p-3 rounded-lg bg-white/5 min-w-0 overflow-hidden">
           <div className="flex items-center gap-1.5 text-gray-500 text-xs">
             <Route size={12} />
             Distanza
@@ -102,7 +102,7 @@ export function WeekStatsCard({ bare = false }: { bare?: boolean }) {
         </div>
 
         {/* Durata */}
-        <div className="flex flex-col gap-1 p-3 rounded-lg bg-white/5">
+        <div className="flex flex-col gap-1 p-3 rounded-lg bg-white/5 min-w-0 overflow-hidden">
           <div className="flex items-center gap-1.5 text-gray-500 text-xs">
             <Timer size={12} />
             Durata totale

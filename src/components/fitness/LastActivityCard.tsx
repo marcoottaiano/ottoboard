@@ -76,8 +76,8 @@ export function LastActivityCard({ bare = false }: { bare?: boolean }) {
   const distanceKm = activity.distance ? (activity.distance / 1000).toFixed(2) : null
 
   const outerClass = bare
-    ? 'p-5 flex flex-col gap-4'
-    : 'rounded-xl bg-white/5 border border-white/10 p-5 flex flex-col gap-4'
+    ? 'p-5 flex flex-col gap-4 overflow-hidden'
+    : 'rounded-xl bg-white/5 border border-white/10 p-5 flex flex-col gap-4 overflow-hidden'
 
   return (
     <div className={outerClass}>

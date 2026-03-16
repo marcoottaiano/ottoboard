@@ -36,7 +36,7 @@ export function HeartRateChart() {
   const chartData = activities ? buildChartData(activities) : []
 
   return (
-    <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+    <div className="rounded-xl bg-white/5 border border-white/10 p-5 overflow-hidden">
       <h3 className="text-sm font-medium text-gray-400 mb-4">FC Corsa (90gg)</h3>
 
       {isLoading ? (

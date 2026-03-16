@@ -26,24 +26,24 @@ export function StravaConnect({ mode = 'full' }: StravaConnectProps) {
 
   if (mode === 'compact' && isConnected) {
     return (
-      <div className="flex items-center gap-3 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm">
-        <span className="text-gray-400">
-          Ultimo sync: <span className="text-white">{formatDate(lastSyncedAt)}</span>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="hidden sm:block text-xs text-gray-500 whitespace-nowrap">
+          Sync: <span className="text-gray-300">{formatDate(lastSyncedAt)}</span>
         </span>
         <button
           onClick={() => sync()}
           disabled={isSyncing}
-          className="flex items-center gap-1.5 px-3 py-1 rounded bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 border border-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 transition-colors text-xs whitespace-nowrap"
         >
-          <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+          <RefreshCw size={13} className={isSyncing ? 'animate-spin' : ''} />
           {isSyncing ? 'Sync...' : 'Sincronizza'}
         </button>
         <button
           onClick={() => disconnect()}
           disabled={isDisconnecting}
-          className="flex items-center gap-1.5 px-3 py-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors"
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50 transition-colors text-xs whitespace-nowrap"
         >
-          <Unlink size={14} />
+          <Unlink size={13} />
           Disconnetti
         </button>
       </div>

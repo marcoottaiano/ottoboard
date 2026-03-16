@@ -73,7 +73,7 @@ export function PaceTrendChart() {
   const maxPace = paceValues.length > 0 ? Math.max(...paceValues) + 30 : 600
 
   return (
-    <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+    <div className="rounded-xl bg-white/5 border border-white/10 p-5 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-400">Pace (Corsa)</h3>
         <div className="flex gap-1">

@@ -131,7 +131,7 @@ export function ActivityHeatmap() {
   const monthStartCols = getMonthStartCols(cells, year)
 
   return (
-    <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+    <div className="rounded-xl bg-white/5 border border-white/10 p-5 overflow-hidden">
       {/* Header: titolo + legenda + navigazione anno */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-gray-400">Attività {year}</h3>

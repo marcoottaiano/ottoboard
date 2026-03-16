@@ -24,7 +24,6 @@ export function TaskCard({ task, isDragging = false, onClick }: Props) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    touchAction: 'none' as const,
   }
 
   const hasExtras = task.priority || task.due_date || task.labels.length > 0

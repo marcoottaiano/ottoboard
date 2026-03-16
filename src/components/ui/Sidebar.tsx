@@ -231,8 +231,8 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
             height={28}
             className="rounded-lg flex-shrink-0"
           />
-          <span className={['text-sm font-semibold', activeItem?.color ?? 'text-white/80'].join(' ')}>
-            {getPageLabel(activeModule)}
+          <span className="text-sm font-semibold text-white/80">
+            Ottoboard
           </span>
         </div>
 

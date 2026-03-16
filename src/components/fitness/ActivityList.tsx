@@ -62,7 +62,7 @@ export function ActivityList() {
   const totalPages = activities ? Math.ceil(activities.length / PAGE_SIZE) : 0
 
   return (
-    <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+    <div className="rounded-xl bg-white/5 border border-white/10 p-5 overflow-hidden">
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <h3 className="text-sm font-medium text-gray-400 flex-1">Attività</h3>
         <Select

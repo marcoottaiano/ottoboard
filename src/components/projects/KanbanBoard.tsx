@@ -6,7 +6,6 @@ import {
   DragOverlay,
   PointerSensor,
   KeyboardSensor,
-  TouchSensor,
   useSensor,
   useSensors,
   DragStartEvent,
@@ -56,7 +55,6 @@ export function KanbanBoard({ projectId }: Props) {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
@@ -210,7 +208,7 @@ export function KanbanBoard({ projectId }: Props) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex-1 overflow-x-auto">
+        <div className="flex-1 overflow-x-auto touch-pan-x">
           <div className="flex gap-4 p-4 md:p-6 min-h-full items-start">
             <SortableContext
               items={columns.map((c) => c.id)}
