@@ -15,7 +15,10 @@
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_take_screenshot",
       "mcp__Claude_Preview__preview_start",
-      "mcp__playwright__browser_click"
+      "mcp__playwright__browser_click",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(cd:*)"
     ]
   }
 }

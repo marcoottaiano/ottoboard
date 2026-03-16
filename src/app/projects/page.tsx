@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useProjects } from '@/hooks/useProjects'
 import { useProjectStore } from '@/hooks/useProjectStore'
+import { useLinearConnection } from '@/hooks/useLinearConnection'
 import { KanbanBoard } from '@/components/projects/KanbanBoard'
 import { ProjectSidebar } from '@/components/projects/ProjectSidebar'
 import { ProjectFormModal } from '@/components/projects/ProjectFormModal'
+import { LinearNotConnectedBanner } from '@/components/projects/LinearNotConnectedBanner'
 import { ColorDot } from '@/components/projects/ColorDot'
-import { Kanban, ChevronDown, Plus } from 'lucide-react'
-import { useRef, useEffect as useClickOutside } from 'react'
+import { Kanban, ChevronDown, Plus, RefreshCw } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,16 +17,18 @@ function MobileProjectBar({
   selectedId,
   onSelect,
   onNew,
+  isLinearConnected,
 }: {
   selectedId: string | null
   onSelect: (id: string) => void
   onNew: () => void
+  isLinearConnected?: boolean
 }) {
   const { data: projects = [] } = useProjects()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  useClickOutside(() => {
+  useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
@@ -53,12 +56,14 @@ function MobileProjectBar({
         <ChevronDown size={14} className={`ml-auto text-gray-600 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      <button
-        onClick={onNew}
-        className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs hover:bg-purple-500/30 transition-colors flex-shrink-0"
-      >
-        <Plus size={13} />
-      </button>
+      {!isLinearConnected && (
+        <button
+          onClick={onNew}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs hover:bg-purple-500/30 transition-colors flex-shrink-0"
+        >
+          <Plus size={13} />
+        </button>
+      )}
 
       {open && (
         <div className="absolute z-50 top-full left-0 right-0 bg-[#0f0f1a] border-b border-white/10 shadow-xl">
@@ -86,6 +91,7 @@ function MobileProjectBar({
 export default function ProjectsPage() {
   const { selectedProjectId, setSelectedProjectId } = useProjectStore()
   const { data: projects, isLoading } = useProjects()
+  const { isConnected, sync, isSyncing, lastSyncedAt } = useLinearConnection()
   const [showNewProject, setShowNewProject] = useState(false)
 
   useEffect(() => {
@@ -110,20 +116,29 @@ export default function ProjectsPage() {
   }
 
   const hasProjects = (projects?.length ?? 0) > 0
+  const showLinearBanner = !isConnected && !hasProjects
 
   return (
     <div className="flex flex-col md:flex-row h-full overflow-hidden">
+      {/* Linear not connected banner */}
+      {showLinearBanner && <LinearNotConnectedBanner />}
+
       {/* Mobile top bar */}
       <MobileProjectBar
         selectedId={selectedProjectId}
         onSelect={setSelectedProjectId}
         onNew={() => setShowNewProject(true)}
+        isLinearConnected={isConnected}
       />
 
       {/* Desktop sidebar */}
       <ProjectSidebar
         selectedId={selectedProjectId}
         onSelect={setSelectedProjectId}
+        isLinearConnected={isConnected}
+        onSync={sync}
+        isSyncing={isSyncing}
+        lastSyncedAt={lastSyncedAt}
       />
 
       <div className="flex-1 overflow-hidden">
@@ -132,21 +147,40 @@ export default function ProjectsPage() {
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-6">
             <Kanban size={40} className="text-purple-400/40" />
-            <div>
-              <p className="text-gray-400 font-medium">Nessun progetto</p>
-              <p className="text-sm text-gray-600 mt-1">Crea il tuo primo progetto per iniziare</p>
-            </div>
-            <button
-              onClick={() => setShowNewProject(true)}
-              className="px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-400 text-sm hover:bg-purple-500/30 transition-colors"
-            >
-              Crea progetto
-            </button>
+            {isConnected ? (
+              <>
+                <div>
+                  <p className="text-gray-400 font-medium">Nessun progetto sincronizzato</p>
+                  <p className="text-sm text-gray-600 mt-1">Sincronizza i tuoi progetti da Linear</p>
+                </div>
+                <button
+                  onClick={() => sync()}
+                  disabled={isSyncing}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-400 text-sm hover:bg-purple-500/30 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+                  {isSyncing ? 'Sync...' : 'Sync da Linear'}
+                </button>
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className="text-gray-400 font-medium">Nessun progetto</p>
+                  <p className="text-sm text-gray-600 mt-1">Crea il tuo primo progetto per iniziare</p>
+                </div>
+                <button
+                  onClick={() => setShowNewProject(true)}
+                  className="px-4 py-2 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-400 text-sm hover:bg-purple-500/30 transition-colors"
+                >
+                  Crea progetto
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
 
-      {showNewProject && (
+      {!isConnected && showNewProject && (
         <ProjectFormModal
           mode="create"
           onClose={(newId) => {

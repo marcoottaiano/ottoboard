@@ -36,19 +36,47 @@ export function TaskCard({ task, isDragging = false, onClick }: Props) {
       {...listeners}
       onClick={() => onClick(task.id)}
       className={`
-        bg-white/5 border border-white/10 rounded-lg p-3 cursor-pointer
+        relative bg-white/5 border border-white/10 rounded-lg p-3 cursor-pointer
         hover:bg-white/8 hover:border-white/20 transition-colors
         ${isSortableDragging ? 'opacity-40' : ''}
         ${isDragging ? 'shadow-2xl ring-1 ring-purple-500/30' : ''}
       `}
     >
-      <p className="text-sm text-white line-clamp-2 leading-snug">{task.title}</p>
+      {/* Linear identifier badge */}
+      {task.linear_identifier && (
+        <span className="absolute top-2 right-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/5 text-gray-600 border border-white/10">
+          {task.linear_identifier}
+        </span>
+      )}
+
+      <p className="text-sm text-white line-clamp-2 leading-snug pr-12">{task.title}</p>
 
       {hasExtras && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           <PriorityBadge priority={task.priority} />
           <DueDateBadge dueDate={task.due_date} />
           <LabelBadge labels={task.labels} />
+        </div>
+      )}
+
+      {/* Assignee avatar */}
+      {task.assignee_name && (
+        <div className="mt-2 flex justify-end">
+          {task.assignee_avatar ? (
+            <img
+              src={task.assignee_avatar}
+              alt={task.assignee_name}
+              title={task.assignee_name}
+              className="w-4 h-4 rounded-full"
+            />
+          ) : (
+            <span
+              title={task.assignee_name}
+              className="w-4 h-4 rounded-full bg-purple-500/30 text-purple-300 text-[8px] flex items-center justify-center font-medium"
+            >
+              {task.assignee_name.charAt(0).toUpperCase()}
+            </span>
+          )}
         </div>
       )}
     </div>

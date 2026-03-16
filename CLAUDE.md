@@ -33,7 +33,7 @@
 | Servizio | Auth      | Note                                          |
 | -------- | --------- | --------------------------------------------- |
 | Strava   | OAuth 2.0 | Fetch attività e stats atleta (100 req/15min) |
-| Timetree | OAuth 2.0 | Integrazione calendario personale (Fase 8)    |
+| Linear   | API Key   | Sync bidirezionale progetti/issue (Fase 10)   |
 
 ---
 
@@ -292,17 +292,18 @@ Wrapper DnD per ogni widget: drag handle, "Vai alla sezione", configura (solo ka
 
 ## Roadmap
 
-| Fase       | Modulo   | Stato | Deliverable                                                                |
-| ---------- | -------- | ----- | -------------------------------------------------------------------------- |
-| **Fase 1** | Setup    | ✅    | Scaffolding Next.js, Supabase, Auth, layout shell                          |
-| **Fase 2** | Fitness  | ✅    | OAuth Strava, sync attività, grafici, lista, heatmap                       |
-| **Fase 3** | Finanze  | ✅    | Schema DB, form inserimento, grafici, import CSV, budget                   |
-| **Fase 4** | Progetti | ✅    | Kanban board, drag & drop, task modal, mobile UX                           |
-| **Fase 5** | Home     | ✅    | Widget dashboard configurabile, DnD reorder, add/remove widget             |
-| **Fase 6** | Profilo  | ✅    | Pagina profilo: cambio password, gestione integrazione Strava multi-utente |
-| **Fase 7** | Auth     | ✅    | Registrazione, reset password, onboarding nuovo utente, test multi-account |
-| **Fase 8** | PWA      | ✅    | App installabile: manifest, service worker, icone, offline fallback        |
-| **Fase 9** | Misurazioni corporee | 🔜 | Tab misurazioni in /fitness: peso, plicometrie, circonferenze, composizione corporea, grafici, canvas interattivo |
+| Fase        | Modulo               | Stato | Deliverable                                                                                                       |
+| ----------- | -------------------- | ----- | ----------------------------------------------------------------------------------------------------------------- |
+| **Fase 1**  | Setup                | ✅    | Scaffolding Next.js, Supabase, Auth, layout shell                                                                 |
+| **Fase 2**  | Fitness              | ✅    | OAuth Strava, sync attività, grafici, lista, heatmap                                                              |
+| **Fase 3**  | Finanze              | ✅    | Schema DB, form inserimento, grafici, import CSV, budget                                                          |
+| **Fase 4**  | Progetti             | ✅    | Kanban board, drag & drop, task modal, mobile UX                                                                  |
+| **Fase 5**  | Home                 | ✅    | Widget dashboard configurabile, DnD reorder, add/remove widget                                                    |
+| **Fase 6**  | Profilo              | ✅    | Pagina profilo: cambio password, gestione integrazione Strava multi-utente                                        |
+| **Fase 7**  | Auth                 | ✅    | Registrazione, reset password, onboarding nuovo utente, test multi-account                                        |
+| **Fase 8**  | PWA                  | ✅    | App installabile: manifest, service worker, icone, offline fallback                                               |
+| **Fase 9**  | Misurazioni corporee | 🔜    | Tab misurazioni in /fitness: peso, plicometrie, circonferenze, composizione corporea, grafici, canvas interattivo |
+| **Fase 10** | Linear + Reminders   | 🔜    | Sync bidirezionale Linear in /projects, setup integrazione in /profile, widget Reminders in home                  |
 
 ---
 
@@ -390,6 +391,7 @@ Aggiungere una seconda tab alla pagina `/fitness` dedicata al monitoraggio della
 ### Struttura pagina
 
 `/fitness` diventa a due tab:
+
 - **Tab 1 — Strava**: contenuto attuale (LastActivityCard, WeekStatsCard, grafici, lista attività)
 - **Tab 2 — Corpo**: misurazioni corporee, grafici composizione, canvas interattivo
 
@@ -443,34 +445,38 @@ birth_date DATE NOT NULL   -- serve per calcolare età nelle formule JP
 ### Formule — Jackson-Pollock
 
 **JP 3 pliche — Uomo** (petto + addome + coscia):
+
 ```
 density = 1.10938 - (0.0008267 × Σ3) + (0.0000016 × Σ3²) - (0.0002574 × età)
 ```
 
 **JP 3 pliche — Donna** (tricipite + soprailiaca + coscia):
+
 ```
 density = 1.0994921 - (0.0009929 × Σ3) + (0.0000023 × Σ3²) - (0.0001392 × età)
 ```
 
 **JP 7 pliche** (tutti e 7 i siti):
+
 - Uomo: `density = 1.112 - (0.00043499 × Σ7) + (0.00000055 × Σ7²) - (0.00028826 × età)`
 - Donna: `density = 1.097 - (0.00046971 × Σ7) + (0.00000056 × Σ7²) - (0.00012828 × età)`
 
 **Equazione di Siri** (density → % grasso):
+
 ```
 % grasso = (495 / density) - 450
 ```
 
 ### Grafici
 
-| # | Grafico | Tipo | Dati |
-|---|---------|------|------|
-| 1 | Peso nel tempo | Line chart | `weight_kg` + media mobile 7gg |
-| 2 | Composizione corporea | Stacked area | `lean_mass_kg` + `fat_mass_kg` in kg |
-| 3 | % Grasso nel tempo | Line chart | `body_fat_pct` + fasce riferimento (atleta/forma/normale) |
-| 4 | Radar circonferenze | Radar/Spider | Tutte le circonferenze — sovrapponi 2 date |
-| 5 | Variazione misure | Bar orizzontale | Delta dalla prima misurazione (verde = miglioramento) |
-| 6 | Somma pliche | Line chart | Σ pliche nel tempo + toggle per singolo sito |
+| #   | Grafico               | Tipo            | Dati                                                      |
+| --- | --------------------- | --------------- | --------------------------------------------------------- |
+| 1   | Peso nel tempo        | Line chart      | `weight_kg` + media mobile 7gg                            |
+| 2   | Composizione corporea | Stacked area    | `lean_mass_kg` + `fat_mass_kg` in kg                      |
+| 3   | % Grasso nel tempo    | Line chart      | `body_fat_pct` + fasce riferimento (atleta/forma/normale) |
+| 4   | Radar circonferenze   | Radar/Spider    | Tutte le circonferenze — sovrapponi 2 date                |
+| 5   | Variazione misure     | Bar orizzontale | Delta dalla prima misurazione (verde = miglioramento)     |
+| 6   | Somma pliche          | Line chart      | Σ pliche nel tempo + toggle per singolo sito              |
 
 ### Canvas interattivo — BodyCanvas
 
@@ -515,3 +521,164 @@ Implementazione: SVG nativo + React `onMouseEnter/Leave` + Tooltip component esi
 - `user_body_profile` va inserito in onboarding o al primo accesso alla tab Corpo
 - I grafici mostrano solo le sessioni in cui quella specifica misura è presente (no interpolazione)
 - Il grafico radar normalizza i valori su scala 0–100 per rendere comparabili misure diverse (cm)
+
+---
+
+## Fase 10 — Linear Integration + Widget Reminders
+
+### Obiettivo
+
+1. Sostituire il Kanban interno di `/projects` con una vista sincronizzata bidirezionalmente su Linear (progetti e issue)
+2. Aggiungere la configurazione dell'integrazione Linear nella pagina `/profile`
+3. Aggiungere un nuovo widget **Reminders** nella home dashboard, gestibile interamente dal widget stesso
+
+---
+
+### Modulo Projects — Integrazione Linear
+
+#### Architettura
+
+- L'utente inserisce la propria **Linear API Key** in `/profile` → salvata cifrata in Supabase (come i token Strava)
+- I **Linear Projects** corrispondono 1:1 ai progetti in Ottoboard
+- Le **Linear States** di ogni team corrispondono alle colonne del Kanban
+- La sincronizzazione è **bidirezionale**:
+  - Drag & drop in Ottoboard → `PATCH /issues/:id` su Linear API
+  - Webhook Linear `issueUpdated` / `issueCreated` / `issueRemoved` → aggiorna vista in Ottoboard via revalidation React Query
+
+#### Migrazione dati
+
+- Le tabelle `projects`, `columns`, `tasks` vengono svuotate (`TRUNCATE`) — i dati esistenti sono sostituiti dai dati Linear
+- Le tabelle esistenti vengono **riutilizzate come cache locale** dei dati Linear, aggiungendo le colonne di mapping:
+
+```sql
+ALTER TABLE projects ADD COLUMN linear_project_id TEXT UNIQUE;
+ALTER TABLE projects ADD COLUMN linear_team_id    TEXT;
+
+ALTER TABLE columns  ADD COLUMN linear_state_id   TEXT UNIQUE;
+ALTER TABLE columns  ADD COLUMN linear_state_color TEXT;  -- colore hex da Linear
+
+ALTER TABLE tasks    ADD COLUMN linear_issue_id    TEXT UNIQUE;
+ALTER TABLE tasks    ADD COLUMN linear_issue_url   TEXT;  -- link diretto Linear
+ALTER TABLE tasks    ADD COLUMN linear_identifier  TEXT;  -- es. "ENG-42"
+ALTER TABLE tasks    ADD COLUMN priority           INT;   -- 0=none 1=urgent 2=high 3=medium 4=low
+ALTER TABLE tasks    ADD COLUMN assignee_name      TEXT;
+ALTER TABLE tasks    ADD COLUMN assignee_avatar    TEXT;
+```
+
+#### Flusso sync
+
+```
+Apertura /projects
+  → fetch Linear API: projects + states + issues (team selezionato)
+  → upsert cache locale su Supabase
+  → render Kanban da cache
+
+Drag & drop issue (cambio stato)
+  → optimistic update UI
+  → PATCH Linear API issue state
+  → on error: rollback UI
+
+Webhook Linear → Supabase Edge Function
+  → aggiorna cache locale
+  → React Query invalidation via Supabase Realtime
+```
+
+#### Rate limit Linear
+
+- Linear API: 1.500 req/ora per API key → nessun problema per uso personale
+- Webhook: no limite, push-based
+
+#### UI — Componenti aggiornati/nuovi
+
+- `ProjectsPage` — gestione stato connessione Linear (se non configurata: banner prompt setup)
+- `KanbanBoard` — colonne e issue da Linear, badge identificatore (`ENG-42`), avatar assignee, icona priorità
+- `TaskCard` — aggiunta `linear_identifier`, link esterno Linear, badge priorità colorato
+- `LinearNotConnectedBanner` — banner con link a `/profile` se API key non configurata
+- `KanbanColumnWidget` (home) — invariato, usa la stessa cache
+
+---
+
+### Profilo — LinearIntegrationCard
+
+Aggiunta nuova card nella sezione "Integrazioni" di `/profile`:
+
+- Campo API Key (input password, mai mostrata in chiaro dopo salvataggio)
+- Stato connessione: "Connesso — team X" / "Non configurato"
+- Selector team Linear (fetch dopo inserimento API key valida)
+- Pulsante "Salva" / "Rimuovi integrazione"
+- Data ultima sincronizzazione
+
+La API key viene salvata nella stessa tabella delle integrazioni esistenti (es. `user_integrations`) con `service = 'linear'` e `access_token` = API key cifrata.
+
+---
+
+### Widget Reminders
+
+#### Decisione architetturale
+
+I reminder **non hanno una sezione dedicata** — sono gestibili interamente dal widget in home. Il widget mostra reminder futuri/non completati; i completati sono accessibili tramite link "X completati →" che apre una modale con lo storico.
+
+#### Schema: `reminders`
+
+```sql
+id            UUID PRIMARY KEY DEFAULT gen_random_uuid()
+user_id       UUID NOT NULL DEFAULT auth.uid()
+title         TEXT NOT NULL
+notes         TEXT
+due_date      DATE NOT NULL
+due_time      TIME                              -- opzionale
+priority      TEXT NOT NULL DEFAULT 'none'     -- 'none' | 'low' | 'medium' | 'high' | 'urgent'
+recurrence    TEXT                             -- null | 'daily' | 'weekly' | 'monthly' | 'yearly'
+completed     BOOLEAN NOT NULL DEFAULT FALSE
+completed_at  TIMESTAMPTZ
+created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+RLS standard: `auth.uid() = user_id`.
+
+#### UI — RemindersWidget
+
+**Vista principale (reminder futuri/non completati):**
+- Lista ordinata per `due_date` ASC
+- Ogni riga: checkbox completamento + titolo + data + badge priorità
+- Click checkbox → marca completato (optimistic update)
+- Click riga → apre `ReminderEditModal`
+- Pulsante "+ Aggiungi" → apre `ReminderCreateModal`
+- Link "X completati →" in fondo → apre `CompletedRemindersModal`
+
+**`CompletedRemindersModal`:**
+- Lista reminder completati, ordinata per `completed_at` DESC
+- Ogni riga: titolo, data originale, data completamento, pulsante "Riapri"
+- Paginazione semplice (20 per pagina)
+
+**`ReminderCreateModal` / `ReminderEditModal`:**
+- Campi: titolo (required), note, data (required), orario (opzionale), priorità (select), ricorrenza (select)
+- Pulsante "Elimina" in `ReminderEditModal`
+
+#### Logica ricorrenza
+
+Quando un reminder ricorrente viene marcato come completato, viene creato automaticamente il successivo:
+
+```
+daily   → due_date + 1 giorno
+weekly  → due_date + 7 giorni
+monthly → due_date + 1 mese (stesso giorno)
+yearly  → due_date + 1 anno (stesso giorno)
+```
+
+Il nuovo reminder eredita tutti i campi del precedente (`completed = false`).
+
+#### Aggiunta al `dashboard_widgets`
+
+```
+type: 'reminders'   -- nuovo tipo widget, nessun campo config necessario
+```
+
+#### Componenti
+
+- `RemindersWidget` — container widget, lista reminder attivi, link completati
+- `ReminderRow` — singola riga con checkbox, titolo, data, badge priorità
+- `ReminderCreateModal` — form creazione
+- `ReminderEditModal` — form modifica/eliminazione
+- `CompletedRemindersModal` — storico completati con "Riapri"
+- `useReminders` — hook React Query: fetch, create, update, complete, delete

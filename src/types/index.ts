@@ -98,6 +98,9 @@ export interface Project {
   color: string | null
   status: ProjectStatus
   created_at: string
+  linear_project_id?: string | null
+  linear_team_id?: string | null
+  icon?: string | null
 }
 
 export interface Column {
@@ -106,6 +109,8 @@ export interface Column {
   name: string
   position: number
   color: string | null
+  linear_state_id?: string | null
+  linear_state_color?: string | null
 }
 
 export interface Task {
@@ -119,7 +124,34 @@ export interface Task {
   labels: string[]
   position: number
   created_at: string
+  linear_issue_id?: string | null
+  linear_issue_url?: string | null
+  linear_identifier?: string | null
+  assignee_name?: string | null
+  assignee_avatar?: string | null
 }
+
+// ─── Reminder Types ───────────────────────────────────────────────────────────
+
+export type ReminderPriority = 'none' | 'low' | 'medium' | 'high' | 'urgent'
+export type ReminderRecurrence = 'daily' | 'weekly' | 'monthly' | 'yearly'
+
+export interface Reminder {
+  id: string
+  user_id: string
+  title: string
+  notes: string | null
+  due_date: string
+  due_time: string | null
+  priority: ReminderPriority
+  recurrence: ReminderRecurrence | null
+  completed: boolean
+  completed_at: string | null
+  created_at: string
+}
+
+export type CreateReminderInput = Omit<Reminder, 'id' | 'user_id' | 'completed' | 'completed_at' | 'created_at'>
+export type UpdateReminderInput = Partial<CreateReminderInput>
 
 // ─── Body Measurements Types ──────────────────────────────────────────────────
 

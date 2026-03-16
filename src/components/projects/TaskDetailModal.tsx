@@ -6,7 +6,7 @@ import { useUpdateTask, useDeleteTask } from '@/hooks/useTaskMutations'
 import { useColumns } from '@/hooks/useColumns'
 import { Select } from '@/components/ui/Select'
 import { Task, TaskPriority } from '@/types'
-import { X, Trash2, Plus } from 'lucide-react'
+import { X, Trash2, Plus, ExternalLink, Save, CheckCircle } from 'lucide-react'
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Bassa' },
@@ -38,6 +38,8 @@ export function TaskDetailModal({ taskId, projectId, onClose }: Props) {
   const [labels, setLabels] = useState<string[]>(task?.labels ?? [])
   const [labelInput, setLabelInput] = useState('')
   const [confirming, setConfirming] = useState(false)
+  const [isSavingLinear, setIsSavingLinear] = useState(false)
+  const [linearSaved, setLinearSaved] = useState(false)
 
   useEffect(() => {
     if (task) {
@@ -57,6 +59,47 @@ export function TaskDetailModal({ taskId, projectId, onClose }: Props) {
   type PartialUpdate = Omit<Parameters<typeof updateTask.mutateAsync>[0], 'id' | 'project_id'>
   const saveField = async (updates: PartialUpdate) => {
     await updateTask.mutateAsync({ id: taskId, project_id: projectId, ...updates })
+  }
+
+  const handleSaveLinear = async () => {
+    if (!task.linear_issue_id) return
+    setIsSavingLinear(true)
+    setLinearSaved(false)
+    try {
+      // Also save latest values to Supabase
+      await updateTask.mutateAsync({
+        id: taskId,
+        project_id: projectId,
+        title: title.trim() || task.title,
+        description: description || null,
+        priority: (priority as TaskPriority) || null,
+        column_id: columnId,
+      })
+
+      // Extract real Linear stateId from virtual ID (format: "projectId:stateId")
+      const selectedCol = columns.find((c) => c.id === columnId)
+      const realStateId = selectedCol?.linear_state_id?.split(':').pop()
+
+      const body: Record<string, unknown> = {
+        issueId: task.linear_issue_id,
+        title: title.trim() || task.title,
+        description: description || null,
+        priority: priority || null,
+      }
+      if (realStateId) body.stateId = realStateId
+
+      const res = await fetch('/api/linear/update-issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) {
+        setLinearSaved(true)
+        setTimeout(() => setLinearSaved(false), 3000)
+      }
+    } finally {
+      setIsSavingLinear(false)
+    }
   }
 
   const handleAddLabel = () => {
@@ -182,6 +225,42 @@ export function TaskDetailModal({ taskId, projectId, onClose }: Props) {
           <p className="text-xs text-gray-700">
             Creato il {new Date(task.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
           </p>
+
+          {/* Linear info */}
+          {task.linear_identifier && (
+            <div className="pt-2 border-t border-white/5 space-y-2">
+              <p className="text-xs text-gray-600 font-medium">Linear</p>
+              <div className="flex items-center justify-between text-xs text-gray-600">
+                <span className="font-mono">{task.linear_identifier}</span>
+                {task.linear_issue_url && (
+                  <a
+                    href={task.linear_issue_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-purple-400 transition-colors"
+                  >
+                    <ExternalLink size={11} /> Apri in Linear
+                  </a>
+                )}
+              </div>
+              {task.assignee_name && (
+                <p className="text-xs text-gray-600">Assegnato a: <span className="text-gray-400">{task.assignee_name}</span></p>
+              )}
+
+              {/* Save to Linear button */}
+              <button
+                onClick={handleSaveLinear}
+                disabled={isSavingLinear}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:bg-purple-500/30"
+              >
+                {linearSaved ? (
+                  <><CheckCircle size={12} /> Salvato</>
+                ) : (
+                  <><Save size={12} /> {isSavingLinear ? 'Salvataggio...' : 'Salva in Linear'}</>
+                )}
+              </button>
+            </div>
+          )}
 
           {/* Delete */}
           <div className="pt-2 border-t border-white/5">

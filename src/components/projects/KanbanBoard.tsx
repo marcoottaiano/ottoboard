@@ -22,8 +22,10 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { useColumns } from '@/hooks/useColumns'
 import { useTasks, tasksByColumn } from '@/hooks/useTasks'
+import { useProjects } from '@/hooks/useProjects'
 import { useCreateColumn, useReorderColumns } from '@/hooks/useColumnMutations'
 import { useMoveTask } from '@/hooks/useTaskMutations'
+import { useLinearIssueUpdate } from '@/hooks/useLinearIssueUpdate'
 import { KanbanColumn } from './KanbanColumn'
 import { TaskCard } from './TaskCard'
 import { NewTaskModal } from './NewTaskModal'
@@ -39,10 +41,13 @@ export function KanbanBoard({ projectId }: Props) {
   const queryClient = useQueryClient()
   const { data: columns = [], isLoading: colLoading } = useColumns(projectId)
   const { data: allTasks = [], isLoading: taskLoading } = useTasks(projectId)
+  const { data: projects = [] } = useProjects()
+  const isLinearProject = projects.find((p) => p.id === projectId)?.linear_project_id != null
 
   const createColumn = useCreateColumn()
   const reorderColumns = useReorderColumns()
   const moveTask = useMoveTask()
+  const updateLinearIssue = useLinearIssueUpdate()
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null)
   const [activeTask, setActiveTask] = useState<Task | null>(null)
@@ -174,6 +179,14 @@ export function KanbanBoard({ projectId }: Props) {
 
       try {
         await moveTask.mutateAsync({ id: active.id as string, project_id: projectId, column_id: targetColumnId, position: newPosition })
+
+        // Fire-and-forget Linear state update if both sides have Linear IDs
+        const movedTask = currentTasks.find((t) => t.id === active.id)
+        const targetCol = columns.find((c) => c.id === targetColumnId)
+        if (movedTask?.linear_issue_id && targetCol?.linear_state_id) {
+          const realStateId = targetCol.linear_state_id.split(':').pop() ?? targetCol.linear_state_id
+          updateLinearIssue.mutate({ issueId: movedTask.linear_issue_id, stateId: realStateId })
+        }
       } catch {
         if (tasksSnapshot.current) {
           queryClient.setQueryData(['tasks', projectId], tasksSnapshot.current)
@@ -225,8 +238,8 @@ export function KanbanBoard({ projectId }: Props) {
               ))}
             </SortableContext>
 
-            {/* New column */}
-            <div className="w-72 flex-shrink-0">
+            {/* New column (hidden for Linear projects — columns come from Linear states) */}
+            {!isLinearProject && <div className="w-72 flex-shrink-0">
               {showNewCol ? (
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 space-y-2">
                   <input
@@ -264,7 +277,7 @@ export function KanbanBoard({ projectId }: Props) {
                   <Plus size={14} /> Nuova colonna
                 </button>
               )}
-            </div>
+            </div>}
           </div>
         </div>
 

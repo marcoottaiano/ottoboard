@@ -3,9 +3,10 @@
   "configurations": [
     {
       "name": "ottoboard-dev",
-      "runtimeExecutable": "C:\\nvm4w\\nodejs\\npm.cmd",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3000
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "npm", "run", "dev"],
+      "port": 3000,
+      "autoPort": true
     }
   ]
 }

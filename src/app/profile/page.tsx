@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { AccountInfoSection } from '@/components/profile/AccountInfoSection'
 import { ChangePasswordForm } from '@/components/profile/ChangePasswordForm'
 import { StravaIntegrationCard } from '@/components/profile/StravaIntegrationCard'
+import { LinearIntegrationCard } from '@/components/profile/LinearIntegrationCard'
 import { BodyProfileSection } from '@/components/profile/BodyProfileSection'
 
 export const dynamic = 'force-dynamic'
@@ -34,6 +35,7 @@ export default async function ProfilePage() {
               Integrazioni
             </h3>
             <StravaIntegrationCard />
+            <LinearIntegrationCard />
           </div>
         </div>
       </div>

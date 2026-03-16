@@ -17,10 +17,11 @@ const PRIORITY_OPTIONS = [
 interface Props {
   projectId: string
   defaultColumnId: string
+  isLinearProject?: boolean
   onClose: () => void
 }
 
-export function NewTaskModal({ projectId, defaultColumnId, onClose }: Props) {
+export function NewTaskModal({ projectId, defaultColumnId, isLinearProject, onClose }: Props) {
   const createTask = useCreateTask()
   const { data: allTasks = [] } = useTasks(projectId)
 
@@ -37,7 +38,7 @@ export function NewTaskModal({ projectId, defaultColumnId, onClose }: Props) {
     const position = lastPos + 1000
 
     try {
-      await createTask.mutateAsync({
+      const newTask = await createTask.mutateAsync({
         project_id: projectId,
         column_id: defaultColumnId,
         title: title.trim(),
@@ -45,6 +46,21 @@ export function NewTaskModal({ projectId, defaultColumnId, onClose }: Props) {
         due_date: dueDate || undefined,
         position,
       })
+
+      // Fire-and-forget: create in Linear if this is a Linear project
+      if (isLinearProject && newTask?.id) {
+        fetch('/api/linear/create-issue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskId: newTask.id,
+            title: title.trim(),
+            priority: priority || null,
+            columnId: defaultColumnId,
+          }),
+        }).catch(() => {})
+      }
+
       onClose()
     } catch {
       setError('Errore durante la creazione')

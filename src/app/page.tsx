@@ -27,12 +27,14 @@ import { WeekStatsCard } from '@/components/fitness/WeekStatsCard'
 import { MonthFinanceWidget } from '@/components/home/MonthFinanceWidget'
 import { KanbanColumnWidget } from '@/components/home/KanbanColumnWidget'
 import { TotalBalanceWidget } from '@/components/home/TotalBalanceWidget'
+import { RemindersWidget } from '@/components/home/RemindersWidget'
 
 export const dynamic = 'force-dynamic'
 
-function getWidgetHref(type: WidgetType): string {
+function getWidgetHref(type: WidgetType): string | undefined {
   if (type === 'month-finance' || type === 'total-balance') return '/finance'
   if (type === 'kanban-column') return '/projects'
+  if (type === 'reminders') return undefined
   return '/fitness'
 }
 
@@ -48,6 +50,8 @@ function WidgetRenderer({ widget }: { widget: DashboardWidget }) {
       return <TotalBalanceWidget bare />
     case 'kanban-column':
       return <KanbanColumnWidget config={widget.config} />
+    case 'reminders':
+      return <RemindersWidget />
     default:
       return null
   }
@@ -102,7 +106,7 @@ export default function HomePage() {
                 <WidgetShell
                   key={w.id}
                   widgetId={w.id}
-                  href={getWidgetHref(w.type)}
+                  href={getWidgetHref(w.type) ?? undefined}
                   configurable={w.type === 'kanban-column'}
                   onConfigure={() => setConfiguringWidget(w)}
                 >
