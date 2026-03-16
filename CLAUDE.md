@@ -302,6 +302,7 @@ Wrapper DnD per ogni widget: drag handle, "Vai alla sezione", configura (solo ka
 | **Fase 6** | Profilo  | ✅    | Pagina profilo: cambio password, gestione integrazione Strava multi-utente |
 | **Fase 7** | Auth     | ✅    | Registrazione, reset password, onboarding nuovo utente, test multi-account |
 | **Fase 8** | PWA      | ✅    | App installabile: manifest, service worker, icone, offline fallback        |
+| **Fase 9** | Misurazioni corporee | 🔜 | Tab misurazioni in /fitness: peso, plicometrie, circonferenze, composizione corporea, grafici, canvas interattivo |
 
 ---
 
@@ -377,3 +378,140 @@ Rendere Ottoboard installabile come app nativa su mobile e desktop, con supporto
 - `public/sw.js` e `public/workbox-*.js` generati al build → aggiunti a `.gitignore`
 - Icone con `purpose: "any"` (non maskable — logo ha già bordi arrotondati)
 - `theme_color: "#1a5f6b"` corrisponde al colore di sfondo del logo
+
+---
+
+## Fase 9 — Misurazioni Corporee
+
+### Obiettivo
+
+Aggiungere una seconda tab alla pagina `/fitness` dedicata al monitoraggio della composizione corporea: peso, plicometrie, circonferenze, massa grassa e massa magra calcolate. Nessun BMI.
+
+### Struttura pagina
+
+`/fitness` diventa a due tab:
+- **Tab 1 — Strava**: contenuto attuale (LastActivityCard, WeekStatsCard, grafici, lista attività)
+- **Tab 2 — Corpo**: misurazioni corporee, grafici composizione, canvas interattivo
+
+### Schema: `body_measurements`
+
+```sql
+id            UUID PRIMARY KEY DEFAULT gen_random_uuid()
+user_id       UUID NOT NULL DEFAULT auth.uid()
+measured_at   DATE NOT NULL
+
+-- Peso
+weight_kg     FLOAT
+
+-- Plicometrie (mm) — protocollo Jackson-Pollock
+skinfold_chest        FLOAT   -- petto (JP7 / JP3 uomo)
+skinfold_abdomen      FLOAT   -- addome (JP7 / JP3 uomo)
+skinfold_thigh        FLOAT   -- coscia (JP7 / JP3 uomo + donna)
+skinfold_tricep       FLOAT   -- tricipite (JP7 / JP3 donna)
+skinfold_suprailiac   FLOAT   -- soprailiaca (JP7 / JP3 donna)
+skinfold_subscapular  FLOAT   -- sottoscapolare (JP7)
+skinfold_midaxillary  FLOAT   -- ascellare mediana (JP7)
+
+-- Circonferenze (cm)
+circ_waist      FLOAT
+circ_hip        FLOAT
+circ_chest      FLOAT
+circ_arm        FLOAT   -- bicipite contratto
+circ_forearm    FLOAT
+circ_thigh      FLOAT
+circ_calf       FLOAT
+circ_neck       FLOAT
+
+-- Calcolati e persistiti
+body_fat_pct  FLOAT   -- % grasso da formula JP
+fat_mass_kg   FLOAT   -- peso × body_fat_pct / 100
+lean_mass_kg  FLOAT   -- peso - fat_mass_kg
+
+created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+### Schema: `user_body_profile`
+
+```sql
+-- Dati statici per i calcoli (inseriti in onboarding)
+user_id    UUID PRIMARY KEY
+height_cm  FLOAT NOT NULL
+sex        TEXT NOT NULL   -- 'male' | 'female'
+birth_date DATE NOT NULL   -- serve per calcolare età nelle formule JP
+```
+
+### Formule — Jackson-Pollock
+
+**JP 3 pliche — Uomo** (petto + addome + coscia):
+```
+density = 1.10938 - (0.0008267 × Σ3) + (0.0000016 × Σ3²) - (0.0002574 × età)
+```
+
+**JP 3 pliche — Donna** (tricipite + soprailiaca + coscia):
+```
+density = 1.0994921 - (0.0009929 × Σ3) + (0.0000023 × Σ3²) - (0.0001392 × età)
+```
+
+**JP 7 pliche** (tutti e 7 i siti):
+- Uomo: `density = 1.112 - (0.00043499 × Σ7) + (0.00000055 × Σ7²) - (0.00028826 × età)`
+- Donna: `density = 1.097 - (0.00046971 × Σ7) + (0.00000056 × Σ7²) - (0.00012828 × età)`
+
+**Equazione di Siri** (density → % grasso):
+```
+% grasso = (495 / density) - 450
+```
+
+### Grafici
+
+| # | Grafico | Tipo | Dati |
+|---|---------|------|------|
+| 1 | Peso nel tempo | Line chart | `weight_kg` + media mobile 7gg |
+| 2 | Composizione corporea | Stacked area | `lean_mass_kg` + `fat_mass_kg` in kg |
+| 3 | % Grasso nel tempo | Line chart | `body_fat_pct` + fasce riferimento (atleta/forma/normale) |
+| 4 | Radar circonferenze | Radar/Spider | Tutte le circonferenze — sovrapponi 2 date |
+| 5 | Variazione misure | Bar orizzontale | Delta dalla prima misurazione (verde = miglioramento) |
+| 6 | Somma pliche | Line chart | Σ pliche nel tempo + toggle per singolo sito |
+
+### Canvas interattivo — BodyCanvas
+
+Componente SVG React con figura stilizzata (anteriore + posteriore). Ogni regione è un path SVG cliccabile/hoverable mappato a una misura:
+
+```
+Zona SVG        →  Misura
+──────────────────────────
+braccio-sx/dx   →  circ_arm
+avambraccio     →  circ_forearm
+petto           →  circ_chest / skinfold_chest
+addome          →  circ_waist / skinfold_abdomen
+fianchi         →  circ_hip
+coscia          →  circ_thigh / skinfold_thigh
+polpaccio       →  circ_calf
+collo           →  circ_neck
+tricipite       →  skinfold_tricep
+soprailiaca     →  skinfold_suprailiac
+```
+
+Al hover: tooltip con valore attuale, data ultima misurazione e delta rispetto alla sessione precedente.
+Implementazione: SVG nativo + React `onMouseEnter/Leave` + Tooltip component esistente. Vista anteriore di default, toggle per vista posteriore.
+
+### UI — Componenti
+
+- `FitnessPage` — aggiunta gestione tab con stato (`'strava' | 'body'`)
+- `BodyMeasurementsTab` — container tab corpo, layout grafici + canvas
+- `MeasurementForm` — form inserimento sessione (tutti i campi opzionali tranne data)
+- `BodyCanvas` — SVG interattivo omino anteriore/posteriore
+- `BodyCompositionChart` — stacked area massa magra/grassa (grafico 2)
+- `WeightChart` — line chart peso + media mobile (grafico 1)
+- `BodyFatChart` — line chart % grasso con fasce (grafico 3)
+- `CircumferencesRadarChart` — radar chart circonferenze (grafico 4)
+- `MeasurementsDeltaChart` — bar orizzontale variazioni (grafico 5)
+- `SkinfoldsTrendChart` — line chart pliche nel tempo (grafico 6)
+- `MeasurementHistoryTable` — tabella sessioni passate, click → dettaglio/modifica
+
+### Note tecniche
+
+- Tutti i campi del form sono opzionali: l'utente può inserire solo peso, solo circonferenze, solo pliche, o qualsiasi combinazione
+- Il calcolo JP richiede almeno i 3 siti del protocollo scelto (JP3 o JP7) + `user_body_profile` compilato → altrimenti `body_fat_pct` = null
+- `user_body_profile` va inserito in onboarding o al primo accesso alla tab Corpo
+- I grafici mostrano solo le sessioni in cui quella specifica misura è presente (no interpolazione)
+- Il grafico radar normalizza i valori su scala 0–100 per rendere comparabili misure diverse (cm)

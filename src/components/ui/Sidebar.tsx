@@ -105,7 +105,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
           {!collapsed && (
             <>
               <Image src="/icons/icon-192x192.png" alt="Ottoboard" width={32} height={32} className="rounded-lg flex-shrink-0" />
-              <span className="text-sm font-semibold tracking-wide text-white/90 flex-1">Ottoboard</span>
+              <span className="text-sm font-semibold tracking-wide text-white/90 flex-1" suppressHydrationWarning>Ottoboard</span>
             </>
           )}
           <button onClick={() => setCollapsed(!collapsed)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-200 flex-shrink-0" title={collapsed ? "Espandi sidebar" : "Chiudi sidebar"}>
@@ -147,7 +147,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
         {/* Logo + page title */}
         <div className="flex items-center gap-2.5">
           <Image src="/icons/icon-192x192.png" alt="Ottoboard" width={28} height={28} className="rounded-lg flex-shrink-0" />
-          <span className="text-sm font-semibold text-white/80">Ottoboard</span>
+          <span className="text-sm font-semibold text-white/80" suppressHydrationWarning>Ottoboard</span>
         </div>
 
         {/* User + logout */}

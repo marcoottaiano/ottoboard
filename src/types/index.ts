@@ -121,6 +121,46 @@ export interface Task {
   created_at: string
 }
 
+// ─── Body Measurements Types ──────────────────────────────────────────────────
+
+export interface UserBodyProfile {
+  user_id: string
+  height_cm: number
+  sex: 'male' | 'female'
+  birth_date: string // YYYY-MM-DD
+}
+
+export interface BodyMeasurement {
+  id: string
+  user_id: string
+  measured_at: string // YYYY-MM-DD
+  weight_kg?: number
+  // Plicometrie (mm)
+  skinfold_chest?: number
+  skinfold_abdomen?: number
+  skinfold_thigh?: number
+  skinfold_tricep?: number
+  skinfold_suprailiac?: number
+  skinfold_subscapular?: number
+  skinfold_midaxillary?: number
+  // Circonferenze (cm)
+  circ_waist?: number
+  circ_hip?: number
+  circ_chest?: number
+  circ_arm?: number
+  circ_forearm?: number
+  circ_thigh?: number
+  circ_calf?: number
+  circ_neck?: number
+  // Calcolati
+  body_fat_pct?: number
+  fat_mass_kg?: number
+  lean_mass_kg?: number
+  created_at: string
+}
+
+export type CreateBodyMeasurementInput = Omit<BodyMeasurement, 'id' | 'user_id' | 'created_at'>
+
 // ─── UI Types ─────────────────────────────────────────────────────────────────
 
 export type Module = 'fitness' | 'finance' | 'projects'
