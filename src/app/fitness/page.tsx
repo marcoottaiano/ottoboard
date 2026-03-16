@@ -57,7 +57,7 @@ export default async function FitnessPage() {
       {/* FC corsa e heatmap */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
         <HeartRateChart />
-        {/* <ActivityHeatmap /> */}
+        <ActivityHeatmap />
       </div>
 
       {/* Lista attività */}
