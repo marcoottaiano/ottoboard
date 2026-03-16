@@ -31,6 +31,7 @@ export function Select({ value, onChange, options, placeholder = 'Seleziona...',
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<DropdownPos | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const selected = options.find((o) => o.value === value)
 
@@ -76,7 +77,10 @@ export function Select({ value, onChange, options, placeholder = 'Seleziona...',
   useEffect(() => {
     if (!open) return
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (
+        ref.current && !ref.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) setOpen(false)
     }
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
     document.addEventListener('mousedown', handleClickOutside)
@@ -89,6 +93,7 @@ export function Select({ value, onChange, options, placeholder = 'Seleziona...',
 
   const dropdown = open && pos ? (
     <div
+      ref={dropdownRef}
       style={{
         position: 'fixed',
         top: pos.openUp ? undefined : pos.top,
