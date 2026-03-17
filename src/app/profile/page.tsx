@@ -4,6 +4,7 @@ import { AccountInfoSection } from '@/components/profile/AccountInfoSection'
 import { ChangePasswordForm } from '@/components/profile/ChangePasswordForm'
 import { StravaIntegrationCard } from '@/components/profile/StravaIntegrationCard'
 import { LinearIntegrationCard } from '@/components/profile/LinearIntegrationCard'
+import { NotificationsCard } from '@/components/profile/NotificationsCard'
 import { BodyProfileSection } from '@/components/profile/BodyProfileSection'
 
 export const dynamic = 'force-dynamic'
@@ -20,22 +21,25 @@ export default async function ProfilePage() {
     <main className="flex-1 p-4 md:p-6">
       <h1 className="text-xl font-bold text-white mb-6">Profilo</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl items-start">
-        {/* Colonna sinistra */}
-        <div className="space-y-4">
-          <AccountInfoSection user={user} />
-          <BodyProfileSection />
+      <div className="space-y-6 max-w-5xl">
+        {/* Account + password */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div className="space-y-4">
+            <AccountInfoSection user={user} />
+            <BodyProfileSection />
+          </div>
+          <ChangePasswordForm />
         </div>
 
-        {/* Colonna destra */}
-        <div className="space-y-4">
-          <ChangePasswordForm />
-          <div className="space-y-2">
-            <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest px-1">
-              Integrazioni
-            </h3>
+        {/* Integrazioni — 3 colonne su desktop */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest px-1">
+            Integrazioni
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             <StravaIntegrationCard />
             <LinearIntegrationCard />
+            <NotificationsCard />
           </div>
         </div>
       </div>
