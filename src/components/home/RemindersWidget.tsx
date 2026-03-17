@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { Plus, CheckSquare } from 'lucide-react'
-import { usePendingReminders, useCompleteReminder } from '@/hooks/useReminders'
+import { usePendingReminders, useCompleteReminder, useCompletedReminders } from '@/hooks/useReminders'
 import { ReminderRow } from './ReminderRow'
 import { ReminderCreateModal } from './ReminderCreateModal'
 import { ReminderEditModal } from './ReminderEditModal'
 import { CompletedRemindersModal } from './CompletedRemindersModal'
-import { useCompletedReminders } from '@/hooks/useReminders'
 import type { Reminder } from '@/types'
 
 export function RemindersWidget() {
@@ -20,7 +19,7 @@ export function RemindersWidget() {
   const [showCompleted, setShowCompleted] = useState(false)
 
   return (
-    <div className="space-y-3">
+    <div className="p-5 flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -44,9 +43,9 @@ export function RemindersWidget() {
           ))}
         </div>
       ) : pending.length === 0 ? (
-        <p className="text-xs text-gray-600 py-2">Nessun promemoria in sospeso</p>
+        <p className="text-xs text-gray-600">Nessun promemoria in sospeso</p>
       ) : (
-        <div className="max-h-64 overflow-y-auto space-y-0 divide-y divide-white/5">
+        <div className="max-h-64 overflow-y-auto divide-y divide-white/5">
           {pending.map((r) => (
             <ReminderRow
               key={r.id}
@@ -65,7 +64,7 @@ export function RemindersWidget() {
       {completed.length > 0 && (
         <button
           onClick={() => setShowCompleted(true)}
-          className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+          className="text-xs text-gray-600 hover:text-gray-400 transition-colors self-start"
         >
           {completed.length} completat{completed.length === 1 ? 'o' : 'i'} →
         </button>

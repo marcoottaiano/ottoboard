@@ -6,6 +6,7 @@ import { useTasks, tasksByColumn } from '@/hooks/useTasks'
 import { Select } from '@/components/ui/Select'
 import { TaskPriority } from '@/types'
 import { X } from 'lucide-react'
+import { toast } from 'sonner'
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Bassa' },
@@ -58,7 +59,14 @@ export function NewTaskModal({ projectId, defaultColumnId, isLinearProject, onCl
             priority: priority || null,
             columnId: defaultColumnId,
           }),
-        }).catch(() => {})
+        })
+          .then((res) => {
+            if (!res.ok) toast.error('Task creata localmente ma non su Linear')
+            else toast.success('Task creata anche su Linear')
+          })
+          .catch(() => toast.error('Task creata localmente ma non su Linear'))
+      } else {
+        toast.success('Task creata')
       }
 
       onClose()

@@ -304,6 +304,7 @@ Wrapper DnD per ogni widget: drag handle, "Vai alla sezione", configura (solo ka
 | **Fase 8**  | PWA                  | ✅    | App installabile: manifest, service worker, icone, offline fallback                                               |
 | **Fase 9**  | Misurazioni corporee | 🔜    | Tab misurazioni in /fitness: peso, plicometrie, circonferenze, composizione corporea, grafici, canvas interattivo |
 | **Fase 10** | Linear + Reminders   | 🔜    | Sync bidirezionale Linear in /projects, setup integrazione in /profile, widget Reminders in home                  |
+| **Fase 11** | Notifiche Push       | 🔜    | Push notifications PWA per i promemoria: richiesta permesso, service worker, scheduling, gestione dal profilo      |
 
 ---
 
@@ -682,3 +683,151 @@ type: 'reminders'   -- nuovo tipo widget, nessun campo config necessario
 - `ReminderEditModal` — form modifica/eliminazione
 - `CompletedRemindersModal` — storico completati con "Riapri"
 - `useReminders` — hook React Query: fetch, create, update, complete, delete
+
+---
+
+## Fase 11 — Notifiche Push (Promemoria)
+
+### Obiettivo
+
+Notificare l'utente quando un promemoria è in scadenza, anche con l'app chiusa, sfruttando le Web Push API integrate nella PWA (service worker già presente dalla Fase 8).
+
+Per ora le notifiche riguardano **solo i promemoria**. Estensioni future (es. scadenze task Linear) vanno pianificate in fasi separate.
+
+---
+
+### Architettura
+
+```
+Browser / dispositivo
+  └─ Service Worker (già registrato in Fase 8)
+       ├─ ascolta messaggi PUSH dal server
+       └─ mostra notifica nativa OS via self.registration.showNotification()
+
+Next.js API Route  (/api/notifications/send)
+  └─ chiama web-push per inviare payload al browser dell'utente
+
+Supabase Edge Function  (scheduled: ogni ora)
+  └─ legge reminders con due_date = oggi e due_time prossima
+  └─ chiama /api/notifications/send per ogni utente con subscription attiva
+
+Supabase DB
+  ├─ tabella push_subscriptions  (subscription endpoint + keys per utente)
+  └─ tabella reminders            (già esistente — aggiunta colonna notified_at)
+```
+
+---
+
+### Schema DB
+
+#### `push_subscriptions`
+
+```sql
+id           UUID PRIMARY KEY DEFAULT gen_random_uuid()
+user_id      UUID NOT NULL DEFAULT auth.uid()
+endpoint     TEXT NOT NULL UNIQUE
+p256dh       TEXT NOT NULL   -- chiave pubblica client
+auth         TEXT NOT NULL   -- chiave di autenticazione client
+created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+RLS standard: `auth.uid() = user_id`.
+
+#### Modifica `reminders`
+
+```sql
+ALTER TABLE reminders ADD COLUMN notified_at TIMESTAMPTZ;
+-- Aggiornato a NOW() quando la notifica viene inviata, per evitare duplicati
+```
+
+---
+
+### Flusso completo
+
+#### 1. Richiesta permesso (frontend)
+
+Al primo accesso, o su click esplicito in `/profile`, il browser chiede il permesso di inviare notifiche:
+
+```
+navigator.Notification.requestPermission()
+  → se "granted": chiama serviceWorker.pushManager.subscribe(...)
+  → invia la subscription a /api/notifications/subscribe (POST)
+  → salva in push_subscriptions su Supabase
+```
+
+Il `applicationServerKey` (VAPID public key) viene letto da `NEXT_PUBLIC_VAPID_PUBLIC_KEY`.
+
+#### 2. Invio notifica (backend)
+
+```
+Edge Function scheduled (ogni ora, es. alle :00 e :30)
+  → SELECT reminders WHERE due_date = TODAY
+                       AND due_time BETWEEN NOW() AND NOW() + 60min
+                       AND completed = false
+                       AND notified_at IS NULL
+  → per ogni reminder: fetch push_subscriptions WHERE user_id = reminder.user_id
+  → chiama web-push con payload { title, body, data: { reminderId } }
+  → UPDATE reminders SET notified_at = NOW() WHERE id = reminder.id
+```
+
+Se `due_time` è NULL, la notifica viene inviata alle **9:00** del giorno della scadenza.
+
+#### 3. Click sulla notifica (service worker)
+
+```javascript
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil(clients.openWindow('/'))
+  // Apre la home dove il widget Promemoria è visibile
+})
+```
+
+---
+
+### Variabili d'ambiente necessarie
+
+```
+VAPID_PUBLIC_KEY=...   # generata con web-push generateVAPIDKeys()
+VAPID_PRIVATE_KEY=...  # mai esposta al client
+VAPID_SUBJECT=mailto:admin@example.com
+```
+
+`NEXT_PUBLIC_VAPID_PUBLIC_KEY` = stesso valore di `VAPID_PUBLIC_KEY` (esposta al client per subscribe).
+
+---
+
+### Dipendenze
+
+```
+web-push   # libreria Node.js per inviare push — usata nelle API routes e Edge Functions
+```
+
+---
+
+### UI — Componenti
+
+- **`NotificationPermissionBanner`** — banner non invasivo in home se i permessi non sono stati ancora concessi e l'utente ha promemoria attivi. Pulsante "Attiva notifiche" → richiede permesso → salva subscription.
+- **`NotificationsSection`** in `/profile` — stato attuale (abilitato/disabilitato/non supportato dal browser), pulsante "Disabilita notifiche" (elimina subscription da DB), pulsante "Ri-attiva".
+- **`useNotificationPermission`** — hook che legge `Notification.permission`, gestisce la subscribe/unsubscribe e salva su Supabase.
+
+---
+
+### Gestione errori e casi limite
+
+| Caso | Comportamento |
+|---|---|
+| Browser non supporta Push API | `NotificationPermissionBanner` nascosto, sezione profilo mostra "non supportato" |
+| Utente nega permesso | Banner non riappare (stato salvato in localStorage), sezione profilo mostra "bloccato dal browser" |
+| Subscription scaduta / 410 da push server | Rimuovere automaticamente la riga da `push_subscriptions` |
+| `due_time` NULL | Notifica alle 9:00 del giorno della scadenza |
+| Reminder già completato al momento dell'invio | Skip — controllare `completed = false` nella query Edge Function |
+| Ricorrenza — nuovo reminder generato | `notified_at` NULL sul nuovo reminder → verrà notificato normalmente |
+
+---
+
+### Note tecniche
+
+- Il service worker della Fase 8 (`@ducanh2912/next-pwa` / Workbox) gestisce già la registrazione. Per aggiungere l'handler `push` e `notificationclick` serve un **custom service worker** (`public/custom-sw.js`) che viene importato dal SW generato via `next-pwa`'s `additionalManifestEntries` o `swSrc`.
+- VAPID keys generate una volta sola (`web-push generateVAPIDKeys()`) e salvate come env vars su Vercel.
+- La Edge Function scheduled va configurata in Supabase dashboard (cron: `0 * * * *` per ogni ora intera).
+- Su iOS Safari (PWA installata), le Push Notifications sono supportate da iOS 16.4+. Su versioni precedenti mostrare un fallback in-app.

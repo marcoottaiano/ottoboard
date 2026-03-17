@@ -14,16 +14,17 @@ interface Props {
   column: Column
   tasks: Task[]
   isDragging?: boolean
+  isLinear?: boolean
   onTaskClick: (taskId: string) => void
   onAddTask: (columnId: string) => void
 }
 
-export function KanbanColumn({ column, tasks, isDragging = false, onTaskClick, onAddTask }: Props) {
+export function KanbanColumn({ column, tasks, isDragging = false, isLinear = false, onTaskClick, onAddTask }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging: isSortableDragging } =
     useSortable({
       id: column.id,
       data: { type: 'column', column },
-      disabled: isDragging,
+      disabled: isDragging || isLinear,
     })
 
   const style = {
@@ -57,13 +58,15 @@ export function KanbanColumn({ column, tasks, isDragging = false, onTaskClick, o
     >
       {/* Header */}
       <div className="flex items-center gap-2 px-3 py-2.5 border-b border-white/5">
-        <button
-          {...attributes}
-          {...listeners}
-          className="text-gray-700 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none p-0.5"
-        >
-          <GripVertical size={14} />
-        </button>
+        {!isLinear && (
+          <button
+            {...attributes}
+            {...listeners}
+            className="text-gray-700 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none p-0.5"
+          >
+            <GripVertical size={14} />
+          </button>
+        )}
 
         {column.color && <ColorDot color={column.color} size="sm" />}
 
@@ -82,7 +85,7 @@ export function KanbanColumn({ column, tasks, isDragging = false, onTaskClick, o
 
         <span className="text-xs text-gray-600 flex-shrink-0">{tasks.length}</span>
 
-        {!editing && (
+        {!editing && !isLinear && (
           <div className="flex items-center gap-0.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             {confirming ? (
               <div className="flex items-center gap-1 text-xs">

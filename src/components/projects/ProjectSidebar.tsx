@@ -8,6 +8,7 @@ import { Project } from '@/types'
 import { ColorDot } from './ColorDot'
 import { ProjectFormModal } from './ProjectFormModal'
 import { Plus, ChevronDown, ChevronUp, Archive, RefreshCw, X } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface Props {
   selectedId: string | null
@@ -38,7 +39,11 @@ function ProjectItem({
       }`}
       onClick={onSelect}
     >
-      <ColorDot color={project.color} size="sm" />
+      {project.icon ? (
+        <span className="text-sm flex-shrink-0 leading-none">{project.icon}</span>
+      ) : (
+        <ColorDot color={project.color} size="sm" />
+      )}
       <span className={`flex-1 text-sm truncate ${isSelected ? 'text-white' : 'text-gray-400'}`}>
         {project.name}
       </span>
@@ -77,6 +82,7 @@ export function ProjectSidebar({ selectedId, onSelect, isLinearConnected, onSync
   const [showNewLinearProject, setShowNewLinearProject] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectDesc, setNewProjectDesc] = useState('')
+  const [newProjectIcon, setNewProjectIcon] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
 
@@ -94,20 +100,25 @@ export function ProjectSidebar({ selectedId, onSelect, isLinearConnected, onSync
       const res = await fetch('/api/linear/create-project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description: newProjectDesc.trim() || undefined }),
+        body: JSON.stringify({ name, description: newProjectDesc.trim() || undefined, icon: newProjectIcon.trim() || undefined }),
       })
       const data = await res.json()
       if (!res.ok) {
-        setCreateError(data.error ?? 'Errore creazione progetto')
+        const msg = data.error ?? 'Errore creazione progetto'
+        setCreateError(msg)
+        toast.error(msg)
         return
       }
       // Reset form and sync to pull the new project
       setNewProjectName('')
       setNewProjectDesc('')
+      setNewProjectIcon('')
       setShowNewLinearProject(false)
+      toast.success('Progetto creato su Linear — sync in corso...')
       onSync?.()
     } catch {
       setCreateError('Errore di rete')
+      toast.error('Errore di rete')
     } finally {
       setIsCreating(false)
     }
@@ -157,23 +168,32 @@ export function ProjectSidebar({ selectedId, onSelect, isLinearConnected, onSync
               {/* New Linear project inline form */}
               {showNewLinearProject ? (
                 <div className="px-1 space-y-2">
-                  <input
-                    autoFocus
-                    value={newProjectName}
-                    onChange={(e) => setNewProjectName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCreateLinearProject()
-                      if (e.key === 'Escape') { setShowNewLinearProject(false); setNewProjectName(''); setNewProjectDesc('') }
-                    }}
-                    placeholder="Nome progetto"
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50"
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      value={newProjectIcon}
+                      onChange={(e) => setNewProjectIcon(e.target.value)}
+                      placeholder="🚀"
+                      maxLength={2}
+                      className="w-10 text-center bg-white/5 border border-white/10 rounded-lg px-1 py-1.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50"
+                    />
+                    <input
+                      autoFocus
+                      value={newProjectName}
+                      onChange={(e) => setNewProjectName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleCreateLinearProject()
+                        if (e.key === 'Escape') { setShowNewLinearProject(false); setNewProjectName(''); setNewProjectDesc(''); setNewProjectIcon(''); setCreateError(null) }
+                      }}
+                      placeholder="Nome progetto"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50"
+                    />
+                  </div>
                   <input
                     value={newProjectDesc}
                     onChange={(e) => setNewProjectDesc(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleCreateLinearProject()
-                      if (e.key === 'Escape') { setShowNewLinearProject(false); setNewProjectName(''); setNewProjectDesc('') }
+                      if (e.key === 'Escape') { setShowNewLinearProject(false); setNewProjectName(''); setNewProjectDesc(''); setNewProjectIcon(''); setCreateError(null) }
                     }}
                     placeholder="Descrizione (opzionale)"
                     className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-purple-500/50"
@@ -188,7 +208,7 @@ export function ProjectSidebar({ selectedId, onSelect, isLinearConnected, onSync
                       {isCreating ? 'Crea...' : 'Crea'}
                     </button>
                     <button
-                      onClick={() => { setShowNewLinearProject(false); setNewProjectName(''); setNewProjectDesc(''); setCreateError(null) }}
+                      onClick={() => { setShowNewLinearProject(false); setNewProjectName(''); setNewProjectDesc(''); setNewProjectIcon(''); setCreateError(null) }}
                       className="p-1 text-gray-600 hover:text-gray-400 transition-colors"
                     >
                       <X size={12} />

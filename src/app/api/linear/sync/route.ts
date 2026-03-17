@@ -76,6 +76,14 @@ export async function POST() {
   let syncedColumns = 0
   let syncedTasks = 0
 
+  // Track which issues were matched to a project via their project.id field.
+  // Issues with project: null (Linear API quirk) will be assigned to the first project.
+  const assignedIssueIds = new Set<string>()
+
+  // First pass: collect stateToColumnId maps per project so we can assign unmatched issues later
+  type ProjectEntry = { projectId: string; stateToColumnId: Map<string, string> }
+  const projectEntries: ProjectEntry[] = []
+
   for (const lp of linearProjects) {
     // Upsert one Ottoboard project per Linear project
     const { data: upsertedProject } = await supabase
@@ -126,7 +134,7 @@ export async function POST() {
       syncedColumns++
     }
 
-    // Upsert issues belonging to this Linear project
+    // Upsert issues explicitly assigned to this Linear project
     const projectIssues = issues.filter((i) => i.project?.id === lp.id)
 
     for (const li of projectIssues) {
@@ -137,7 +145,31 @@ export async function POST() {
       await supabase
         .from('tasks')
         .upsert(taskData, { onConflict: 'linear_issue_id' })
+      assignedIssueIds.add(li.id)
       syncedTasks++
+    }
+
+    projectEntries.push({ projectId, stateToColumnId })
+  }
+
+  // Second pass: issues with project: null in the Linear API (a known quirk where Linear
+  // shows a project badge in the UI but returns project: null via GraphQL).
+  // Assign them to the first project as a best-effort fallback.
+  const unassignedIssues = issues.filter((i) => !i.project && !assignedIssueIds.has(i.id))
+  const fallbackEntry = projectEntries[0]
+
+  let syncedUnassigned = 0
+  if (fallbackEntry && unassignedIssues.length > 0) {
+    for (const li of unassignedIssues) {
+      const columnId = fallbackEntry.stateToColumnId.get(li.state.id)
+      if (!columnId) continue
+
+      const taskData = { ...linearIssueToTask(li, columnId, fallbackEntry.projectId), user_id: user.id }
+      await supabase
+        .from('tasks')
+        .upsert(taskData, { onConflict: 'linear_issue_id' })
+      syncedTasks++
+      syncedUnassigned++
     }
   }
 
@@ -148,6 +180,6 @@ export async function POST() {
     .eq('user_id', user.id)
 
   return NextResponse.json({
-    synced: { projects: syncedProjects, columns: syncedColumns, tasks: syncedTasks },
+    synced: { projects: syncedProjects, columns: syncedColumns, tasks: syncedTasks, unassigned: syncedUnassigned },
   })
 }

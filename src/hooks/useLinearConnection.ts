@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 interface LinearStatus {
   connected: boolean
@@ -16,7 +17,7 @@ interface LinearTeam {
 }
 
 interface SyncResult {
-  synced: { projects: number; columns: number; tasks: number }
+  synced: { projects: number; columns: number; tasks: number; unassigned: number }
 }
 
 const STATUS_KEY = ['linear-status']
@@ -77,11 +78,17 @@ export function useLinearConnection() {
       if (!res.ok) throw new Error(data.error ?? 'Errore sync')
       return data
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: STATUS_KEY })
       queryClient.invalidateQueries({ queryKey: ['projects'] })
       queryClient.invalidateQueries({ queryKey: ['columns'] })
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      const { projects, tasks, unassigned } = data.synced
+      const unassignedNote = unassigned > 0 ? ` (${unassigned} senza progetto)` : ''
+      toast.success(`Sync completata — ${projects} progetti, ${tasks} task${unassignedNote}`)
+    },
+    onError: (err) => {
+      toast.error(`Errore sync: ${err.message}`)
     },
   })
 

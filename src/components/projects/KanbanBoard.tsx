@@ -232,6 +232,7 @@ export function KanbanBoard({ projectId }: Props) {
                   key={col.id}
                   column={col}
                   tasks={tasksByColumn(allTasks, col.id)}
+                  isLinear={isLinearProject}
                   onTaskClick={setOpenTaskId}
                   onAddTask={setAddTaskColumnId}
                 />
@@ -290,6 +291,7 @@ export function KanbanBoard({ projectId }: Props) {
               column={activeColumn}
               tasks={tasksByColumn(allTasks, activeColumn.id)}
               isDragging
+              isLinear={isLinearProject}
               onTaskClick={() => {}}
               onAddTask={() => {}}
             />
@@ -301,6 +303,7 @@ export function KanbanBoard({ projectId }: Props) {
         <NewTaskModal
           projectId={projectId}
           defaultColumnId={addTaskColumnId}
+          isLinearProject={isLinearProject}
           onClose={() => setAddTaskColumnId(null)}
         />
       )}
