@@ -6,7 +6,8 @@ import { useUpdateTask, useDeleteTask } from '@/hooks/useTaskMutations'
 import { useColumns } from '@/hooks/useColumns'
 import { Select } from '@/components/ui/Select'
 import { Task, TaskPriority } from '@/types'
-import { X, Trash2, Plus, ExternalLink, Save, CheckCircle } from 'lucide-react'
+import { X, Trash2, Plus, ExternalLink, Save, AlertCircle } from 'lucide-react'
+import { toast } from 'sonner'
 
 const PRIORITY_OPTIONS = [
   { value: 'low', label: 'Bassa' },
@@ -39,7 +40,7 @@ export function TaskDetailModal({ taskId, projectId, onClose }: Props) {
   const [labelInput, setLabelInput] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [isSavingLinear, setIsSavingLinear] = useState(false)
-  const [linearSaved, setLinearSaved] = useState(false)
+  const [linearError, setLinearError] = useState(false)
 
   useEffect(() => {
     if (task) {
@@ -64,9 +65,9 @@ export function TaskDetailModal({ taskId, projectId, onClose }: Props) {
   const handleSaveLinear = async () => {
     if (!task.linear_issue_id) return
     setIsSavingLinear(true)
-    setLinearSaved(false)
+    setLinearError(false)
     try {
-      // Also save latest values to Supabase
+      // Save latest values to Supabase
       await updateTask.mutateAsync({
         id: taskId,
         project_id: projectId,
@@ -94,8 +95,11 @@ export function TaskDetailModal({ taskId, projectId, onClose }: Props) {
         body: JSON.stringify(body),
       })
       if (res.ok) {
-        setLinearSaved(true)
-        setTimeout(() => setLinearSaved(false), 3000)
+        toast.success('Task salvata su Linear')
+        onClose()
+      } else {
+        setLinearError(true)
+        toast.error('Errore salvataggio su Linear')
       }
     } finally {
       setIsSavingLinear(false)
@@ -246,23 +250,10 @@ export function TaskDetailModal({ taskId, projectId, onClose }: Props) {
               {task.assignee_name && (
                 <p className="text-xs text-gray-600">Assegnato a: <span className="text-gray-400">{task.assignee_name}</span></p>
               )}
-
-              {/* Save to Linear button */}
-              <button
-                onClick={handleSaveLinear}
-                disabled={isSavingLinear}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:bg-purple-500/30"
-              >
-                {linearSaved ? (
-                  <><CheckCircle size={12} /> Salvato</>
-                ) : (
-                  <><Save size={12} /> {isSavingLinear ? 'Salvataggio...' : 'Salva in Linear'}</>
-                )}
-              </button>
             </div>
           )}
 
-          {/* Delete */}
+          {/* Bottom action row: Save (Linear) + Delete */}
           <div className="pt-2 border-t border-white/5">
             {confirming ? (
               <div className="flex items-center gap-3 text-xs">
@@ -279,12 +270,30 @@ export function TaskDetailModal({ taskId, projectId, onClose }: Props) {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => setConfirming(true)}
-                className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-red-400 transition-colors"
-              >
-                <Trash2 size={12} /> Elimina task
-              </button>
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setConfirming(true)}
+                  className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-red-400 transition-colors"
+                >
+                  <Trash2 size={12} /> Elimina task
+                </button>
+                {task.linear_issue_id && (
+                  <div className="flex items-center gap-2">
+                    {linearError && (
+                      <span className="flex items-center gap-1 text-xs text-red-400">
+                        <AlertCircle size={11} /> Errore
+                      </span>
+                    )}
+                    <button
+                      onClick={handleSaveLinear}
+                      disabled={isSavingLinear}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50 bg-purple-500/20 border border-purple-500/30 text-purple-400 hover:bg-purple-500/30"
+                    >
+                      <Save size={12} /> {isSavingLinear ? 'Salvataggio...' : 'Salva'}
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
