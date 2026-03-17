@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 
-export type WidgetType = 'last-activity' | 'week-stats' | 'month-finance' | 'total-balance' | 'kanban-column' | 'reminders'
+export type WidgetType = 'last-activity' | 'week-stats' | 'month-finance' | 'total-balance' | 'kanban-column' | 'reminders' | 'habits'
 
 export interface WidgetConfig {
   projectId?: string
