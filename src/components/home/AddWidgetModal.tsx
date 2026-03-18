@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Activity, BarChart2, Wallet, PiggyBank, Columns, BellRing, Target } from 'lucide-react'
+import { toast } from 'sonner'
+import { X, Activity, BarChart2, Wallet, PiggyBank, Columns, BellRing, Target, TrendingUp } from 'lucide-react'
 import { useProjects } from '@/hooks/useProjects'
 import { useColumns } from '@/hooks/useColumns'
+import { useFinancialGoals } from '@/hooks/useFinancialGoals'
 import { Select } from '@/components/ui/Select'
 import {
   useAddWidget,
@@ -64,6 +66,12 @@ const WIDGET_CATALOGUE: WidgetEntry[] = [
     label: 'Abitudini',
     description: 'Abitudini di oggi con checklist',
   },
+  {
+    type: 'financial-goal',
+    icon: <TrendingUp size={20} />,
+    label: 'Obiettivo risparmio',
+    description: 'Progresso verso un obiettivo finanziario',
+  },
 ]
 
 // ─── Kanban config pickers (shared) ──────────────────────────────────────────
@@ -114,20 +122,29 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
   const [selected, setSelected] = useState<WidgetType | null>(null)
   const [projectId, setProjectId] = useState('')
   const [columnId, setColumnId] = useState('')
+  const [goalId, setGoalId] = useState('')
   const addWidget = useAddWidget()
+  const { data: goals = [] } = useFinancialGoals()
 
   const canAdd =
     selected !== null &&
-    (selected !== 'kanban-column' || (!!projectId && !!columnId))
+    (selected !== 'kanban-column' || (!!projectId && !!columnId)) &&
+    (selected !== 'financial-goal' || !!goalId)
 
   const handleAdd = () => {
     if (!selected || !canAdd) return
+    const config =
+      selected === 'kanban-column'
+        ? { projectId, columnId }
+        : selected === 'financial-goal'
+        ? { goalId }
+        : {}
     addWidget.mutate(
+      { type: selected, config },
       {
-        type: selected,
-        config: selected === 'kanban-column' ? { projectId, columnId } : {},
-      },
-      { onSuccess: onClose }
+        onSuccess: onClose,
+        onError: () => toast.error("Errore durante l'aggiunta del widget"),
+      }
     )
   }
 
@@ -154,6 +171,7 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
                 setSelected(w.type)
                 setProjectId('')
                 setColumnId('')
+                setGoalId('')
               }}
               className={`flex flex-col gap-2 p-3 rounded-xl border text-left transition-colors ${
                 selected === w.type
@@ -184,6 +202,23 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
           </div>
         )}
 
+        {/* Financial goal picker */}
+        {selected === 'financial-goal' && (
+          <div className="px-4 pb-2">
+            <Select
+              value={goalId}
+              onChange={setGoalId}
+              dropUp
+              options={goals.map((g) => ({ value: g.id, label: `${g.icon ?? ''} ${g.name}`.trim() }))}
+              placeholder="Seleziona obiettivo..."
+              showPlaceholder={false}
+            />
+            {goals.length === 0 && (
+              <p className="text-xs text-gray-600 mt-1">Nessun obiettivo creato. Creane uno in /finance.</p>
+            )}
+          </div>
+        )}
+
         {/* Footer */}
         <div className="px-4 py-4 border-t border-white/5 flex justify-end">
           <button
@@ -209,13 +244,21 @@ interface ConfigureWidgetModalProps {
 export function ConfigureWidgetModal({ widget, onClose }: ConfigureWidgetModalProps) {
   const [projectId, setProjectId] = useState(widget.config.projectId ?? '')
   const [columnId, setColumnId] = useState(widget.config.columnId ?? '')
+  const [goalId, setGoalId] = useState(widget.config.goalId ?? '')
   const updateConfig = useUpdateWidgetConfig()
+  const { data: goals = [] } = useFinancialGoals()
 
-  const canSave = !!projectId && !!columnId
+  const canSave =
+    (widget.type === 'kanban-column' && !!projectId && !!columnId) ||
+    (widget.type === 'financial-goal' && !!goalId)
 
   const handleSave = () => {
     if (!canSave) return
-    updateConfig.mutate({ id: widget.id, config: { projectId, columnId } }, { onSuccess: onClose })
+    const config =
+      widget.type === 'kanban-column'
+        ? { projectId, columnId }
+        : { goalId }
+    updateConfig.mutate({ id: widget.id, config }, { onSuccess: onClose })
   }
 
   return (
@@ -234,12 +277,24 @@ export function ConfigureWidgetModal({ widget, onClose }: ConfigureWidgetModalPr
 
         {/* Pickers */}
         <div className="p-4">
-          <KanbanPickers
-            projectId={projectId}
-            columnId={columnId}
-            onProjectChange={(v) => { setProjectId(v); setColumnId('') }}
-            onColumnChange={setColumnId}
-          />
+          {widget.type === 'kanban-column' && (
+            <KanbanPickers
+              projectId={projectId}
+              columnId={columnId}
+              onProjectChange={(v) => { setProjectId(v); setColumnId('') }}
+              onColumnChange={setColumnId}
+            />
+          )}
+          {widget.type === 'financial-goal' && (
+            <Select
+              value={goalId}
+              onChange={setGoalId}
+              dropUp
+              options={goals.map((g) => ({ value: g.id, label: `${g.icon ?? ''} ${g.name}`.trim() }))}
+              placeholder="Seleziona obiettivo..."
+              showPlaceholder={false}
+            />
+          )}
         </div>
 
         {/* Footer */}
