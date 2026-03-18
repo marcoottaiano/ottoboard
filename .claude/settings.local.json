@@ -18,7 +18,21 @@
       "mcp__playwright__browser_click",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "mcp__a28b3276-81e0-40a9-ab25-34b3938f8549__list_projects",
+      "mcp__a28b3276-81e0-40a9-ab25-34b3938f8549__list_teams",
+      "mcp__a28b3276-81e0-40a9-ab25-34b3938f8549__save_issue",
+      "Bash(ls ~/.claude/skills/analyze*)",
+      "mcp__a28b3276-81e0-40a9-ab25-34b3938f8549__get_issue",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git remote:*)",
+      "Bash(git fetch:*)",
+      "Bash(git reset:*)",
+      "Bash(gh pr:*)"
     ]
   }
 }
