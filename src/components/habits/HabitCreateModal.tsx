@@ -16,7 +16,7 @@ interface HabitCreateModalProps {
 export function HabitCreateModal({ onClose }: HabitCreateModalProps) {
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('')
-  const [color, setColor] = useState(HABIT_COLORS[0].value)
+  const [color, setColor] = useState<string>(HABIT_COLORS[0].value)
   const [targetDays, setTargetDays] = useState<number[]>([...ALL_DAYS])
 
   const createHabit = useCreateHabit()
