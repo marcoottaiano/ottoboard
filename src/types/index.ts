@@ -193,6 +193,37 @@ export interface BodyMeasurement {
 
 export type CreateBodyMeasurementInput = Omit<BodyMeasurement, 'id' | 'user_id' | 'created_at'>
 
+// ─── Financial Goals Types ────────────────────────────────────────────────────
+
+export interface FinancialGoal {
+  id: string
+  user_id: string
+  name: string
+  icon: string | null
+  target_amount: number
+  current_amount: number
+  deadline: string | null   // YYYY-MM-DD
+  color: string | null
+  completed: boolean
+  created_at: string
+}
+
+export type CreateFinancialGoalInput = Omit<FinancialGoal, 'id' | 'user_id' | 'completed' | 'created_at'>
+
+/** Campi modificabili dall'utente via edit form — esclude current_amount e completed */
+export type UpdateFinancialGoalMetadataInput = Partial<
+  Pick<FinancialGoal, 'name' | 'icon' | 'target_amount' | 'deadline' | 'color'>
+>
+
+/** Aggiornamento progresso — usato da GoalUpdateModal */
+export type UpdateFinancialGoalProgressInput = {
+  current_amount: number
+  completed?: boolean
+}
+
+/** Union per il hook generico */
+export type UpdateFinancialGoalInput = UpdateFinancialGoalMetadataInput | UpdateFinancialGoalProgressInput
+
 // ─── UI Types ─────────────────────────────────────────────────────────────────
 
 export type Module = 'fitness' | 'finance' | 'projects'

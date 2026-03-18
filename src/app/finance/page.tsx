@@ -1,5 +1,6 @@
 'use client'
 
+import { GoalsSection } from '@/components/finance/GoalsSection'
 import { BudgetTracker } from '@/components/finance/BudgetTracker'
 import { CategoryManager } from '@/components/finance/CategoryManager'
 import { CSVImport } from '@/components/finance/CSVImport'
@@ -63,6 +64,8 @@ export default function FinancePage() {
         <SpendingPieChart month={selectedMonth} />
         <MonthlyBarChart />
       </div>
+
+      <GoalsSection />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
         <BudgetTracker month={selectedMonth} />
