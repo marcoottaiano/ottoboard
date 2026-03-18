@@ -28,6 +28,7 @@ import { MonthFinanceWidget } from '@/components/home/MonthFinanceWidget'
 import { KanbanColumnWidget } from '@/components/home/KanbanColumnWidget'
 import { TotalBalanceWidget } from '@/components/home/TotalBalanceWidget'
 import { RemindersWidget } from '@/components/home/RemindersWidget'
+import { HabitsWidget } from '@/components/home/HabitsWidget'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +36,7 @@ function getWidgetHref(type: WidgetType): string | undefined {
   if (type === 'month-finance' || type === 'total-balance') return '/finance'
   if (type === 'kanban-column') return '/projects'
   if (type === 'reminders') return undefined
+  if (type === 'habits') return '/habits'
   return '/fitness'
 }
 
@@ -52,6 +54,8 @@ function WidgetRenderer({ widget }: { widget: DashboardWidget }) {
       return <KanbanColumnWidget config={widget.config} />
     case 'reminders':
       return <RemindersWidget />
+    case 'habits':
+      return <HabitsWidget />
     default:
       return null
   }

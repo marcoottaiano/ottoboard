@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Activity, BarChart2, Wallet, PiggyBank, Columns, BellRing } from 'lucide-react'
+import { X, Activity, BarChart2, Wallet, PiggyBank, Columns, BellRing, Target } from 'lucide-react'
 import { useProjects } from '@/hooks/useProjects'
 import { useColumns } from '@/hooks/useColumns'
 import { Select } from '@/components/ui/Select'
@@ -57,6 +57,12 @@ const WIDGET_CATALOGUE: WidgetEntry[] = [
     icon: <BellRing size={20} />,
     label: 'Promemoria',
     description: 'Lista promemoria e scadenze',
+  },
+  {
+    type: 'habits',
+    icon: <Target size={20} />,
+    label: 'Abitudini',
+    description: 'Abitudini di oggi con checklist',
   },
 ]
 
