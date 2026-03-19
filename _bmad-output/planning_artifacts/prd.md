@@ -1,5 +1,5 @@
 ---
-stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional']
+stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional']
 inputDocuments: ['CLAUDE.md', 'README.md', 'package.json', 'Doc/personal_dashboard_PRD.docx']
 workflowType: 'prd'
 documentCounts:
@@ -228,3 +228,23 @@ Ottoboard è un'applicazione Single Page Application (SPA) costruita su Next.js 
 *   **FR22:** The system can isolate user data using a secure multi-tenant architecture (RLS).
 *   **FR23:** The user can manage their personal profile and security settings.
 *   **FR24:** The system can provide an onboarding flow for new users to configure core modules.
+
+## 11. Non-Functional Requirements
+
+### Performance
+* **Response Time:** All local UI interactions (modal openings, filter toggles) must feel instantaneous (< 100ms).
+* **Data Load:** Initial dashboard load with cached data must occur in < 1.5 seconds on 4G/5G networks.
+* **Background Sync:** Synchronization with external APIs (Linear/Strava) must not block the main UI thread.
+
+### Security & Privacy
+* **Data Isolation:** Each user must have exclusive access to their data via Supabase Row Level Security (RLS).
+* **Credential Encryption:** All API keys and OAuth tokens must be encrypted at rest within the database.
+* **Privacy Mode:** The system must support immediate obfuscation of sensitive data for use in public environments.
+
+### Reliability & Integration
+* **Atomic Sync:** Synchronization operations must be atomic; in case of failure, the system must either rollback or flag the data as "incomplete" to prevent inconsistent states.
+* **Integration Resilience:** Core dashboard data (cached) must remain available even when external Linear or Strava APIs are offline.
+* **Token Health:** The system must automatically refresh Strava tokens before expiration in 99% of cases.
+
+### Accessibility
+* **Keyboard First:** All critical actions (logging transactions, completing tasks) must be fully executable via keyboard shortcuts and tab navigation.
