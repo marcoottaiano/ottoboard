@@ -1,0 +1,97 @@
+# generated: 2026-03-19
+# last_updated: 2026-03-19
+# project: ottoboard
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {implementation_artifacts}
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-19
+last_updated: 2026-03-19
+project: ottoboard
+project_key: NOKEY
+tracking_system: file-system
+story_location: {implementation_artifacts}
+
+development_status:
+  # EPIC 1: Trusted Data (PRIORITY: UX GAPS 1.1, 1.2)
+  epic-1: backlog
+  1-1-sync-status-badge-on-affected-widgets: backlog
+  1-2-integration-health-section-in-profile: backlog
+  1-3-force-reconciliation-for-linear: backlog
+  1-4-atomic-bidirectional-linear-sync-via-kanban: backlog
+  1-5-automatic-strava-token-refresh: backlog
+  1-6-integration-token-expiration-warning-banners: backlog
+  epic-1-retrospective: optional
+
+  # EPIC 5: Onboarding (PRIORITY: UX GAP 5.1, 5.2)
+  epic-5: backlog
+  5-1-onboarding-wizard-strava-oauth-connection: backlog
+  5-2-onboarding-wizard-linear-api-key-setup: backlog
+  5-3-profile-security-change-password: backlog
+  5-4-data-isolation-verification-rls: backlog
+  epic-5-retrospective: optional
+
+  # EPIC 2: Push Notifications (PRIORITY: UX GAP 2.1)
+  epic-2: backlog
+  2-1-push-notification-permission-subscription: backlog
+  2-2-scheduled-push-notification-delivery: backlog
+  2-3-recurring-reminder-auto-generation: backlog
+  2-4-in-app-notification-center-fallback: backlog
+  epic-2-retrospective: optional
+
+  # EPIC 3: Actionable Home Dashboard
+  epic-3: backlog
+  3-1-widget-empty-states-with-contextual-ctas: backlog
+  3-2-direct-actions-from-home-widgets: backlog
+  3-3-dashboard-widget-customization-add-remove-reorder: backlog
+  3-4-persist-widget-filters-and-view-states: backlog
+  epic-3-retrospective: optional
+
+  # EPIC 4: Finance Integrity & Intelligence
+  epic-4: backlog
+  4-1-manual-transaction-entry: backlog
+  4-2-csv-import-with-automated-column-mapping: backlog
+  4-3-duplicate-detection-during-csv-import: backlog
+  4-4-monthly-budget-monitoring: backlog
+  4-5-bulk-transaction-operations: backlog
+  4-6-lock-transaction-category: backlog
+  4-7-client-side-spending-insights: backlog
+  epic-4-retrospective: optional
+
+  # EPIC 6: Advanced Fitness Analytics
+  epic-6: backlog
+  6-1-strava-activity-visualization-with-correct-timezone: backlog
+  6-2-body-measurement-recording: backlog
+  6-3-body-composition-charts: backlog
+  6-4-interactive-bodycanvas: backlog
+  6-5-privacy-mode-blur-sensitive-data: backlog
+  epic-6-retrospective: optional
