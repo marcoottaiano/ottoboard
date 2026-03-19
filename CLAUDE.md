@@ -33,7 +33,7 @@
 | Servizio | Auth      | Note                                          |
 | -------- | --------- | --------------------------------------------- |
 | Strava   | OAuth 2.0 | Fetch attività e stats atleta (100 req/15min) |
-| Linear   | API Key   | Sync bidirezionale progetti/issue (Fase 10)   |
+| Linear   | API Key   | Sync bidirezionale progetti/issue              |
 
 ---
 
@@ -43,16 +43,18 @@
 src/
 ├── app/
 │   ├── page.tsx                # Home — widget dashboard configurabile
-│   ├── fitness/page.tsx        # Modulo allenamento
+│   ├── fitness/page.tsx        # Modulo allenamento (Tab Strava + Tab Corpo)
 │   ├── finance/page.tsx        # Modulo finanze
-│   ├── projects/page.tsx       # Modulo progetti (kanban)
-│   └── profile/page.tsx        # Profilo utente + integrazioni (Fase 6)
+│   ├── projects/page.tsx       # Modulo progetti (kanban + Linear)
+│   ├── habits/page.tsx         # Modulo abitudini
+│   └── profile/page.tsx        # Profilo utente + integrazioni
 ├── components/
 │   ├── ui/                     # Componenti base (Button, Card, Select, GlobalLoadingBar...)
-│   ├── fitness/                # LastActivityCard, WeekStatsCard, WeeklyVolumeChart, ActivityHeatmap...
+│   ├── fitness/                # LastActivityCard, WeekStatsCard, WeeklyVolumeChart, ActivityHeatmap, BodyCanvas, BodyMeasurementsTab...
 │   ├── finance/                # MonthlyHeader, TransactionForm, SpendingPieChart...
-│   ├── projects/               # KanbanBoard, TaskCard, ProjectSidebar, MobileProjectBar...
-│   └── home/                   # WidgetShell, AddWidgetModal, MonthFinanceWidget, TotalBalanceWidget, KanbanColumnWidget...
+│   ├── projects/               # KanbanBoard, TaskCard, ProjectSidebar, MobileProjectBar, LinearNotConnectedBanner...
+│   ├── habits/                 # HabitsContent, HabitRow, HabitCreateModal, HabitEditModal, HabitHeatmap
+│   └── home/                   # WidgetShell, AddWidgetModal, MonthFinanceWidget, TotalBalanceWidget, KanbanColumnWidget, RemindersWidget...
 ├── hooks/                      # Custom hooks per ogni modulo
 ├── lib/
 │   ├── supabase/               # Client, types generati
@@ -231,6 +233,7 @@ config    JSONB           -- { projectId, columnId } per kanban-column
 | `month-finance` | `MonthFinanceWidget` | `/finance`   |
 | `total-balance` | `TotalBalanceWidget` | `/finance`   |
 | `kanban-column` | `KanbanColumnWidget` | `/projects`  |
+| `reminders`     | `RemindersWidget`    | (home only)  |
 
 ### Pattern `bare`
 
@@ -252,12 +255,12 @@ Wrapper DnD per ogni widget: drag handle, "Vai alla sezione", configura (solo ka
 
 - Sidebar fissa a sinistra su desktop (collassabile a icone)
 - Bottom navigation su mobile
-- Routes: `/` (home), `/fitness`, `/finance`, `/projects`, `/profile` (Fase 6)
+- Routes: `/` (home), `/fitness`, `/finance`, `/projects`, `/habits`, `/profile`
 
 ### Theme
 
 - Dark mode by default (toggle disponibile)
-- Colore per modulo: `orange` fitness / `green` finance / `purple` projects
+- Colore per modulo: `orange` fitness / `emerald` finance / `purple` projects / `teal` habits / `sky` profile
 - Font: Geist (incluso in Next.js 14)
 
 ---
@@ -302,9 +305,10 @@ Wrapper DnD per ogni widget: drag handle, "Vai alla sezione", configura (solo ka
 | **Fase 6**  | Profilo              | ✅    | Pagina profilo: cambio password, gestione integrazione Strava multi-utente                                        |
 | **Fase 7**  | Auth                 | ✅    | Registrazione, reset password, onboarding nuovo utente, test multi-account                                        |
 | **Fase 8**  | PWA                  | ✅    | App installabile: manifest, service worker, icone, offline fallback                                               |
-| **Fase 9**  | Misurazioni corporee | 🔜    | Tab misurazioni in /fitness: peso, plicometrie, circonferenze, composizione corporea, grafici, canvas interattivo |
-| **Fase 10** | Linear + Reminders   | 🔜    | Sync bidirezionale Linear in /projects, setup integrazione in /profile, widget Reminders in home                  |
-| **Fase 11** | Notifiche Push       | 🔜    | Push notifications PWA per i promemoria: richiesta permesso, service worker, scheduling, gestione dal profilo      |
+| **Fase 9**  | Misurazioni corporee | ✅    | Tab misurazioni in /fitness: peso, plicometrie, circonferenze, composizione corporea, grafici, canvas interattivo |
+| **Fase 10** | Linear + Reminders   | ✅    | Sync bidirezionale Linear in /projects, setup integrazione in /profile, widget Reminders in home                  |
+| **Fase 11** | Notifiche Push       | ✅    | Push notifications PWA per i promemoria: richiesta permesso, service worker, scheduling, gestione dal profilo      |
+| **Fase 12** | Abitudini            | ✅    | Modulo /habits: tracciamento abitudini giornaliere, heatmap completamenti, schedule per giorno della settimana    |
 
 ---
 
@@ -831,3 +835,36 @@ web-push   # libreria Node.js per inviare push — usata nelle API routes e Edge
 - VAPID keys generate una volta sola (`web-push generateVAPIDKeys()`) e salvate come env vars su Vercel.
 - La Edge Function scheduled va configurata in Supabase dashboard (cron: `0 * * * *` per ogni ora intera).
 - Su iOS Safari (PWA installata), le Push Notifications sono supportate da iOS 16.4+. Su versioni precedenti mostrare un fallback in-app.
+
+---
+
+## Fase 12 — Abitudini (✅ Completata)
+
+### Obiettivo
+
+Modulo `/habits` per il tracciamento delle abitudini quotidiane. L'utente definisce abitudini con un nome, un'icona e i giorni della settimana in cui è programmata, e le spunta ogni giorno.
+
+### Route & Colore
+
+- Route: `/habits`
+- Colore modulo: `teal-400/500`
+- Icona sidebar: `Target` (Lucide)
+- Label: "Abitudini"
+
+### UI — Componenti
+
+- `HabitsContent` — container principale: header con pulsante "Nuova", heatmap, lista abitudini di oggi, lista tutte le abitudini
+- `HabitRow` — singola riga con checkbox completamento, nome, icona, pulsante edit
+- `HabitHeatmap` — griglia calendar heatmap completamenti (stile GitHub)
+- `HabitCreateModal` — form creazione: nome, icona, giorni target (checkbox settimana)
+- `HabitEditModal` — form modifica/eliminazione
+- `useHabits` — hook React Query: fetch abitudini con stats
+- `useToggleCompletion` — mutation toggle completamento per data
+
+### Logica
+
+- `target_days`: array di ISO weekday (1=Lun … 7=Dom) — filtra quali abitudini mostrare oggi
+- Oggi: solo le abitudini schedulate per il giorno corrente (`getIsoWeekday()`)
+- Ordinamento lista: non completate prima, poi per nome
+- Completamento: optimistic update con `togglingId` per evitare doppi click
+- Heatmap: griglia anno con intensità basata sul numero di abitudini completate quel giorno
