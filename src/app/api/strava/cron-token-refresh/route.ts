@@ -32,31 +32,50 @@ export async function GET(request: Request) {
   const errors: string[] = []
 
   for (const tokenRow of tokens) {
+    let newToken: Awaited<ReturnType<typeof refreshStravaToken>> | null = null
+
+    // P1/P2: separate refresh errors from DB update errors
     try {
-      const newToken = await refreshStravaToken(tokenRow.refresh_token)
-
-      const { error: updateError } = await supabase
-        .from('strava_tokens')
-        .update({
-          access_token: newToken.access_token,
-          refresh_token: newToken.refresh_token,
-          expires_at: new Date(newToken.expires_at * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', tokenRow.user_id)
-
-      if (updateError) throw updateError
-      refreshedCount++
-    } catch (err) {
-      // Log failure — must pass user_id explicitly (no RLS session in service role context)
-      await supabase.from('integration_error_logs').insert({
+      newToken = await refreshStravaToken(tokenRow.refresh_token)
+    } catch (refreshErr) {
+      // Only a 401/revoked refresh token should be TOKEN_REVOKED; all other errors are REFRESH_FAILED
+      const msg = refreshErr instanceof Error ? refreshErr.message : String(refreshErr)
+      const isRevoked = msg.includes('401') || msg.toLowerCase().includes('revoked') || msg.toLowerCase().includes('unauthorized')
+      const { error: logErr } = await supabase.from('integration_error_logs').insert({
         user_id: tokenRow.user_id,
         service: 'strava',
-        error_message: 'Strava Token Refresh: Re-authentication required — refresh token revoked',
-        error_code: 'TOKEN_REVOKED',
+        error_message: `Strava Token Refresh: ${isRevoked ? 'Re-authentication required — refresh token revoked' : `Errore temporaneo — ${msg}`}`,
+        error_code: isRevoked ? 'TOKEN_REVOKED' : 'REFRESH_FAILED',
       })
+      if (logErr) console.error('[cron-token-refresh] failed to log error for user', tokenRow.user_id, logErr.message)
       errors.push(tokenRow.user_id)
+      continue
     }
+
+    // P2: DB update failure is separate from token revocation
+    const { error: updateError } = await supabase
+      .from('strava_tokens')
+      .update({
+        access_token: newToken.access_token,
+        refresh_token: newToken.refresh_token,
+        expires_at: new Date(newToken.expires_at * 1000).toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', tokenRow.user_id)
+
+    if (updateError) {
+      const { error: logErr } = await supabase.from('integration_error_logs').insert({
+        user_id: tokenRow.user_id,
+        service: 'strava',
+        error_message: `Strava Token Refresh: token rinnovato ma salvataggio fallito — ${updateError.message}`,
+        error_code: 'DB_UPDATE_FAILED',
+      })
+      if (logErr) console.error('[cron-token-refresh] failed to log DB error for user', tokenRow.user_id, logErr.message)
+      errors.push(tokenRow.user_id)
+      continue
+    }
+
+    refreshedCount++
   }
 
   return NextResponse.json({ refreshed: refreshedCount, errors: errors.length })

@@ -38,10 +38,14 @@ export function StravaIntegrationCard() {
 
   const { data: health } = useIntegrationHealth()
 
-  // Detect re-auth required: most recent strava error has error_code TOKEN_REVOKED
+  // Detect re-auth required: most recent strava log (index 0, ordered desc) is TOKEN_REVOKED
+  // and occurred after the last successful sync (prevents stale historical logs triggering re-auth)
+  const mostRecentStravaLog = (health?.strava ?? [])[0]
   const requiresReAuth =
     isConnected &&
-    (health?.strava ?? []).some((log) => log.error_code === 'TOKEN_REVOKED')
+    health !== undefined &&
+    mostRecentStravaLog?.error_code === 'TOKEN_REVOKED' &&
+    (!lastSyncedAt || new Date(mostRecentStravaLog.occurred_at) > new Date(lastSyncedAt))
 
   return (
     <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5 space-y-4">
@@ -94,7 +98,7 @@ export function StravaIntegrationCard() {
         <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-3 space-y-2">
           <div className="flex items-center gap-2 text-amber-400 text-xs font-medium">
             <ShieldAlert size={13} className="shrink-0" />
-            Re-authentication required
+            Strava: Re-authentication required
           </div>
           <p className="text-xs text-white/40 leading-snug">
             Il token di accesso Strava è scaduto e non può essere rinnovato automaticamente.
@@ -109,7 +113,7 @@ export function StravaIntegrationCard() {
         </div>
       )}
 
-      {!isLoading && isConnected && (
+      {!isLoading && isConnected && !requiresReAuth && (
         <div className="space-y-3">
           {/* Info connessione */}
           <div className="space-y-1.5 text-xs text-white/40">
