@@ -35,7 +35,8 @@
       "Bash(gh pr:*)",
       "mcp__aeeda266-3088-4c95-82ef-9edbd5c5432a__list_projects",
       "mcp__aeeda266-3088-4c95-82ef-9edbd5c5432a__apply_migration",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "mcp__aeeda266-3088-4c95-82ef-9edbd5c5432a__execute_sql"
     ]
   }
 }
