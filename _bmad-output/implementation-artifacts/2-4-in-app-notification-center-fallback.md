@@ -1,6 +1,6 @@
 # Story 2.4: In-App Notification Center Fallback
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -24,12 +24,12 @@ So that I can still review and act on my reminders even without system-level pus
 
 ## Tasks / Subtasks
 
-- [ ] Update empty state in `RemindersWidget.tsx` to match AC3 (AC: 3)
-  - [ ] Change text from "Nessun promemoria in sospeso" to "Nessun promemoria in scadenza"
-  - [ ] Replace plain text with an actionable empty state including `[+ Aggiungi]` button that opens `ReminderCreateModal`
-- [ ] Verify overdue visual in `ReminderRow.tsx` is sufficient for AC2 (AC: 2)
-  - [ ] Confirm `text-red-400` on title + date span — no additional badge needed
-- [ ] Verify `usePendingReminders` sorts by `due_date` ASC (AC: 1) — confirm no change needed
+- [x] Update empty state in `RemindersWidget.tsx` to match AC3 (AC: 3)
+  - [x] Change text from "Nessun promemoria in sospeso" to "Nessun promemoria in scadenza"
+  - [x] Replace plain text with an actionable empty state including `[+ Aggiungi]` button that opens `ReminderCreateModal`
+- [x] Verify overdue visual in `ReminderRow.tsx` is sufficient for AC2 (AC: 2)
+  - [x] Confirm `text-red-400` on title + date span — no additional badge needed
+- [x] Verify `usePendingReminders` sorts by `due_date` ASC (AC: 1) — confirm no change needed
 
 ## Dev Notes
 
@@ -128,6 +128,15 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+(none)
+
 ### Completion Notes List
 
+- AC1 verified: `usePendingReminders` already uses `.order('due_date', { ascending: true })` — no change needed.
+- AC2 verified: `ReminderRow` already applies `text-red-400` to title and date for overdue items via `isOverdue()` — no change needed.
+- AC3 implemented: updated empty state in `RemindersWidget.tsx` — changed text to "Nessun promemoria in scadenza" and added `[+ Aggiungi promemoria]` button using existing `setShowCreate(true)` state, styled with `text-purple-400` consistent with widget header accent color.
+- TypeScript compilation passes with no errors.
+
 ### File List
+
+- src/components/home/RemindersWidget.tsx (modified)

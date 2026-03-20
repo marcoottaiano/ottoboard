@@ -1,6 +1,6 @@
 # Story 2.3: Recurring Reminder Auto-Generation
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -25,12 +25,12 @@ So that I don't have to manually recreate recurring reminders each time.
 
 ## Tasks / Subtasks
 
-- [ ] Fix `calcNextDueDate` monthly edge case in `src/hooks/useReminders.ts` (AC: 2)
-  - [ ] Replace current `d.setMonth(d.getMonth() + 1)` with day-clamping logic
-  - [ ] Clamp to last day of target month when original day > days in target month
-- [ ] Verify `useCompleteReminder` inserts new reminder with `notified_at` implicitly NULL (AC: 1)
-  - [ ] Confirm `notified_at` is NOT included in the insert payload → DB DEFAULT = NULL ✅
-- [ ] Verify rollback logic on failed insert still works after the fix (AC: 1)
+- [x] Fix `calcNextDueDate` monthly edge case in `src/hooks/useReminders.ts` (AC: 2)
+  - [x] Replace current `d.setMonth(d.getMonth() + 1)` with day-clamping logic
+  - [x] Clamp to last day of target month when original day > days in target month
+- [x] Verify `useCompleteReminder` inserts new reminder with `notified_at` implicitly NULL (AC: 1)
+  - [x] Confirm `notified_at` is NOT included in the insert payload → DB DEFAULT = NULL ✅
+- [x] Verify rollback logic on failed insert still works after the fix (AC: 1)
 
 ## Dev Notes
 
@@ -157,6 +157,19 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+(none)
+
 ### Completion Notes List
 
+- Fixed `calcNextDueDate` monthly case: replaced bare `d.setMonth(d.getMonth() + 1)` with day-clamping logic that sets day to 1 before advancing month, then clamps to the last valid day of the target month. Prevents JS rollover (e.g. Jan 31 → Mar 3) and correctly produces Jan 31 → Feb 28/29, Mar 31 → Apr 30.
+- Verified (no change needed): `useCompleteReminder` insert payload correctly omits `notified_at` and `completed`, so both default to NULL/false via DB schema defaults. AC1 satisfied.
+- Verified (no change needed): Rollback logic on failed insert correctly reverts `completed = false` and `completed_at = null` on the original reminder. AC1 satisfied.
+- TypeScript check (`tsc --noEmit`) passes with no errors.
+
 ### File List
+
+- src/hooks/useReminders.ts
+
+### Change Log
+
+- 2026-03-21: Fixed monthly recurrence date rollover bug in `calcNextDueDate` — added day-clamping logic for `'monthly'` case (AC: 2)

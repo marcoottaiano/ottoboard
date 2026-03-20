@@ -1,6 +1,6 @@
 # Story 2.2: Scheduled Push Notification Delivery
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -29,18 +29,18 @@ So that I never miss a scheduled reminder.
 
 ## Tasks / Subtasks
 
-- [ ] Add `reminders.notified_at` column via migration if not yet present (AC: 2)
-  - [ ] Check if column exists: query `information_schema.columns` or run `supabase db diff`
-  - [ ] If missing: create `supabase/migrations/<timestamp>_reminders_notified_at.sql`
-- [ ] Fix `src/app/api/notifications/cron/route.ts` query logic to match AC (AC: 1, 2, 3)
-  - [ ] Replace current `lte('due_date', today)` single-query approach with two-bucket logic
-  - [ ] Bucket A (due_time set): `due_date = today AND due_time >= NOW() AND due_time < NOW() + 1h AND notified_at IS NULL AND completed = false`
-  - [ ] Bucket B (due_time null): `due_date = today AND due_time IS NULL AND notified_at IS NULL AND completed = false` — only send if current UTC hour = 9 (or configured hour)
-  - [ ] Bucket C (overdue): `due_date < today AND notified_at IS NULL AND completed = false` — send regardless of time
-  - [ ] Confirm 410 handling deletes subscription row ✅ (already implemented)
-  - [ ] Confirm batch `notified_at` update ✅ (already implemented)
-- [ ] Update `vercel.json` cron schedule from `0 7 * * *` → `0 * * * *` (AC: 1, 3)
-- [ ] Verify cron auth env var alignment (`PUSH_NOTIFICATIONS_SECRET` vs Vercel `CRON_SECRET`)
+- [x] Add `reminders.notified_at` column via migration if not yet present (AC: 2)
+  - [x] Check if column exists: query `information_schema.columns` or run `supabase db diff`
+  - [x] If missing: create `supabase/migrations/<timestamp>_reminders_notified_at.sql`
+- [x] Fix `src/app/api/notifications/cron/route.ts` query logic to match AC (AC: 1, 2, 3)
+  - [x] Replace current `lte('due_date', today)` single-query approach with two-bucket logic
+  - [x] Bucket A (due_time set): `due_date = today AND due_time >= NOW() AND due_time < NOW() + 1h AND notified_at IS NULL AND completed = false`
+  - [x] Bucket B (due_time null): `due_date = today AND due_time IS NULL AND notified_at IS NULL AND completed = false` — only send if current UTC hour = 9 (or configured hour)
+  - [x] Bucket C (overdue): `due_date < today AND notified_at IS NULL AND completed = false` — send regardless of time
+  - [x] Confirm 410 handling deletes subscription row ✅ (already implemented)
+  - [x] Confirm batch `notified_at` update ✅ (already implemented)
+- [x] Update `vercel.json` cron schedule from `0 7 * * *` → `0 * * * *` (AC: 1, 3)
+- [x] Verify cron auth env var alignment (`PUSH_NOTIFICATIONS_SECRET` vs Vercel `CRON_SECRET`)
 
 ## Dev Notes
 
@@ -184,6 +184,27 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+- `notified_at` column: confirmed present in `supabase/migrations/20260321000000_push_subscriptions_and_reminders_notified_at.sql` — no new migration needed.
+- 410 handling: existing code deleted by `user_id`; updated to delete by `endpoint` to be more precise (prevents deleting valid subscriptions for the same user on other devices).
+
 ### Completion Notes List
 
+- Task 1: `reminders.notified_at` column already covered by existing migration `20260321000000_push_subscriptions_and_reminders_notified_at.sql` (uses `IF NOT EXISTS`). No new migration required.
+- Task 2: Replaced single broad query in `cron/route.ts` with three-bucket logic:
+  - Bucket A: timed reminders with `due_time` in the current UTC hour window
+  - Bucket B: untimed reminders (`due_time IS NULL`), sent only at `NOTIFY_HOUR_UTC = 7` (≈9 AM CET)
+  - Bucket C: overdue reminders (`due_date < today`), always sent
+  - Fixed date string to use UTC methods (avoids off-by-one bug in CET/CEST)
+  - Improved 410 cleanup: now deletes by `endpoint` (not `user_id`) to avoid removing valid subscriptions on other devices
+  - Added comment documenting `PUSH_NOTIFICATIONS_SECRET` = `CRON_SECRET` alignment (Option A, no code change)
+- Task 3: Updated `vercel.json` cron from `0 7 * * *` → `0 * * * *` (runs every hour at :00)
+- Task 4: Verified auth alignment — comment added in code; Vercel env var alignment is an ops task, documented clearly
+
 ### File List
+
+- `src/app/api/notifications/cron/route.ts` (modified)
+- `vercel.json` (modified)
+
+## Change Log
+
+- 2026-03-21: Implemented story 2.2 — fixed hourly cron query logic with three-bucket approach (Bucket A: timed window, Bucket B: null-time at UTC 7, Bucket C: overdue), updated vercel.json cron to hourly schedule, documented PUSH_NOTIFICATIONS_SECRET/CRON_SECRET alignment.

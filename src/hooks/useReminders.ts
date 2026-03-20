@@ -19,9 +19,14 @@ function calcNextDueDate(dueDate: string, recurrence: ReminderRecurrence): strin
     case 'weekly':
       d.setDate(d.getDate() + 7)
       break
-    case 'monthly':
-      d.setMonth(d.getMonth() + 1)
+    case 'monthly': {
+      const origDay = d.getDate()
+      d.setDate(1)                          // prevent overflow during month change
+      d.setMonth(d.getMonth() + 1)          // advance month safely
+      const lastDayOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+      d.setDate(Math.min(origDay, lastDayOfMonth))  // clamp to last valid day
       break
+    }
     case 'yearly':
       d.setFullYear(d.getFullYear() + 1)
       break

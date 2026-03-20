@@ -43,7 +43,15 @@ export function RemindersWidget() {
           ))}
         </div>
       ) : pending.length === 0 ? (
-        <p className="text-xs text-gray-600">Nessun promemoria in sospeso</p>
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-xs text-gray-600">Nessun promemoria in scadenza</p>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+          >
+            + Aggiungi promemoria
+          </button>
+        </div>
       ) : (
         <div className="max-h-64 overflow-y-auto divide-y divide-white/5">
           {pending.map((r) => (
