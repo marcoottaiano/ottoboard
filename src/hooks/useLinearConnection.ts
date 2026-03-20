@@ -23,11 +23,12 @@ interface SyncResult {
 const STATUS_KEY = ['linear-status']
 const TEAMS_KEY = ['linear-teams']
 
-export function useLinearConnection() {
+export function useLinearConnection(options?: { enabled?: boolean }) {
   const queryClient = useQueryClient()
 
   const statusQuery = useQuery<LinearStatus>({
     queryKey: STATUS_KEY,
+    enabled: options?.enabled ?? true,
     queryFn: async () => {
       const res = await fetch('/api/linear/status')
       return res.json()
@@ -107,6 +108,7 @@ export function useLinearConnection() {
   return {
     isConnected,
     isLoading: statusQuery.isLoading,
+    isConnectionError: statusQuery.isError,
     selectedTeamId: statusQuery.data?.selectedTeamId,
     selectedTeamName: statusQuery.data?.selectedTeamName,
     lastSyncedAt: statusQuery.data?.lastSyncedAt,
