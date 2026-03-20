@@ -15,7 +15,5 @@ export function useLinearIssueUpdate() {
         throw new Error(data.error ?? 'Errore aggiornamento Linear')
       }
     },
-    // Fire-and-forget: failures don't roll back local state (next sync corrects divergences)
-    onError: () => {},
   })
 }
