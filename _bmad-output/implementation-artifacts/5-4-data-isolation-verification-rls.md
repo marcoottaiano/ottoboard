@@ -3,7 +3,7 @@
 **Epic:** 5 — Beta User Self-Onboarding & Profile Management
 **Story ID:** 5.4
 **Story Key:** `5-4-data-isolation-verification-rls`
-**Status:** ready-for-dev
+**Status:** review
 **Created:** 2026-03-20
 
 ---
@@ -323,17 +323,17 @@ This story produces **zero changes** to TypeScript/Next.js application code. All
 
 ## Tasks
 
-- [ ] **Task 1**: Run RLS audit SQL query via Supabase MCP `execute_sql` — identify all tables missing RLS or policies
-- [ ] **Task 2**: Run `user_id` DEFAULT check via `execute_sql` — identify tables missing `DEFAULT auth.uid()`
-- [ ] **Task 3**: Investigate `budgets` table — determine if `user_id` column exists and policy is present
-- [ ] **Task 4**: Apply migrations for all identified gaps:
-  - [ ] 4a. Group A tables missing RLS/policy (if any)
-  - [ ] 4b. `columns` table — subquery RLS via `project_id`
-  - [ ] 4c. `tasks` table — subquery RLS via `project_id`
-  - [ ] 4d. `budgets` table — based on finding in Task 3
-- [ ] **Task 5**: Re-run audit query to confirm all gaps are resolved
-- [ ] **Task 6**: Run `npm run build` — confirm zero TypeScript errors
-- [ ] **Task 7**: Document verified table list in Completion Notes
+- [x] **Task 1**: Run RLS audit SQL query via Supabase MCP `execute_sql` — identify all tables missing RLS or policies
+- [x] **Task 2**: Run `user_id` DEFAULT check via `execute_sql` — identify tables missing `DEFAULT auth.uid()`
+- [x] **Task 3**: Investigate `budgets` table — determine if `user_id` column exists and policy is present
+- [x] **Task 4**: Apply migrations for all identified gaps:
+  - [x] 4a. Group A tables missing RLS/policy (if any) — all had RLS enabled; fixed `WITH CHECK` on 8 tables
+  - [x] 4b. `columns` table — had `user_id` directly (not FK-based); fixed `WITH CHECK` + `DEFAULT`
+  - [x] 4c. `tasks` table — had `user_id` directly (not FK-based); fixed `WITH CHECK` + `DEFAULT`
+  - [x] 4d. `budgets` table — had `user_id` + policy; fixed `WITH CHECK` + `DEFAULT`
+- [x] **Task 5**: Re-run audit query to confirm all gaps are resolved
+- [x] **Task 6**: Run `npm run build` — confirm zero TypeScript errors
+- [x] **Task 7**: Document verified table list in Completion Notes
 
 ---
 
@@ -345,8 +345,60 @@ Claude Sonnet 4.6
 
 ### Debug Log References
 
+_None — no blocking issues encountered._
+
 ### Completion Notes List
+
+**RLS Audit Results (2026-03-20):**
+
+All 19 user-owned tables in public schema were audited. Pre-existing state:
+- ✅ All tables had `rls_enabled = true` — no table was fully unprotected
+- ❌ 8 tables were missing `WITH CHECK` clause: `activities`, `budgets`, `categories`, `columns`, `projects`, `strava_tokens`, `tasks`, `transactions`
+- ❌ 11 tables were missing `DEFAULT auth.uid()`: `activities`, `budgets`, `categories`, `columns`, `linear_tokens`, `projects`, `push_subscriptions`, `strava_tokens`, `tasks`, `transactions`, `user_body_profile`
+
+**Note on `columns` and `tasks`:** The story assumed these tables had no `user_id` column and required FK-based subquery policies. In practice, both tables have a direct `user_id` column with a simple policy. The direct approach was retained (more efficient) and `WITH CHECK` was added.
+
+**Note on `budgets`:** The story flagged this as "investigate first". The table has a `user_id` column with a direct policy — only needed `WITH CHECK` + `DEFAULT` (Option B).
+
+**Migration applied:** `20260320120000_rls_fix_with_check_and_defaults.sql`
+- 8 `ALTER POLICY` statements to add `WITH CHECK (auth.uid() = user_id)`
+- 11 `ALTER TABLE ... SET DEFAULT auth.uid()` statements
+
+**Post-migration state:** All 19 tables confirmed:
+- `rls_enabled = true` ✅
+- Policy with both `USING (auth.uid() = user_id)` AND `WITH CHECK (auth.uid() = user_id)` ✅
+- `DEFAULT auth.uid()` on all `user_id` columns ✅
+
+**Build:** `npm run build` — ✅ zero TypeScript errors (no application code changes, SQL-only story)
+
+**Verified table list:**
+
+| Table | RLS | Policy | WITH CHECK | DEFAULT auth.uid() |
+|-------|-----|--------|------------|-------------------|
+| `activities` | ✅ | `own_activities` | ✅ fixed | ✅ fixed |
+| `body_measurements` | ✅ | `own measurements` | ✅ was ok | ✅ was ok |
+| `budgets` | ✅ | `own_budgets` | ✅ fixed | ✅ fixed |
+| `categories` | ✅ | `own_categories` | ✅ fixed | ✅ fixed |
+| `columns` | ✅ | `own_columns` | ✅ fixed | ✅ fixed |
+| `dashboard_widgets` | ✅ | `own_widgets` | ✅ was ok | ✅ was ok |
+| `financial_goals` | ✅ | `Users can only see their own financial goals` | ✅ was ok | ✅ was ok |
+| `habit_completions` | ✅ | `completions_user` | ✅ was ok | ✅ was ok |
+| `habits` | ✅ | `habits_user` | ✅ was ok | ✅ was ok |
+| `integration_error_logs` | ✅ | `Users can only see their own integration error logs` | ✅ was ok | ✅ was ok |
+| `linear_tokens` | ✅ | `linear_tokens: own rows only` | ✅ was ok | ✅ fixed |
+| `projects` | ✅ | `own_projects` | ✅ fixed | ✅ fixed |
+| `push_subscriptions` | ✅ | `Users manage own subscription` | ✅ was ok | ✅ fixed |
+| `recurring_transactions` | ✅ | `Users can only see their own recurring transactions` | ✅ was ok | ✅ was ok |
+| `reminders` | ✅ | `reminders: own rows only` | ✅ was ok | ✅ was ok |
+| `strava_tokens` | ✅ | `own_tokens` | ✅ fixed | ✅ fixed |
+| `tasks` | ✅ | `own_tasks` | ✅ fixed | ✅ fixed |
+| `transactions` | ✅ | `own_transactions` | ✅ fixed | ✅ fixed |
+| `user_body_profile` | ✅ | `own profile` | ✅ was ok | ✅ fixed |
 
 ### File List
 
+- `supabase/migrations/20260320120000_rls_fix_with_check_and_defaults.sql` (new)
+
 ## Change Log
+
+- 2026-03-20: RLS audit completed. Applied migration `20260320120000_rls_fix_with_check_and_defaults.sql` — fixed `WITH CHECK` on 8 policies, added `DEFAULT auth.uid()` on 11 tables. Zero application code changes. Build passes.

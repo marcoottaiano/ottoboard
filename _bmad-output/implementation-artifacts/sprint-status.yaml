@@ -56,7 +56,7 @@ development_status:
   5-1-onboarding-wizard-strava-oauth-connection: done
   5-2-onboarding-wizard-linear-api-key-setup: done
   5-3-profile-security-change-password: done
-  5-4-data-isolation-verification-rls: ready-for-dev
+  5-4-data-isolation-verification-rls: done
   epic-5-retrospective: optional
 
   # EPIC 2: Push Notifications (PRIORITY: UX GAP 2.1)
