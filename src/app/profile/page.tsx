@@ -6,6 +6,7 @@ import { StravaIntegrationCard } from '@/components/profile/StravaIntegrationCar
 import { LinearIntegrationCard } from '@/components/profile/LinearIntegrationCard'
 import { NotificationsCard } from '@/components/profile/NotificationsCard'
 import { BodyProfileSection } from '@/components/profile/BodyProfileSection'
+import { IntegrationHealthSection } from '@/components/profile/IntegrationHealthSection'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,6 +43,9 @@ export default async function ProfilePage() {
             <NotificationsCard />
           </div>
         </div>
+
+        {/* Salute Integrazioni */}
+        <IntegrationHealthSection />
       </div>
     </main>
   )
