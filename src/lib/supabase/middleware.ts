@@ -27,8 +27,11 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/auth')
-  const isProtectedRoute = !isAuthRoute && !request.nextUrl.pathname.startsWith('/_next')
+  const pathname = request.nextUrl.pathname
+  const isAuthRoute = pathname.startsWith('/auth')
+  const isApiRoute = pathname.startsWith('/api')
+  const isOnboardingRoute = pathname === '/onboarding' || pathname.startsWith('/onboarding/')
+  const isProtectedRoute = !isAuthRoute && !pathname.startsWith('/_next')
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()
@@ -36,10 +39,19 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  if (user && request.nextUrl.pathname === '/auth/login') {
+  if (user && pathname === '/auth/login') {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
+  }
+
+  // Onboarding gate: utente autenticato senza onboarding completato → /onboarding
+  if (user && !isOnboardingRoute && !isAuthRoute && !isApiRoute) {
+    if (!user.app_metadata?.onboarding_completed_at) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/onboarding'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse
