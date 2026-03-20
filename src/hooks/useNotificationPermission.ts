@@ -35,7 +35,7 @@ export function useNotificationPermission() {
     queryKey: STATUS_KEY,
     queryFn: async () => {
       const res = await fetch('/api/notifications/status')
-      if (!res.ok) return { subscribed: false }
+      if (!res.ok) throw new Error('Failed to fetch notification status')
       return res.json()
     },
     enabled: isSupported,
@@ -47,15 +47,15 @@ export function useNotificationPermission() {
     try {
       const perm = await Notification.requestPermission()
       setPermission(perm)
-      if (perm !== 'granted') return
+      if (perm !== 'granted') {
+        toast.info('Permesso notifiche non concesso')
+        return
+      }
 
       const swTimeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Service worker non disponibile. Apri l\'app dal browser dopo averla installata come PWA.')), 5000)
       )
       const reg = await Promise.race([navigator.serviceWorker.ready, swTimeout])
-
-      const existing = await reg.pushManager.getSubscription()
-      if (existing) await existing.unsubscribe()
 
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
       if (!vapidKey) throw new Error('VAPID key non configurata')
@@ -97,6 +97,9 @@ export function useNotificationPermission() {
       await fetch('/api/notifications/subscribe', { method: 'DELETE' })
       queryClient.invalidateQueries({ queryKey: STATUS_KEY })
       toast.success('Notifiche disattivate')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Errore durante la disattivazione'
+      toast.error(msg)
     } finally {
       setIsUnsubscribing(false)
     }

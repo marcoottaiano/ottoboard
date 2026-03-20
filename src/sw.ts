@@ -2,7 +2,12 @@
 declare const self: ServiceWorkerGlobalScope
 
 self.addEventListener('push', (event) => {
-  const data = event.data?.json() ?? {}
+  let data: { title?: string; body?: string; url?: string } = {}
+  try {
+    data = event.data?.json() ?? {}
+  } catch {
+    // malformed payload — show generic notification
+  }
   event.waitUntil(
     self.registration.showNotification(data.title ?? 'Ottoboard', {
       body: data.body ?? '',
@@ -19,8 +24,8 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const client of list) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          return (client as WindowClient).focus()
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          return (client as WindowClient).focus().then(() => client.navigate(url))
         }
       }
       return self.clients.openWindow(url)
