@@ -3,6 +3,8 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Zap, ArrowRight, LayoutDashboard, CheckCircle2, AlertCircle } from "lucide-react";
+import Image from "next/image";
+
 function OnboardingContent() {
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
@@ -34,14 +36,17 @@ function OnboardingContent() {
   };
 
   const completeOnboarding = async (): Promise<boolean> => {
-    const res = await fetch('/api/onboarding/complete', { method: 'POST' })
-    return res.ok
-  }
+    const res = await fetch("/api/onboarding/complete", { method: "POST" });
+    return res.ok;
+  };
 
   const handleSkip = async () => {
-    setCompleteError(false)
-    const ok = await completeOnboarding()
-    if (!ok) { setCompleteError(true); return }
+    setCompleteError(false);
+    const ok = await completeOnboarding();
+    if (!ok) {
+      setCompleteError(true);
+      return;
+    }
     router.push("/");
   };
 
@@ -55,9 +60,12 @@ function OnboardingContent() {
   };
 
   const handleContinueFromStrava = async () => {
-    setCompleteError(false)
-    const ok = await completeOnboarding()
-    if (!ok) { setCompleteError(true); return }
+    setCompleteError(false);
+    const ok = await completeOnboarding();
+    if (!ok) {
+      setCompleteError(true);
+      return;
+    }
     router.push("/");
   };
 
@@ -72,9 +80,7 @@ function OnboardingContent() {
       <div className="w-full max-w-sm relative">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-purple-500 to-emerald-500 flex items-center justify-center">
-            <span className="text-sm font-black text-white">OB</span>
-          </div>
+          <Image src="/icon.png" alt="Ottoboard Logo" width={32} height={32} className="text-white/80" />
           <span className="text-lg font-semibold text-white/90 tracking-wide">Ottoboard</span>
         </div>
 
@@ -85,11 +91,7 @@ function OnboardingContent() {
           ))}
         </div>
 
-        {completeError && (
-          <p className="text-xs text-red-400/80 text-center mb-4">
-            Errore di rete. Riprova tra qualche secondo.
-          </p>
-        )}
+        {completeError && <p className="text-xs text-red-400/80 text-center mb-4">Errore di rete. Riprova tra qualche secondo.</p>}
 
         <div className="bg-white/[0.04] backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-6">
           {/* Step 1 — Benvenuto */}
