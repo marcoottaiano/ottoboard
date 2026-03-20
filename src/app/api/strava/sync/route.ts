@@ -3,7 +3,10 @@ import { getActivitiesAfter } from '@/lib/strava/api'
 import { stravaActivityToDb } from '@/lib/strava/transforms'
 import { NextResponse } from 'next/server'
 
-export async function POST() {
+export async function POST(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const scopeDays = searchParams.get('scope_days') // '30' | 'all' | null
+
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -21,7 +24,12 @@ export async function POST() {
     return NextResponse.json({ error: 'Strava non connesso' }, { status: 400 })
   }
 
-  const after = tokenRow.last_synced_at ? new Date(tokenRow.last_synced_at) : undefined
+  let after: Date | undefined
+  if (tokenRow.last_synced_at) {
+    after = new Date(tokenRow.last_synced_at)
+  } else if (scopeDays === '30') {
+    after = new Date(Date.now() - 30 * 24 * 3600 * 1000)
+  }
 
   let stravaActivities: Awaited<ReturnType<typeof getActivitiesAfter>>
   try {
