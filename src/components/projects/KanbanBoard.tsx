@@ -20,6 +20,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { useColumns } from '@/hooks/useColumns'
 import { useTasks, tasksByColumn } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
@@ -177,19 +178,44 @@ export function KanbanBoard({ projectId }: Props) {
         )
       )
 
-      try {
-        await moveTask.mutateAsync({ id: active.id as string, project_id: projectId, column_id: targetColumnId, position: newPosition })
+      const movedTask = currentTasks.find((t) => t.id === active.id)
+      const targetCol = columns.find((c) => c.id === targetColumnId)
 
-        // Fire-and-forget Linear state update if both sides have Linear IDs
-        const movedTask = currentTasks.find((t) => t.id === active.id)
-        const targetCol = columns.find((c) => c.id === targetColumnId)
-        if (movedTask?.linear_issue_id && targetCol?.linear_state_id) {
-          const realStateId = targetCol.linear_state_id.split(':').pop() ?? targetCol.linear_state_id
-          updateLinearIssue.mutate({ issueId: movedTask.linear_issue_id, stateId: realStateId })
+      if (isLinearProject && movedTask?.linear_issue_id && targetCol?.linear_state_id) {
+        // Linear project: Linear update must succeed before writing to Supabase
+        const realStateId = targetCol.linear_state_id.split(':').pop() ?? targetCol.linear_state_id
+        try {
+          await updateLinearIssue.mutateAsync({
+            issueId: movedTask.linear_issue_id,
+            stateId: realStateId,
+          })
+          // Linear succeeded → persist locally
+          await moveTask.mutateAsync({
+            id: active.id as string,
+            project_id: projectId,
+            column_id: targetColumnId,
+            position: newPosition,
+          })
+        } catch {
+          // Rollback optimistic update
+          if (tasksSnapshot.current) {
+            queryClient.setQueryData(['tasks', projectId], tasksSnapshot.current)
+          }
+          toast.error('Operazione non riuscita, riprova')
         }
-      } catch {
-        if (tasksSnapshot.current) {
-          queryClient.setQueryData(['tasks', projectId], tasksSnapshot.current)
+      } else {
+        // Non-Linear project: Supabase-only flow
+        try {
+          await moveTask.mutateAsync({
+            id: active.id as string,
+            project_id: projectId,
+            column_id: targetColumnId,
+            position: newPosition,
+          })
+        } catch {
+          if (tasksSnapshot.current) {
+            queryClient.setQueryData(['tasks', projectId], tasksSnapshot.current)
+          }
         }
       }
     }
