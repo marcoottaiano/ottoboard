@@ -3,7 +3,7 @@
 **Epic:** 5 — Beta User Self-Onboarding & Profile Management
 **Story ID:** 5.1
 **Story Key:** `5-1-onboarding-wizard-strava-oauth-connection`
-**Status:** ready-for-dev
+**Status:** review
 **Created:** 2026-03-20
 
 ---
@@ -438,6 +438,29 @@ Claude Sonnet 4.6
 
 ### Debug Log References
 
+- Identified that commit `4f0ca12` added onboarding gate to documentation but did NOT implement it in code
+- Middleware `src/lib/supabase/middleware.ts` had no gate logic
+- Used `user.user_metadata.onboarding_completed_at` approach (no migration needed; `getUser()` in middleware fetches fresh data from Supabase)
+- `handleSkip` and `handleContinueFromStrava` needed `updateUser` call before redirect to avoid infinite redirect loop
+
 ### Completion Notes List
 
+- **Gate implemented** in `src/lib/supabase/middleware.ts`: authenticated users without `onboarding_completed_at` in **app_metadata** (service-role-only) are redirected to `/onboarding`. Excludes `/auth/*`, `/api/*`, `/onboarding` routes.
+- **Persistence via server API route** `src/app/api/onboarding/complete/route.ts`: uses `createAdminClient()` (service role) to write `app_metadata.onboarding_completed_at`. This prevents client-side bypass (user_metadata is user-writable; app_metadata is not).
+- **Error handling** in `src/app/onboarding/page.tsx`: `handleSkip` and `handleContinueFromStrava` call `/api/onboarding/complete` and show an error message on failure, preventing redirect-loop on network error.
+- **OAuth flow already complete** (from PR #15): `connect/route.ts` encodes `scope_days` + `from:'onboarding'` in Base64 state; `callback/route.ts` decodes state, uses `fromOnboarding` for redirect, passes `scope_days` to sync with 30s timeout; `sync/route.ts` accepts `scope_days` query param for first-sync date range.
+- **Onboarding UI already complete** (from PR #15): scope selector (30d/all), `stravaStatus` state machine (idle/connected/error), URL param detection via `useEffect`.
+- Build passes with no TypeScript errors.
+
 ### File List
+
+- `src/lib/supabase/middleware.ts` — Added onboarding gate checking `app_metadata.onboarding_completed_at`
+- `src/app/api/onboarding/complete/route.ts` — **NEW** API route: verifies auth, writes `app_metadata.onboarding_completed_at` via service role admin client
+- `src/app/onboarding/page.tsx` — `handleSkip` and `handleContinueFromStrava` now async, call `/api/onboarding/complete`, show error message on failure
+- `src/app/api/strava/connect/route.ts` — (from PR #15) scope_days validation + Base64 state encoding
+- `src/app/api/strava/callback/route.ts` — (from PR #15) state decoding, conditional redirect, timeout on sync
+- `src/app/api/strava/sync/route.ts` — (from PR #15) scope_days support for first-sync date range
+
+## Change Log
+
+- 2026-03-20: Implemented onboarding gate in middleware + persistence of `onboarding_completed_at` via user_metadata (Claude Sonnet 4.6)
