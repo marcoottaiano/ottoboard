@@ -80,6 +80,78 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true })
   }
 
+  if (action === 'create') {
+    if (!issue.title || !issue.state?.id) {
+      // Incomplete payload — not enough data to insert
+      return NextResponse.json({ ok: true })
+    }
+
+    // Resolve project from issue.project.id
+    let projectId: string | null = null
+    if (issue.project?.id) {
+      const { data: project } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('linear_project_id', issue.project.id)
+        .single()
+      if (project) projectId = project.id
+    }
+
+    // Fallback: find a project that has this state
+    if (!projectId) {
+      const { data: column } = await supabase
+        .from('columns')
+        .select('project_id')
+        .like('linear_state_id', `%:${issue.state.id}`)
+        .single()
+      if (column) projectId = column.project_id
+    }
+
+    if (!projectId) {
+      // Can't resolve project — reconciliation will catch it on next sync
+      return NextResponse.json({ ok: true })
+    }
+
+    // Resolve column from state scoped to project
+    const { data: column } = await supabase
+      .from('columns')
+      .select('id')
+      .eq('project_id', projectId)
+      .like('linear_state_id', `%:${issue.state.id}`)
+      .single()
+
+    if (!column) {
+      return NextResponse.json({ ok: true })
+    }
+
+    const newTask = {
+      column_id: column.id,
+      project_id: projectId,
+      title: issue.title,
+      description: issue.description ?? null,
+      priority: PRIORITY_MAP[issue.priority ?? 0] ?? null,
+      due_date: null as string | null,
+      labels: [] as string[],
+      position: Date.now(),
+      linear_issue_id: issue.id,
+      linear_issue_url: issue.url ?? null,
+      linear_identifier: issue.identifier ?? null,
+      assignee_name: issue.assignee?.name ?? null,
+      assignee_avatar: issue.assignee?.avatarUrl ?? null,
+    }
+
+    const { error: insertError } = await supabase
+      .from('tasks')
+      .upsert(newTask, { onConflict: 'linear_issue_id' })
+
+    if (insertError) {
+      console.error('Webhook: failed to insert task', { linearIssueId: issue.id, error: insertError.message })
+      return NextResponse.json({ error: 'DB insert failed' }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true })
+  }
+
   if (action === 'update') {
     // Find the task by linear_issue_id
     const { data: existingTask, error: fetchError } = await supabase
