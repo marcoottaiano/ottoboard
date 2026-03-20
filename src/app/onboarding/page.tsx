@@ -1,29 +1,54 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Zap, ArrowRight, LayoutDashboard } from 'lucide-react'
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Zap, ArrowRight, LayoutDashboard, CheckCircle2, AlertCircle } from "lucide-react";
 
-export default function OnboardingPage() {
-  const [step, setStep] = useState<1 | 2>(1)
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+function OnboardingContent() {
+  const [step, setStep] = useState<1 | 2>(1);
+  const [loading, setLoading] = useState(false);
+  const [scopeDays, setScopeDays] = useState<"30" | "all">("30");
+  const [stravaStatus, setStravaStatus] = useState<"idle" | "connected" | "error">("idle");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const strava = searchParams.get("strava");
+    const error = searchParams.get("error");
+
+    if (strava === "connected") {
+      setStep(2);
+      setStravaStatus("connected");
+    } else if (error && error.startsWith("strava_")) {
+      setStep(2);
+      setStravaStatus("error");
+    }
+  }, [searchParams]);
 
   const handleContinue = async () => {
-    setLoading(true)
+    setLoading(true);
     // Seed default finance categories (idempotent)
-    await fetch('/api/onboarding/seed-categories', { method: 'POST' })
-    setLoading(false)
-    setStep(2)
-  }
+    await fetch("/api/onboarding/seed-categories", { method: "POST" });
+    setLoading(false);
+    setStep(2);
+  };
 
   const handleSkip = () => {
-    router.push('/')
-  }
+    router.push("/");
+  };
 
   const handleConnectStrava = () => {
-    window.location.href = '/api/strava/connect'
-  }
+    window.location.href = `/api/strava/connect?scope_days=${scopeDays}`;
+  };
+
+  const handleRetryStrava = () => {
+    setStravaStatus("idle");
+    router.replace("/onboarding"); // Rimuove ?error= dalla URL
+  };
+
+  const handleContinueFromStrava = () => {
+    router.push("/"); // Reindirizza a home
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
@@ -45,13 +70,7 @@ export default function OnboardingPage() {
         {/* Step indicators */}
         <div className="flex items-center justify-center gap-2 mb-6">
           {[1, 2].map((s) => (
-            <div
-              key={s}
-              className={[
-                'h-1.5 rounded-full transition-all duration-300',
-                step === s ? 'w-6 bg-white/60' : 'w-3 bg-white/15',
-              ].join(' ')}
-            />
+            <div key={s} className={["h-1.5 rounded-full transition-all duration-300", step === s ? "w-6 bg-white/60" : "w-3 bg-white/15"].join(" ")} />
           ))}
         </div>
 
@@ -67,16 +86,10 @@ export default function OnboardingPage() {
 
               <div>
                 <h2 className="text-lg font-semibold text-white/90 mb-2">Benvenuto su Ottoboard!</h2>
-                <p className="text-sm text-white/40 leading-relaxed">
-                  La tua dashboard personale è pronta. Abbiamo configurato le categorie di spesa di default per il modulo Finanze.
-                </p>
+                <p className="text-sm text-white/40 leading-relaxed">La tua dashboard personale è pronta. Abbiamo configurato le categorie di spesa di default per il modulo Finanze.</p>
               </div>
 
-              <button
-                onClick={handleContinue}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.1] text-white/80 hover:text-white text-sm font-medium rounded-xl py-2.5 transition-all duration-200 disabled:opacity-40"
-              >
+              <button onClick={handleContinue} disabled={loading} className="w-full flex items-center justify-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.1] text-white/80 hover:text-white text-sm font-medium rounded-xl py-2.5 transition-all duration-200 disabled:opacity-40">
                 {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
@@ -95,39 +108,102 @@ export default function OnboardingPage() {
           {/* Step 2 — Strava */}
           {step === 2 && (
             <div className="text-center space-y-5">
-              <div className="flex justify-center">
-                <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-                  <Zap size={26} className="text-orange-400" />
-                </div>
-              </div>
+              {stravaStatus === "idle" ? (
+                <>
+                  <div className="flex justify-center">
+                    <div className="w-14 h-14 rounded-2xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+                      <Zap size={26} className="text-orange-400" />
+                    </div>
+                  </div>
 
-              <div>
-                <h2 className="text-base font-semibold text-white/90 mb-2">Colleghi Strava?</h2>
-                <p className="text-sm text-white/40 leading-relaxed">
-                  Sincronizza automaticamente le tue attività sportive. Puoi farlo anche più tardi dalla pagina Profilo.
-                </p>
-              </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-white/90 mb-2">Colleghi Strava?</h2>
+                    <p className="text-sm text-white/40 leading-relaxed">Sincronizza automaticamente le tue attività sportive. Scegli l&apos;intervallo per la sincronizzazione iniziale:</p>
+                  </div>
 
-              <div className="space-y-2">
-                <button
-                  onClick={handleConnectStrava}
-                  className="w-full flex items-center justify-center gap-2 bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/20 text-orange-400 text-sm font-medium rounded-xl py-2.5 transition-all duration-200"
-                >
-                  <Zap size={15} />
-                  Connetti Strava
-                </button>
+                  <div className="space-y-2 py-2">
+                    <button onClick={() => setScopeDays("30")} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 ${scopeDays === "30" ? "bg-white/[0.08] border-white/20 text-white/90" : "bg-transparent border-white/[0.05] text-white/40 hover:bg-white/[0.04]"}`}>
+                      <div className="text-left">
+                        <div className="text-sm font-medium">Ultimi 30 giorni</div>
+                        <div className="text-xs opacity-60">Sincronizzazione rapida</div>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${scopeDays === "30" ? "border-orange-500" : "border-white/20"}`}>{scopeDays === "30" && <div className="w-2 h-2 rounded-full bg-orange-500" />}</div>
+                    </button>
 
-                <button
-                  onClick={handleSkip}
-                  className="w-full text-sm text-white/30 hover:text-white/60 py-2 transition-colors"
-                >
-                  Salta, lo faccio dopo →
-                </button>
-              </div>
+                    <button onClick={() => setScopeDays("all")} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-200 ${scopeDays === "all" ? "bg-white/[0.08] border-white/20 text-white/90" : "bg-transparent border-white/[0.05] text-white/40 hover:bg-white/[0.04]"}`}>
+                      <div className="text-left">
+                        <div className="text-sm font-medium">Storia completa</div>
+                        <div className="text-xs opacity-60">Tutte le attività passate</div>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${scopeDays === "all" ? "border-orange-500" : "border-white/20"}`}>{scopeDays === "all" && <div className="w-2 h-2 rounded-full bg-orange-500" />}</div>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <button onClick={handleConnectStrava} className="w-full flex items-center justify-center gap-2 bg-orange-500/20 hover:bg-orange-500/30 border border-orange-500/20 text-orange-400 text-sm font-medium rounded-xl py-2.5 transition-all duration-200">
+                      <Zap size={15} />
+                      Connetti Strava
+                    </button>
+
+                    <button onClick={handleSkip} className="w-full text-sm text-white/30 hover:text-white/60 py-2 transition-colors">
+                      Salta, lo faccio dopo →
+                    </button>
+                  </div>
+                </>
+              ) : stravaStatus === "connected" ? (
+                <>
+                  <div className="flex justify-center">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                      <CheckCircle2 size={26} className="text-emerald-400" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h2 className="text-base font-semibold text-white/90 mb-2">Strava connesso!</h2>
+                    <p className="text-sm text-white/40 leading-relaxed">Il tuo account è stato collegato con successo. La sincronizzazione è in corso in background.</p>
+                  </div>
+
+                  <button onClick={handleContinueFromStrava} className="w-full flex items-center justify-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.1] text-white/80 hover:text-white text-sm font-medium rounded-xl py-2.5 transition-all duration-200">
+                    Continua
+                    <ArrowRight size={15} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-center">
+                    <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                      <AlertCircle size={26} className="text-red-400" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h2 className="text-base font-semibold text-white/90 mb-2">Connessione fallita</h2>
+                    <p className="text-sm text-white/40 leading-relaxed">Non è stato possibile collegare il tuo account Strava. Potresti aver negato l&apos;autorizzazione.</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <button onClick={handleRetryStrava} className="w-full flex items-center justify-center gap-2 bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.1] text-white/80 hover:text-white text-sm font-medium rounded-xl py-2.5 transition-all duration-200">
+                      Riprova
+                    </button>
+
+                    <button onClick={handleSkip} className="w-full text-sm text-white/30 hover:text-white/60 py-2 transition-colors">
+                      Salta, lo faccio dopo →
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
       </div>
     </div>
-  )
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingContent />
+    </Suspense>
+  );
 }

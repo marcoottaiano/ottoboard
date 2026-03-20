@@ -43,7 +43,7 @@ story_location: { implementation_artifacts }
 
 development_status:
   # EPIC 1: Trusted Data (PRIORITY: UX GAPS 1.1, 1.2)
-  epic-1: in-progress
+  epic-1: done
   1-1-sync-status-badge-on-affected-widgets: done
   1-2-integration-health-section-in-profile: done
   1-3-force-reconciliation-for-linear: done
@@ -52,8 +52,8 @@ development_status:
   epic-1-retrospective: optional
 
   # EPIC 5: Onboarding (PRIORITY: UX GAP 5.1, 5.2)
-  epic-5: backlog
-  5-1-onboarding-wizard-strava-oauth-connection: backlog
+  epic-5: in-progress
+  5-1-onboarding-wizard-strava-oauth-connection: done
   5-2-onboarding-wizard-linear-api-key-setup: backlog
   5-3-profile-security-change-password: backlog
   5-4-data-isolation-verification-rls: backlog
