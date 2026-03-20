@@ -33,7 +33,7 @@
 | Servizio | Auth      | Note                                          |
 | -------- | --------- | --------------------------------------------- |
 | Strava   | OAuth 2.0 | Fetch attività e stats atleta (100 req/15min) |
-| Linear   | API Key   | Sync bidirezionale progetti/issue              |
+| Linear   | API Key   | Sync bidirezionale progetti/issue             |
 
 ---
 
@@ -307,7 +307,7 @@ Wrapper DnD per ogni widget: drag handle, "Vai alla sezione", configura (solo ka
 | **Fase 8**  | PWA                  | ✅    | App installabile: manifest, service worker, icone, offline fallback                                               |
 | **Fase 9**  | Misurazioni corporee | ✅    | Tab misurazioni in /fitness: peso, plicometrie, circonferenze, composizione corporea, grafici, canvas interattivo |
 | **Fase 10** | Linear + Reminders   | ✅    | Sync bidirezionale Linear in /projects, setup integrazione in /profile, widget Reminders in home                  |
-| **Fase 11** | Notifiche Push       | ✅    | Push notifications PWA per i promemoria: richiesta permesso, service worker, scheduling, gestione dal profilo      |
+| **Fase 11** | Notifiche Push       | ✅    | Push notifications PWA per i promemoria: richiesta permesso, service worker, scheduling, gestione dal profilo     |
 | **Fase 12** | Abitudini            | ✅    | Modulo /habits: tracciamento abitudini giornaliere, heatmap completamenti, schedule per giorno della settimana    |
 
 ---
@@ -354,6 +354,13 @@ Rendere l'app usabile da chiunque senza intervento del developer.
 - **Login page** — tab Login / Registrati
 - **Onboarding** — primo accesso: wizard che guida setup categorie finanza + connessione Strava
 - **Test multi-account** — verificare isolamento dati tra utenti diversi (RLS), nessun leak
+
+### Trigger onboarding (regola obbligatoria)
+
+- Se utente autenticato ha onboarding non completato, qualsiasi route protetta reindirizza a `/onboarding`
+- Route escluse dal gate: `/auth/*`, `/api/*`, `/onboarding`, asset statici
+- Completamento onboarding persistito lato DB (es. `onboarding_completed_at` su profilo utente)
+- Dopo completamento, il redirect forzato non deve piu attivarsi
 
 ---
 
@@ -644,6 +651,7 @@ RLS standard: `auth.uid() = user_id`.
 #### UI — RemindersWidget
 
 **Vista principale (reminder futuri/non completati):**
+
 - Lista ordinata per `due_date` ASC
 - Ogni riga: checkbox completamento + titolo + data + badge priorità
 - Click checkbox → marca completato (optimistic update)
@@ -652,11 +660,13 @@ RLS standard: `auth.uid() = user_id`.
 - Link "X completati →" in fondo → apre `CompletedRemindersModal`
 
 **`CompletedRemindersModal`:**
+
 - Lista reminder completati, ordinata per `completed_at` DESC
 - Ogni riga: titolo, data originale, data completamento, pulsante "Riapri"
 - Paginazione semplice (20 per pagina)
 
 **`ReminderCreateModal` / `ReminderEditModal`:**
+
 - Campi: titolo (required), note, data (required), orario (opzionale), priorità (select), ricorrenza (select)
 - Pulsante "Elimina" in `ReminderEditModal`
 
@@ -779,11 +789,11 @@ Se `due_time` è NULL, la notifica viene inviata alle **9:00** del giorno della 
 #### 3. Click sulla notifica (service worker)
 
 ```javascript
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close()
-  event.waitUntil(clients.openWindow('/'))
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(clients.openWindow("/"));
   // Apre la home dove il widget Promemoria è visibile
-})
+});
 ```
 
 ---
@@ -818,14 +828,14 @@ web-push   # libreria Node.js per inviare push — usata nelle API routes e Edge
 
 ### Gestione errori e casi limite
 
-| Caso | Comportamento |
-|---|---|
-| Browser non supporta Push API | `NotificationPermissionBanner` nascosto, sezione profilo mostra "non supportato" |
-| Utente nega permesso | Banner non riappare (stato salvato in localStorage), sezione profilo mostra "bloccato dal browser" |
-| Subscription scaduta / 410 da push server | Rimuovere automaticamente la riga da `push_subscriptions` |
-| `due_time` NULL | Notifica alle 9:00 del giorno della scadenza |
-| Reminder già completato al momento dell'invio | Skip — controllare `completed = false` nella query Edge Function |
-| Ricorrenza — nuovo reminder generato | `notified_at` NULL sul nuovo reminder → verrà notificato normalmente |
+| Caso                                          | Comportamento                                                                                      |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Browser non supporta Push API                 | `NotificationPermissionBanner` nascosto, sezione profilo mostra "non supportato"                   |
+| Utente nega permesso                          | Banner non riappare (stato salvato in localStorage), sezione profilo mostra "bloccato dal browser" |
+| Subscription scaduta / 410 da push server     | Rimuovere automaticamente la riga da `push_subscriptions`                                          |
+| `due_time` NULL                               | Notifica alle 9:00 del giorno della scadenza                                                       |
+| Reminder già completato al momento dell'invio | Skip — controllare `completed = false` nella query Edge Function                                   |
+| Ricorrenza — nuovo reminder generato          | `notified_at` NULL sul nuovo reminder → verrà notificato normalmente                               |
 
 ---
 

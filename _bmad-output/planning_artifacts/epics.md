@@ -1,5 +1,5 @@
 ---
-stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
+stepsCompleted: ["step-01-validate-prerequisites", "step-02-design-epics", "step-03-create-stories", "step-04-final-validation"]
 inputDocuments:
   - _bmad-output/planning_artifacts/prd.md
   - _bmad-output/planning_artifacts/architecture.md
@@ -134,26 +134,32 @@ FR34: Epic 2 — In-app Notification Center (fallback push)
 ## Epic List
 
 ### Epic 1: Trusted Data — Integration Health & Sync Reliability
+
 Gli utenti capiscono a colpo d'occhio se i dati sono live o stale, e recuperano integrazioni rotte senza aiuto del developer. Il sistema garantisce sync atomico, refresh token automatico, e un pannello di salute dell'integrazione con percorso di recovery trasparente.
 **FRs covered:** FR2, FR3, FR4, FR5, FR7, FR9, FR28, FR29
 
 ### Epic 2: Reliable Push Notifications & Reminders
+
 Gli utenti ricevono notifiche push per i promemoria puntualmente anche con l'app chiusa, e gestiscono l'intero lifecycle del reminder (crea, completa, riapri, ricorrenza) direttamente dal widget home. Un fallback in-app è disponibile quando le notifiche push sono disabilitate.
 **FRs covered:** FR19, FR20, FR21, FR34
 
 ### Epic 3: Actionable Home Dashboard
+
 Gli utenti completano il morning loop (leggi → agisci → fatto) interamente dalla home in ≤60 secondi, senza navigare verso altre sezioni. I widget mostrano CTA contestuali quando vuoti e persistono i filtri/stati tra sessioni.
 **FRs covered:** FR6, FR8, FR30, FR31
 
 ### Epic 4: Finance Integrity & Intelligence
+
 Gli utenti gestiscono le proprie finanze con fiducia totale: zero transazioni duplicate durante l'import CSV, operazioni bulk, categorie bloccate manualmente, e insights di spesa client-side senza costi server.
 **FRs covered:** FR10, FR11, FR12, FR13, FR14, FR32, FR33
 
 ### Epic 5: Beta User Self-Onboarding & Profile Management
+
 Nuovi utenti configurano autonomamente Strava e Linear tramite un wizard guidato con validazione real-time delle API key, e accedono immediatamente ai propri dati senza intervento del developer. Gli utenti esistenti gestiscono profilo e impostazioni di sicurezza.
 **FRs covered:** FR1, FR22, FR23, FR24, FR26
 
 ### Epic 6: Advanced Fitness Analytics & Privacy Controls
+
 Gli utenti accedono ad analisi avanzate della composizione corporea (BodyCanvas navigabile da tastiera, grafici peso/grasso/pliche), visualizzano attività Strava con corretto timezone locale, e controllano la visibilità dei dati sensibili con Privacy Mode.
 **FRs covered:** FR15, FR16, FR17, FR18, FR25, FR27
 
@@ -679,6 +685,22 @@ So that I can understand my financial patterns without any server-side processin
 
 Nuovi utenti configurano autonomamente Strava e Linear tramite un wizard guidato con validazione real-time, e accedono subito ai propri dati senza intervento del developer.
 
+### Prerequisito Epic 5: Trigger Onboarding (Global Gate)
+
+Per garantire che il wizard venga mostrato davvero al primo ingresso, Epic 5 include anche il gate globale di onboarding.
+
+Regole richieste:
+
+- Utente autenticato con onboarding non completato: qualsiasi route protetta deve redirectare a `/onboarding`
+- Utente autenticato con onboarding completato: accesso normale alle route applicative
+- Route escluse dal gate: `/auth/*`, `/api/*`, asset statici, `/onboarding`
+- Completamento onboarding persistito in DB (es. `onboarding_completed_at` su profilo utente)
+
+Note di integrazione stories:
+
+- Story 5.1 copre trigger iniziale e primi step wizard
+- Story 5.2 completa il wizard e marca onboarding come completato
+
 ### Story 5.1: Onboarding Wizard — Strava OAuth Connection
 
 As a new user,
@@ -691,6 +713,10 @@ So that my fitness activities are synced immediately after setup without any dev
 **When** I reach the Strava connection step
 **Then** a "Connetti Strava" button triggers the OAuth flow via `/api/strava/connect`
 **And** on successful OAuth callback, a success indicator is shown and the wizard advances to the next step
+
+**Given** I am authenticated and onboarding is not completed
+**When** I open any protected app route (except `/onboarding`)
+**Then** I am redirected to `/onboarding` by the global onboarding gate
 
 **Given** the OAuth flow fails or I deny permissions on Strava
 **When** I return to the wizard
@@ -730,6 +756,10 @@ So that my projects appear immediately after setup with no empty or broken state
 **Given** the API key is saved and team selected
 **When** the initial sync completes
 **Then** the Kanban board in /projects is populated with real Linear data
+
+**Given** I complete the final onboarding step (including Linear setup or explicit skip)
+**When** I click the final continue action
+**Then** the system persists onboarding completion in DB and the global onboarding gate no longer redirects me to `/onboarding`
 
 ---
 

@@ -14,6 +14,10 @@ As a new user,
 I want to connect my Strava account via OAuth during the onboarding wizard,
 So that my fitness activities are synced immediately after setup without any developer intervention.
 
+**Prerequisito funzionale**
+
+- Il wizard deve essere effettivamente triggerato da un gate globale: utente autenticato con onboarding non completato deve essere reindirizzato a `/onboarding` da qualsiasi route protetta (escluse `/auth/*`, `/api/*`, `/onboarding`, asset statici).
+
 ---
 
 ## Acceptance Criteria
@@ -22,6 +26,10 @@ So that my fitness activities are synced immediately after setup without any dev
 **When** I reach the Strava connection step
 **Then** a "Connetti Strava" button triggers the OAuth flow via `/api/strava/connect`
 **And** on successful OAuth callback, a success indicator is shown and clicking "Continua" redirects to home (`/`)
+
+**Given** I am authenticated and onboarding is not completed
+**When** I open any protected route in the app
+**Then** the global onboarding gate redirects me to `/onboarding`
 
 **Given** the OAuth flow fails or I deny permissions on Strava
 **When** I return to the wizard
@@ -53,6 +61,11 @@ Estende il wizard di onboarding esistente (`/onboarding/page.tsx`) aggiungendo:
 
 Il wizard ha già 2 passi (Welcome + Strava). **Non esiste step 3**, il wizard finisce al passo 2 con redirect a home.
 (**Note:** Se in futuro aggiungere step 3 per categoria setup, toccare story 5.2+)
+
+Nota di orchestrazione Epic 5:
+
+- Story 5.1 definisce il trigger e il comportamento del gate onboarding.
+- Story 5.2 deve persistere il completamento onboarding (es. `onboarding_completed_at`) per disattivare il redirect obbligatorio.
 
 ### Flusso completo aggiornato
 
