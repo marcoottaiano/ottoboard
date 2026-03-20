@@ -20,6 +20,10 @@ interface SyncResult {
   synced: { projects: number; columns: number; tasks: number; unassigned: number }
 }
 
+interface ReconcileResult {
+  reconciled: { projects: number; columns: number; tasks: number; orphansRemoved: number }
+}
+
 const STATUS_KEY = ['linear-status']
 const TEAMS_KEY = ['linear-teams']
 
@@ -93,6 +97,29 @@ export function useLinearConnection(options?: { enabled?: boolean }) {
     },
   })
 
+  const forceReconcileMutation = useMutation<ReconcileResult>({
+    mutationFn: async () => {
+      const res = await fetch('/api/linear/reconcile', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Errore riconciliazione')
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: STATUS_KEY })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      queryClient.invalidateQueries({ queryKey: ['columns'] })
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['integration-health'] })
+      queryClient.invalidateQueries({ queryKey: ['sync-status-linear'] })
+      const { projects, tasks, orphansRemoved } = data.reconciled
+      const orphanNote = orphansRemoved > 0 ? ` (${orphansRemoved} rimossi)` : ''
+      toast.success(
+        `Riconciliazione completata — ${projects} progetti, ${tasks} task${orphanNote}`
+      )
+    },
+    // P4 fix: error shown inline in the card — no toast per AC3
+  })
+
   const selectTeamMutation = useMutation({
     mutationFn: async ({ teamId, teamName }: { teamId: string; teamName: string }) => {
       const res = await fetch('/api/linear/select-team', {
@@ -121,7 +148,16 @@ export function useLinearConnection(options?: { enabled?: boolean }) {
     sync: syncMutation.mutate,
     isSyncing: syncMutation.isPending,
     syncResult: syncMutation.data,
+    // P3 fix: reset stale data/error before each new call so previous result doesn't persist
+    forceReconcile: () => {
+      forceReconcileMutation.reset()
+      forceReconcileMutation.mutate()
+    },
+    isReconciling: forceReconcileMutation.isPending,
+    reconcileError: forceReconcileMutation.error?.message ?? null,
+    reconcileResult: forceReconcileMutation.data ?? null,
     selectTeam: selectTeamMutation.mutate,
     isSelectingTeam: selectTeamMutation.isPending,
   }
 }
+
