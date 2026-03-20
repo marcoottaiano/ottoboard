@@ -4,7 +4,7 @@ import { StravaTokenRow } from './types'
 const STRAVA_API = 'https://www.strava.com/api/v3'
 const REFRESH_BUFFER_MS = 5 * 60 * 1000 // 5 minuti
 
-async function refreshToken(
+export async function refreshStravaToken(
   refreshTokenStr: string
 ): Promise<{ access_token: string; refresh_token: string; expires_at: number }> {
   const res = await fetch('https://www.strava.com/oauth/token', {
@@ -39,7 +39,7 @@ export async function getStravaToken(
 
   if (!isExpired) return data.access_token
 
-  const newToken = await refreshToken(data.refresh_token)
+  const newToken = await refreshStravaToken(data.refresh_token)
 
   await supabase
     .from('strava_tokens')

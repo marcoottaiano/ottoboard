@@ -1,7 +1,15 @@
 'use client'
 
-import { RefreshCw, Unlink, Zap, CheckCircle, AlertCircle } from 'lucide-react'
+import {
+  RefreshCw,
+  Unlink,
+  Zap,
+  CheckCircle,
+  AlertCircle,
+  ShieldAlert,
+} from 'lucide-react'
 import { useStravaConnection } from '@/hooks/useStravaConnection'
+import { useIntegrationHealth } from '@/hooks/useIntegrationHealth'
 
 function formatDate(iso: string | undefined) {
   if (!iso) return 'Mai'
@@ -28,6 +36,13 @@ export function StravaIntegrationCard() {
     syncedCount,
   } = useStravaConnection()
 
+  const { data: health } = useIntegrationHealth()
+
+  // Detect re-auth required: most recent strava error has error_code TOKEN_REVOKED
+  const requiresReAuth =
+    isConnected &&
+    (health?.strava ?? []).some((log) => log.error_code === 'TOKEN_REVOKED')
+
   return (
     <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-5 space-y-4">
       {/* Header */}
@@ -38,16 +53,30 @@ export function StravaIntegrationCard() {
         </div>
 
         {!isLoading && (
-          <div className={[
-            'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium',
-            isConnected
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-              : 'bg-white/[0.05] text-white/30 border border-white/[0.08]',
-          ].join(' ')}>
-            {isConnected ? (
-              <><CheckCircle size={11} /> Connesso</>
-            ) : (
-              <><AlertCircle size={11} /> Non connesso</>
+          <div
+            className={[
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium',
+              isConnected && !requiresReAuth
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                : isConnected && requiresReAuth
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  : 'bg-white/[0.05] text-white/30 border border-white/[0.08]',
+            ].join(' ')}
+          >
+            {isConnected && !requiresReAuth && (
+              <>
+                <CheckCircle size={11} /> Connesso
+              </>
+            )}
+            {isConnected && requiresReAuth && (
+              <>
+                <AlertCircle size={11} /> Errore Token
+              </>
+            )}
+            {!isConnected && (
+              <>
+                <AlertCircle size={11} /> Non connesso
+              </>
             )}
           </div>
         )}
@@ -57,6 +86,26 @@ export function StravaIntegrationCard() {
         <div className="flex items-center gap-2 text-white/30 text-sm">
           <div className="w-3.5 h-3.5 border-2 border-white/20 border-t-white/50 rounded-full animate-spin" />
           Caricamento...
+        </div>
+      )}
+
+      {/* Re-auth warning — shown above normal connected state when token is revoked */}
+      {!isLoading && requiresReAuth && (
+        <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-3 space-y-2">
+          <div className="flex items-center gap-2 text-amber-400 text-xs font-medium">
+            <ShieldAlert size={13} className="shrink-0" />
+            Re-authentication required
+          </div>
+          <p className="text-xs text-white/40 leading-snug">
+            Il token di accesso Strava è scaduto e non può essere rinnovato automaticamente.
+          </p>
+          <button
+            onClick={connect}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors text-xs font-medium border border-orange-500/20"
+          >
+            <Zap size={13} />
+            Reconnetti Strava
+          </button>
         </div>
       )}
 
