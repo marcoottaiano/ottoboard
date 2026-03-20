@@ -54,7 +54,9 @@ export function useStravaConnection() {
     isConnectionError: statusQuery.isError,
     athleteId: statusQuery.data?.athleteId,
     lastSyncedAt: statusQuery.data?.lastSyncedAt,
-    connect: () => { window.location.href = '/api/strava/connect' },
+    expiresAt: statusQuery.data?.expiresAt,
+    connect: () => {
+ window.location.href = '/api/strava/connect' },
     disconnect: disconnectMutation.mutate,
     sync: syncMutation.mutate,
     isSyncing: syncMutation.isPending,

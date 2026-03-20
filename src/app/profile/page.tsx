@@ -7,6 +7,7 @@ import { LinearIntegrationCard } from '@/components/profile/LinearIntegrationCar
 import { NotificationsCard } from '@/components/profile/NotificationsCard'
 import { BodyProfileSection } from '@/components/profile/BodyProfileSection'
 import { IntegrationHealthSection } from '@/components/profile/IntegrationHealthSection'
+import { IntegrationExpirationBanner } from '@/components/ui/IntegrationExpirationBanner'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +22,10 @@ export default async function ProfilePage() {
   return (
     <main className="flex-1 p-4 md:p-6">
       <h1 className="text-xl font-bold text-white mb-6">Profilo</h1>
+
+      <div className="mb-6 max-w-5xl">
+        <IntegrationExpirationBanner />
+      </div>
 
       <div className="space-y-6 max-w-5xl">
         {/* Account + password */}

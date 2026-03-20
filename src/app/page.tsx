@@ -30,6 +30,7 @@ import { TotalBalanceWidget } from '@/components/home/TotalBalanceWidget'
 import { RemindersWidget } from '@/components/home/RemindersWidget'
 import { HabitsWidget } from '@/components/home/HabitsWidget'
 import { FinancialGoalWidget } from '@/components/home/FinancialGoalWidget'
+import { IntegrationExpirationBanner } from '@/components/ui/IntegrationExpirationBanner'
 
 export const dynamic = 'force-dynamic'
 
@@ -98,6 +99,8 @@ export default function HomePage() {
         <h1 className="text-xl font-bold text-white/90">Overview</h1>
         <p className="text-sm text-gray-500 mt-0.5">La tua settimana in sintesi</p>
       </div>
+
+      <IntegrationExpirationBanner />
 
       {isLoading ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
