@@ -47,10 +47,14 @@ export async function DELETE() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  await supabase
+  const { error: deleteError } = await supabase
     .from('push_subscriptions')
     .delete()
     .eq('user_id', user.id)
+
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 })
+  }
 
   return NextResponse.json({ ok: true })
 }
