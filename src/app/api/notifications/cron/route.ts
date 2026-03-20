@@ -8,9 +8,10 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!
 )
 
+// Vercel Hobby plan supports daily cron only (max 1 run/day).
+// Cron runs at 07:00 UTC = 09:00 CET — all reminders due today + overdue sent at once.
 // PUSH_NOTIFICATIONS_SECRET must match CRON_SECRET in Vercel env vars.
 // Vercel Cron automatically sends: Authorization: Bearer {CRON_SECRET}
-// Set PUSH_NOTIFICATIONS_SECRET = CRON_SECRET in Vercel dashboard — no code change needed.
 export async function GET(request: Request) {
   const secret = process.env.PUSH_NOTIFICATIONS_SECRET
   const authHeader = request.headers.get('Authorization')
@@ -22,59 +23,18 @@ export async function GET(request: Request) {
   const supabase = createAdminClient()
 
   const now = new Date()
-  // Use UTC methods consistently to avoid date string UTC-shift bug
+  // Use UTC methods to avoid date string UTC-shift bug (CET = UTC+1)
   const today = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`
-  const currentHour = now.getUTCHours()
 
-  // --- Bucket A: reminders WITH due_time, due within this UTC hour window ---
-  // due_date = today AND due_time in [HH:00:00, HH+1:00:00) AND notified_at IS NULL AND completed = false
-  const windowStart = `${String(currentHour).padStart(2, '0')}:00:00`
-  const nextHour = currentHour + 1
-  const windowEnd = nextHour < 24
-    ? `${String(nextHour).padStart(2, '0')}:00:00`
-    : '24:00:00'
-
-  const { data: bucketA } = await supabase
+  // Fetch all reminders due today or overdue, not yet notified and not completed
+  const { data: allReminders } = await supabase
     .from('reminders')
-    .select('id, user_id, title, due_date, due_time')
-    .eq('due_date', today)
-    .not('due_time', 'is', null)
-    .gte('due_time', windowStart)
-    .lt('due_time', windowEnd)
+    .select('id, user_id, title, due_date')
+    .lte('due_date', today)
     .eq('completed', false)
     .is('notified_at', null)
 
-  // --- Bucket B: reminders WITHOUT due_time, today only, sent at NOTIFY_HOUR_UTC ---
-  // NOTIFY_HOUR_UTC = 7 → 9 AM CET (UTC+1 winter) / 9 AM CEST (UTC+2 summer, effectively 8 AM UTC)
-  // Simple rule: always send at UTC hour 7 — close enough to 9 AM Italian time
-  const NOTIFY_HOUR_UTC = 7
-  const bucketBReminders: typeof bucketA = []
-  if (currentHour === NOTIFY_HOUR_UTC) {
-    const { data } = await supabase
-      .from('reminders')
-      .select('id, user_id, title, due_date, due_time')
-      .eq('due_date', today)
-      .is('due_time', null)
-      .eq('completed', false)
-      .is('notified_at', null)
-    if (data) bucketBReminders.push(...data)
-  }
-
-  // --- Bucket C: overdue reminders (due_date < today), any time ---
-  const { data: bucketC } = await supabase
-    .from('reminders')
-    .select('id, user_id, title, due_date, due_time')
-    .lt('due_date', today)
-    .eq('completed', false)
-    .is('notified_at', null)
-
-  const allReminders = [
-    ...(bucketA ?? []),
-    ...bucketBReminders,
-    ...(bucketC ?? []),
-  ]
-
-  if (allReminders.length === 0) {
+  if (!allReminders || allReminders.length === 0) {
     return NextResponse.json({ sent: 0 })
   }
 
