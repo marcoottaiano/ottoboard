@@ -42,6 +42,9 @@ export async function POST() {
   try {
     apiKey = decryptApiKey(tokenRow.api_key)
   } catch {
+    await supabase
+      .from('integration_error_logs')
+      .insert({ service: 'linear', error_message: 'Linear Sync: Errore decrittazione API key', error_code: '500' })
     return NextResponse.json({ error: 'Errore di configurazione server' }, { status: 500 })
   }
 
@@ -52,6 +55,9 @@ export async function POST() {
   try {
     firstPage = await linearQuery<TeamData>(apiKey, TEAM_DATA_QUERY, { teamId, after: null })
   } catch {
+    await supabase
+      .from('integration_error_logs')
+      .insert({ service: 'linear', error_message: 'Linear Sync: Errore comunicazione con API Linear', error_code: '500' })
     return NextResponse.json({ error: 'Errore nella comunicazione con Linear' }, { status: 500 })
   }
 

@@ -45,7 +45,7 @@ development_status:
   # EPIC 1: Trusted Data (PRIORITY: UX GAPS 1.1, 1.2)
   epic-1: in-progress
   1-1-sync-status-badge-on-affected-widgets: done
-  1-2-integration-health-section-in-profile: backlog
+  1-2-integration-health-section-in-profile: review
   1-3-force-reconciliation-for-linear: backlog
   1-4-atomic-bidirectional-linear-sync-via-kanban: backlog
   1-5-automatic-strava-token-refresh: backlog

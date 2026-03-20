@@ -23,7 +23,19 @@ export async function POST() {
 
   const after = tokenRow.last_synced_at ? new Date(tokenRow.last_synced_at) : undefined
 
-  const stravaActivities = await getActivitiesAfter(user.id, supabase, after)
+  let stravaActivities: Awaited<ReturnType<typeof getActivitiesAfter>>
+  try {
+    stravaActivities = await getActivitiesAfter(user.id, supabase, after)
+  } catch (err) {
+    await supabase
+      .from('integration_error_logs')
+      .insert({
+        service: 'strava',
+        error_message: `Strava Sync: ${err instanceof Error ? err.message : 'Errore comunicazione API Strava'}`,
+        error_code: '500',
+      })
+    return NextResponse.json({ error: 'Errore comunicazione con Strava' }, { status: 500 })
+  }
 
   if (stravaActivities.length === 0) {
     await supabase
@@ -41,6 +53,9 @@ export async function POST() {
     .upsert(rows, { onConflict: 'id' })
 
   if (upsertError) {
+    await supabase
+      .from('integration_error_logs')
+      .insert({ service: 'strava', error_message: `Strava Sync: Errore salvataggio attività — ${upsertError.message}`, error_code: '500' })
     return NextResponse.json({ error: 'Errore salvataggio attività' }, { status: 500 })
   }
 
