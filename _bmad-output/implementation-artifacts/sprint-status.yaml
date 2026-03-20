@@ -52,7 +52,7 @@ development_status:
   epic-1-retrospective: optional
 
   # EPIC 5: Onboarding (PRIORITY: UX GAP 5.1, 5.2)
-  epic-5: in-progress
+  epic-5: done
   5-1-onboarding-wizard-strava-oauth-connection: done
   5-2-onboarding-wizard-linear-api-key-setup: done
   5-3-profile-security-change-password: done

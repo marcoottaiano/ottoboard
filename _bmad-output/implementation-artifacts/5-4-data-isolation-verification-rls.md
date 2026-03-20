@@ -3,7 +3,7 @@
 **Epic:** 5 — Beta User Self-Onboarding & Profile Management
 **Story ID:** 5.4
 **Story Key:** `5-4-data-isolation-verification-rls`
-**Status:** review
+**Status:** done
 **Created:** 2026-03-20
 
 ---

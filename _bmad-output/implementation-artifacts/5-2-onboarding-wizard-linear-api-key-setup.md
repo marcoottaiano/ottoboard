@@ -3,7 +3,7 @@
 **Epic:** 5 — Beta User Self-Onboarding & Profile Management
 **Story ID:** 5.2
 **Story Key:** `5-2-onboarding-wizard-linear-api-key-setup`
-**Status:** ready-for-dev
+**Status:** done
 **Created:** 2026-03-20
 
 ---

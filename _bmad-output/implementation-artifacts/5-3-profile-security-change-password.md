@@ -3,7 +3,7 @@
 **Epic:** 5 — Beta User Self-Onboarding & Profile Management
 **Story ID:** 5.3
 **Story Key:** `5-3-profile-security-change-password`
-**Status:** ready-for-dev
+**Status:** done
 **Created:** 2026-03-20
 
 ---
