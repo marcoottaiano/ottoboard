@@ -51,6 +51,7 @@ export function useStravaConnection() {
   return {
     isConnected: statusQuery.data?.connected ?? false,
     isLoading: statusQuery.isLoading,
+    isConnectionError: statusQuery.isError,
     athleteId: statusQuery.data?.athleteId,
     lastSyncedAt: statusQuery.data?.lastSyncedAt,
     connect: () => { window.location.href = '/api/strava/connect' },

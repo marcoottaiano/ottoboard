@@ -4,9 +4,11 @@ import { Settings } from 'lucide-react'
 import { useColumns } from '@/hooks/useColumns'
 import { useTasks, tasksByColumn } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
+import { useLinearConnection } from '@/hooks/useLinearConnection'
 import { ColorDot } from '@/components/projects/ColorDot'
 import { DueDateBadge } from '@/components/projects/DueDateBadge'
 import { PriorityBadge } from '@/components/projects/PriorityBadge'
+import { SyncStatusBadge } from '@/components/ui/SyncStatusBadge'
 import { WidgetConfig } from '@/hooks/useDashboardWidgets'
 
 interface Props {
@@ -15,11 +17,13 @@ interface Props {
 
 export function KanbanColumnWidget({ config }: Props) {
   const { projectId, columnId } = config
+  const isConfigured = !!(projectId && columnId)
   const { data: projects = [] } = useProjects()
   const { data: columns = [] } = useColumns(projectId ?? null)
   const { data: allTasks = [], isLoading } = useTasks(projectId ?? null)
+  const { lastSyncedAt, isConnectionError } = useLinearConnection({ enabled: isConfigured })
 
-  if (!projectId || !columnId) {
+  if (!isConfigured) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 text-gray-600 min-h-[200px] p-5">
         <Settings size={20} />
@@ -36,11 +40,14 @@ export function KanbanColumnWidget({ config }: Props) {
   return (
     <div className="p-5 flex flex-col gap-3">
       {/* Header */}
-      <div className="flex items-center gap-1.5 min-w-0">
-        <ColorDot color={project?.color ?? null} size="sm" />
-        <span className="text-xs text-gray-500 truncate">{project?.name ?? '—'}</span>
-        <span className="text-gray-700 text-xs">/</span>
-        <span className="text-xs text-gray-300 font-medium truncate">{column?.name ?? '—'}</span>
+      <div className="flex items-center justify-between gap-1.5 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <ColorDot color={project?.color ?? null} size="sm" />
+          <span className="text-xs text-gray-500 truncate">{project?.name ?? '—'}</span>
+          <span className="text-gray-700 text-xs">/</span>
+          <span className="text-xs text-gray-300 font-medium truncate">{column?.name ?? '—'}</span>
+        </div>
+        <SyncStatusBadge lastSyncedAt={lastSyncedAt} hasError={isConnectionError} />
       </div>
 
       {/* Task list */}

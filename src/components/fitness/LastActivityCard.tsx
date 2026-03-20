@@ -1,8 +1,10 @@
 'use client'
 
 import { useActivities } from '@/hooks/useActivities'
+import { useStravaConnection } from '@/hooks/useStravaConnection'
 import { ExternalLink, Heart, Timer, TrendingUp, Flame } from 'lucide-react'
 import { ActivityBadge } from './ActivityBadge'
+import { SyncStatusBadge } from '@/components/ui/SyncStatusBadge'
 
 function formatDuration(seconds: number) {
   const h = Math.floor(seconds / 3600)
@@ -61,6 +63,7 @@ function SkeletonCard({ bare = false }: { bare?: boolean }) {
 
 export function LastActivityCard({ bare = false }: { bare?: boolean }) {
   const { data: activities, isLoading } = useActivities({ limit: 1 })
+  const { lastSyncedAt, isConnectionError } = useStravaConnection()
 
   if (isLoading) return <SkeletonCard bare={bare} />
 
@@ -81,10 +84,13 @@ export function LastActivityCard({ bare = false }: { bare?: boolean }) {
 
   return (
     <div className={outerClass}>
-      {/* Header: badge tipo + data */}
-      <div className="flex items-center gap-2">
-        <ActivityBadge type={activity.type} />
-        <span className="text-xs text-gray-500">{formatDate(activity.start_date)}</span>
+      {/* Header: badge tipo + data + sync status */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <ActivityBadge type={activity.type} />
+          <span className="text-xs text-gray-500">{formatDate(activity.start_date)}</span>
+        </div>
+        <SyncStatusBadge lastSyncedAt={lastSyncedAt} hasError={isConnectionError} />
       </div>
 
       {/* Nome attività */}
