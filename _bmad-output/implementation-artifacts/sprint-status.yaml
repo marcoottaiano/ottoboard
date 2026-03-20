@@ -48,8 +48,7 @@ development_status:
   1-2-integration-health-section-in-profile: done
   1-3-force-reconciliation-for-linear: done
   1-4-atomic-bidirectional-linear-sync-via-kanban: done
-  1-5-automatic-strava-token-refresh: review
-  1-6-integration-token-expiration-warning-banners: backlog
+  1-5-automatic-strava-token-refresh: done
   epic-1-retrospective: optional
 
   # EPIC 5: Onboarding (PRIORITY: UX GAP 5.1, 5.2)
