@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, Link2, CheckCircle, AlertCircle, Clock } from 'lucide-react'
+import { Activity, Link2, CheckCircle, AlertCircle, Clock, RefreshCw } from 'lucide-react'
 import { useIntegrationHealth } from '@/hooks/useIntegrationHealth'
 import { useLinearConnection } from '@/hooks/useLinearConnection'
 import { useStravaConnection } from '@/hooks/useStravaConnection'
@@ -24,6 +24,10 @@ function ServiceHealthCard({
   lastSyncedAt,
   errorLogs,
   logsLoading,
+  onReconcile,
+  isReconciling,
+  reconcileError,
+  reconcileResult,
 }: {
   name: string
   icon: React.ReactNode
@@ -33,6 +37,10 @@ function ServiceHealthCard({
   lastSyncedAt?: string
   errorLogs: Array<{ id: string; error_message: string; occurred_at: string }>
   logsLoading: boolean
+  onReconcile?: () => void
+  isReconciling?: boolean
+  reconcileError?: string | null
+  reconcileResult?: { reconciled: { projects: number; columns: number; tasks: number; orphansRemoved: number } } | null
 }) {
   const iconColor = color === 'orange' ? 'text-orange-400' : 'text-purple-400'
 
@@ -114,6 +122,36 @@ function ServiceHealthCard({
         </div>
       ) : null}
 
+      {/* Force Reconciliation — only for Linear */}
+      {onReconcile && (
+        <div className="pt-2 border-t border-white/[0.05] space-y-2">
+          <button
+            onClick={onReconcile}
+            disabled={isReconciling}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 disabled:opacity-50 transition-colors text-xs font-medium border border-purple-500/20"
+          >
+            <RefreshCw size={12} className={isReconciling ? 'animate-spin' : ''} />
+            {isReconciling ? 'Riconciliazione...' : 'Force Reconciliation'}
+          </button>
+
+          {/* Inline error message */}
+          {reconcileError && !isReconciling && (
+            <p className="text-xs text-red-400/80 leading-snug">{reconcileError}</p>
+          )}
+
+          {/* Inline success message */}
+          {reconcileResult && !isReconciling && !reconcileError && (
+            <p className="text-xs text-emerald-400/80">
+              ✓ {reconcileResult.reconciled.projects} progetti,{' '}
+              {reconcileResult.reconciled.tasks} task
+              {reconcileResult.reconciled.orphansRemoved > 0
+                ? ` · ${reconcileResult.reconciled.orphansRemoved} rimossi`
+                : ''}
+            </p>
+          )}
+        </div>
+      )}
+
       {!isConnected && !connectionLoading && (
         <p className="text-xs text-white/30">
           Connetti l&apos;integrazione per monitorarne la salute.
@@ -129,6 +167,10 @@ export function IntegrationHealthSection() {
     isConnected: linearConnected,
     isLoading: linearLoading,
     lastSyncedAt: linearLastSync,
+    forceReconcile,
+    isReconciling,
+    reconcileError,
+    reconcileResult,
   } = useLinearConnection()
   const {
     isConnected: stravaConnected,
@@ -161,8 +203,13 @@ export function IntegrationHealthSection() {
           lastSyncedAt={linearLastSync}
           errorLogs={health?.linear ?? []}
           logsLoading={logsLoading}
+          onReconcile={linearConnected ? forceReconcile : undefined}
+          isReconciling={isReconciling}
+          reconcileError={reconcileError}
+          reconcileResult={reconcileResult}
         />
       </div>
     </div>
   )
 }
+
