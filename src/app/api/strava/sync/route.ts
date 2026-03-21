@@ -26,7 +26,8 @@ export async function POST(request: Request) {
 
   let after: Date | undefined
   if (tokenRow.last_synced_at) {
-    after = new Date(tokenRow.last_synced_at)
+    // 48h buffer to catch activities uploaded with a past start_date
+    after = new Date(new Date(tokenRow.last_synced_at).getTime() - 48 * 60 * 60 * 1000)
   } else if (scopeDays === '30') {
     after = new Date(Date.now() - 30 * 24 * 3600 * 1000)
   }
