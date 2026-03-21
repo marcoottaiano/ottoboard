@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-22
+last_updated: 2026-03-21
 project: ottoboard
 project_key: NOKEY
 tracking_system: file-system
@@ -68,11 +68,11 @@ development_status:
   epic-2-retrospective: optional
 
   # EPIC 3: Actionable Home Dashboard
-  epic-3: backlog
-  3-1-widget-empty-states-with-contextual-ctas: backlog
-  3-2-direct-actions-from-home-widgets: backlog
-  3-3-dashboard-widget-customization-add-remove-reorder: backlog
-  3-4-persist-widget-filters-and-view-states: backlog
+  epic-3: in-progress
+  3-1-widget-empty-states-with-contextual-ctas: review
+  3-2-direct-actions-from-home-widgets: review
+  3-3-dashboard-widget-customization-add-remove-reorder: review
+  3-4-persist-widget-filters-and-view-states: ready-for-dev
   epic-3-retrospective: optional
 
   # EPIC 4: Finance Integrity & Intelligence

@@ -1,9 +1,10 @@
 'use client'
 
-import { TrendingDown, TrendingUp } from 'lucide-react'
+import { TrendingDown, TrendingUp, Wallet } from 'lucide-react'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useMonthStats } from '@/hooks/useMonthStats'
 import { TransactionWithCategory } from '@/types'
+import Link from 'next/link'
 
 function getCurrentMonth(): string {
   const now = new Date()
@@ -132,7 +133,16 @@ export function MonthFinanceWidget() {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-gray-600 text-center py-4">Nessuna transazione questo mese</p>
+        <div className="flex flex-col items-center justify-center gap-2 text-center py-6 px-5">
+          <Wallet size={24} className="text-gray-700" />
+          <p className="text-xs text-gray-500">Nessun movimento questo mese</p>
+          <Link
+            href="/finance"
+            className="text-xs text-emerald-500/70 hover:text-emerald-400 transition-colors"
+          >
+            Aggiungi transazione →
+          </Link>
+        </div>
       )}
     </div>
   )

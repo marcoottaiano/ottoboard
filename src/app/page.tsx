@@ -157,7 +157,12 @@ export default function HomePage() {
         </DndContext>
       )}
 
-      {showAdd && <AddWidgetModal onClose={() => setShowAdd(false)} />}
+      {showAdd && (
+        <AddWidgetModal
+          onClose={() => setShowAdd(false)}
+          existingTypes={widgets.map((w) => w.type)}
+        />
+      )}
       {configuringWidget && (
         <ConfigureWidgetModal
           widget={configuringWidget}
