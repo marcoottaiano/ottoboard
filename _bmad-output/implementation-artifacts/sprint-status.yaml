@@ -69,9 +69,9 @@ development_status:
 
   # EPIC 3: Actionable Home Dashboard
   epic-3: in-progress
-  3-1-widget-empty-states-with-contextual-ctas: ready-for-dev
-  3-2-direct-actions-from-home-widgets: ready-for-dev
-  3-3-dashboard-widget-customization-add-remove-reorder: ready-for-dev
+  3-1-widget-empty-states-with-contextual-ctas: review
+  3-2-direct-actions-from-home-widgets: review
+  3-3-dashboard-widget-customization-add-remove-reorder: review
   3-4-persist-widget-filters-and-view-states: ready-for-dev
   epic-3-retrospective: optional
 

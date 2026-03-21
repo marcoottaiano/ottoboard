@@ -116,15 +116,32 @@ function KanbanPickers({
 
 interface AddWidgetModalProps {
   onClose: () => void
+  existingTypes: WidgetType[]
 }
 
-export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
+const SINGLETON_TYPES: WidgetType[] = [
+  'last-activity',
+  'week-stats',
+  'month-finance',
+  'total-balance',
+  'reminders',
+  'habits',
+]
+
+export function AddWidgetModal({ onClose, existingTypes }: AddWidgetModalProps) {
   const [selected, setSelected] = useState<WidgetType | null>(null)
   const [projectId, setProjectId] = useState('')
   const [columnId, setColumnId] = useState('')
   const [goalId, setGoalId] = useState('')
   const addWidget = useAddWidget()
   const { data: goals = [] } = useFinancialGoals()
+
+  const visibleCatalogue = WIDGET_CATALOGUE.filter((w) => {
+    if (SINGLETON_TYPES.includes(w.type)) {
+      return !existingTypes.includes(w.type)
+    }
+    return true
+  })
 
   const canAdd =
     selected !== null &&
@@ -164,7 +181,7 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
 
         {/* Widget tiles */}
         <div className="p-4 grid grid-cols-2 gap-2">
-          {WIDGET_CATALOGUE.map((w) => (
+          {visibleCatalogue.map((w) => (
             <button
               key={w.type}
               onClick={() => {
@@ -188,6 +205,11 @@ export function AddWidgetModal({ onClose }: AddWidgetModalProps) {
               </div>
             </button>
           ))}
+          {visibleCatalogue.length === 0 && (
+            <p className="col-span-2 text-xs text-gray-600 text-center py-4">
+              Tutti i widget sono già presenti nella dashboard.
+            </p>
+          )}
         </div>
 
         {/* Kanban config pickers */}

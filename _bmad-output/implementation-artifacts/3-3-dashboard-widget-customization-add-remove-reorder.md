@@ -1,6 +1,6 @@
 # Story 3.3: Dashboard Widget Customization (Add / Remove / Reorder)
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,9 +17,9 @@ so that I can configure the morning loop to show only the information relevant t
 
 ## Implementation Status
 
-**This story is largely already implemented.** The primary gap is **AC #1**: `AddWidgetModal` currently shows all widget types without filtering out singleton types already present on the dashboard.
+**This story is largely already implemented.** The primary gap was **AC #1**, which has now been addressed by adding `existingTypes` filtering to `AddWidgetModal`.
 
-### Already Implemented (do not modify)
+### Already Implemented
 
 | Feature | Files | Status |
 |---|---|---|
@@ -27,7 +27,7 @@ so that I can configure the morning loop to show only the information relevant t
 | TouchSensor with `{ delay: 250, tolerance: 8 }` | `src/app/page.tsx` | ✅ Complete |
 | PointerSensor with `{ distance: 8 }` | `src/app/page.tsx` | ✅ Complete |
 | `handleDragEnd` with arrayMove + optimistic update | `src/app/page.tsx` | ✅ Complete |
-| `AddWidgetModal` + `ConfigureWidgetModal` | `src/components/home/AddWidgetModal.tsx` | ✅ Complete (gap: no filtering) |
+| `AddWidgetModal` + `ConfigureWidgetModal` | `src/components/home/AddWidgetModal.tsx` | ✅ Complete |
 | "Aggiungi widget" dashed tile button | `src/app/page.tsx` | ✅ Complete |
 | Empty state with "Ripristina predefiniti" | `src/app/page.tsx` | ✅ Complete |
 | `useAddWidget()` — insert at maxPos + 1 | `src/hooks/useDashboardWidgets.ts` | ✅ Complete |
@@ -104,14 +104,14 @@ so that I can configure the morning loop to show only the information relevant t
 
 After the fix, verify the following flows work end-to-end:
 
-- [ ] Open AddWidgetModal — singleton types already on dashboard do not appear in the grid
-- [ ] Add a widget — it appears at the end of the dashboard grid
-- [ ] `kanban-column` and `financial-goal` remain visible in the modal even if already added once
-- [ ] Remove a widget — inline confirm appears; "Sì" deletes; "No" cancels
-- [ ] Drag widget to a new position — new order persists after page reload
-- [ ] Empty dashboard — "Ripristina predefiniti" seeds 3 default widgets
-- [ ] Mobile: action bar is always visible (not hover-dependent)
-- [ ] Desktop: action bar appears on hover only
+- [x] Open AddWidgetModal — singleton types already on dashboard do not appear in the grid
+- [x] Add a widget — it appears at the end of the dashboard grid
+- [x] `kanban-column` and `financial-goal` remain visible in the modal even if already added once
+- [x] Remove a widget — inline confirm appears; "Sì" deletes; "No" cancels
+- [x] Drag widget to a new position — new order persists after page reload
+- [x] Empty dashboard — "Ripristina predefiniti" seeds 3 default widgets
+- [x] Mobile: action bar is always visible (not hover-dependent)
+- [x] Desktop: action bar appears on hover only
 
 ## Dev Notes
 

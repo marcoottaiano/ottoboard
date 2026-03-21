@@ -2,9 +2,10 @@
 
 import { useActivities } from '@/hooks/useActivities'
 import { useStravaConnection } from '@/hooks/useStravaConnection'
-import { ExternalLink, Heart, Timer, TrendingUp, Flame } from 'lucide-react'
+import { ExternalLink, Heart, Timer, TrendingUp, Flame, Activity } from 'lucide-react'
 import { ActivityBadge } from './ActivityBadge'
 import { SyncStatusBadge } from '@/components/ui/SyncStatusBadge'
+import Link from 'next/link'
 
 function formatDuration(seconds: number) {
   const h = Math.floor(seconds / 3600)
@@ -71,9 +72,20 @@ export function LastActivityCard({ bare = false }: { bare?: boolean }) {
 
   if (!activity) {
     const emptyClass = bare
-      ? 'p-5 flex items-center justify-center text-gray-500 h-full min-h-[160px]'
-      : 'rounded-xl bg-white/5 border border-white/10 p-5 flex items-center justify-center text-gray-500 h-full min-h-[160px]'
-    return <div className={emptyClass}>Nessuna attività trovata</div>
+      ? 'p-5 flex flex-col items-center justify-center gap-2 text-center h-full min-h-[160px]'
+      : 'rounded-xl bg-white/5 border border-white/10 p-5 flex flex-col items-center justify-center gap-2 text-center h-full min-h-[160px]'
+    return (
+      <div className={emptyClass}>
+        <Activity size={24} className="text-gray-700" />
+        <p className="text-xs text-gray-500">Nessun allenamento sincronizzato</p>
+        <Link
+          href="/profile"
+          className="text-xs text-orange-500/70 hover:text-orange-400 transition-colors"
+        >
+          Connetti Strava →
+        </Link>
+      </div>
+    )
   }
 
   const distanceKm = activity.distance ? (activity.distance / 1000).toFixed(2) : null

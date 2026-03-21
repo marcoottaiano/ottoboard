@@ -1,6 +1,6 @@
 # Story 3.1: Widget Empty States with Contextual CTAs
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -17,30 +17,30 @@ so that I always know what to do next and never see a blank or broken widget.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 — LastActivityCard empty state** (`src/components/fitness/LastActivityCard.tsx`)
-  - [ ] Add `Activity` (or `Dumbbell`) and `Link` imports from `lucide-react` and `next/link`
-  - [ ] Replace the plain text empty `<div>` at lines 72–76 with the standardised empty state layout (icon + message + CTA link to `/profile`)
-  - [ ] Preserve the `bare` prop logic: when `bare=true` omit the outer card wrapper classes; when `bare=false` keep `rounded-xl bg-white/5 border border-white/10`
-  - [ ] CTA link text: "Connetti Strava →", colour: `text-orange-500/70 hover:text-orange-400`
+- [x] **Task 1 — LastActivityCard empty state** (`src/components/fitness/LastActivityCard.tsx`)
+  - [x] Add `Activity` (or `Dumbbell`) and `Link` imports from `lucide-react` and `next/link`
+  - [x] Replace the plain text empty `<div>` at lines 72–76 with the standardised empty state layout (icon + message + CTA link to `/profile`)
+  - [x] Preserve the `bare` prop logic: when `bare=true` omit the outer card wrapper classes; when `bare=false` keep `rounded-xl bg-white/5 border border-white/10`
+  - [x] CTA link text: "Connetti Strava →", colour: `text-orange-500/70 hover:text-orange-400`
 
-- [ ] **Task 2 — KanbanColumnWidget empty state** (`src/components/home/KanbanColumnWidget.tsx`)
-  - [ ] Add `LayoutGrid` (or `Kanban`) import from `lucide-react` and `Link` from `next/link`
-  - [ ] Replace the plain `<p>` at line 74 with the standardised empty state layout (icon + message + CTA link to `/projects`)
-  - [ ] CTA link text: "Apri Progetti →", colour: `text-purple-500/70 hover:text-purple-400`
-  - [ ] Keep the existing `isLoading` skeleton branch untouched above this block
+- [x] **Task 2 — KanbanColumnWidget empty state** (`src/components/home/KanbanColumnWidget.tsx`)
+  - [x] Add `LayoutGrid` (or `Kanban`) import from `lucide-react` and `Link` from `next/link`
+  - [x] Replace the plain `<p>` at line 74 with the standardised empty state layout (icon + message + CTA link to `/projects`)
+  - [x] CTA link text: "Apri Progetti →", colour: `text-purple-500/70 hover:text-purple-400`
+  - [x] Keep the existing `isLoading` skeleton branch untouched above this block
 
-- [ ] **Task 3 — MonthFinanceWidget empty state** (`src/components/home/MonthFinanceWidget.tsx`)
-  - [ ] Add `Wallet` (or `Receipt`) import from `lucide-react` and `Link` from `next/link`
-  - [ ] The current code already shows `"Nessuna transazione questo mese"` as plain text when `top3.length === 0` (line 135). Replace that plain `<p>` with the standardised empty state layout
-  - [ ] **Important:** the empty state should trigger when `transactions.length === 0` (no transactions at all this month), not only when there are no expense categories. Both conditions coincide in practice, but check against `transactions.length === 0` for clarity; the top-3 section empty state covers the residual case (income-only month)
-  - [ ] CTA link text: "Aggiungi transazione →", colour: `text-emerald-500/70 hover:text-emerald-400`
-  - [ ] Keep the balance header section visible even when there are no transactions (balance will be `€ 0,00`)
+- [x] **Task 3 — MonthFinanceWidget empty state** (`src/components/home/MonthFinanceWidget.tsx`)
+  - [x] Add `Wallet` (or `Receipt`) import from `lucide-react` and `Link` from `next/link`
+  - [x] The current code already shows `"Nessuna transazione questo mese"` as plain text when `top3.length === 0` (line 135). Replace that plain `<p>` with the standardised empty state layout
+  - [x] **Important:** the empty state should trigger when `transactions.length === 0` (no transactions at all this month), not only when there are no expense categories. Both conditions coincide in practice, but check against `transactions.length === 0` for clarity; the top-3 section empty state covers the residual case (income-only month)
+  - [x] CTA link text: "Aggiungi transazione →", colour: `text-emerald-500/70 hover:text-emerald-400`
+  - [x] Keep the balance header section visible even when there are no transactions (balance will be `€ 0,00`)
 
-- [ ] **Task 4 — Verify skeleton loaders (no code changes)**
-  - [ ] Confirm `LastActivityCard` has `SkeletonCard` with `animate-pulse` ✅
-  - [ ] Confirm `KanbanColumnWidget` has `animate-pulse` skeleton in `isLoading` branch ✅
-  - [ ] Confirm `MonthFinanceWidget` has `animate-pulse` skeleton in `isLoading || loadingStats` branch ✅
-  - [ ] Confirm `HabitsWidget` and `RemindersWidget` are untouched ✅
+- [x] **Task 4 — Verify skeleton loaders (no code changes)**
+  - [x] Confirm `LastActivityCard` has `SkeletonCard` with `animate-pulse` ✅
+  - [x] Confirm `KanbanColumnWidget` has `animate-pulse` skeleton in `isLoading` branch ✅
+  - [x] Confirm `MonthFinanceWidget` has `animate-pulse` skeleton in `isLoading || loadingStats` branch ✅
+  - [x] Confirm `HabitsWidget` and `RemindersWidget` are untouched ✅
 
 ## Dev Notes
 
@@ -228,6 +228,10 @@ claude-sonnet-4-6
 ### Debug Log References
 
 ### Completion Notes List
+- Implemented standardized empty state for LastActivityCard with Activity icon and CTA to /profile.
+- Implemented standardized empty state for KanbanColumnWidget with LayoutGrid icon and CTA to /projects.
+- Implemented standardized empty state for MonthFinanceWidget with Wallet icon and CTA to /finance.
+- Verified all skeleton loaders are already compliant.
 
 ### File List
 - `src/components/fitness/LastActivityCard.tsx`

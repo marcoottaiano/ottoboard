@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import type { Reminder, CreateReminderInput, UpdateReminderInput, ReminderRecurrence } from '@/types'
+import { toast } from 'sonner'
 
 const PENDING_KEY = ['reminders', 'pending']
 const COMPLETED_KEY = ['reminders', 'completed']
@@ -146,7 +147,25 @@ export function useCompleteReminder() {
         }
       }
     },
-    onSuccess: () => invalidateBoth(queryClient),
+    onMutate: async (reminder) => {
+      await queryClient.cancelQueries({ queryKey: PENDING_KEY })
+      const previous = queryClient.getQueryData<Reminder[]>(PENDING_KEY)
+      const previousCompleted = queryClient.getQueryData<Reminder[]>(COMPLETED_KEY)
+      const now = new Date().toISOString()
+      queryClient.setQueryData<Reminder[]>(PENDING_KEY, (old) =>
+        (old ?? []).filter((r) => r.id !== reminder.id)
+      )
+      queryClient.setQueryData<Reminder[]>(COMPLETED_KEY, (old) =>
+        [{ ...reminder, completed: true, completed_at: now }, ...(old ?? [])]
+      )
+      return { previous, previousCompleted }
+    },
+    onError: (_err, _reminder, context) => {
+      if (context?.previous) queryClient.setQueryData(PENDING_KEY, context.previous)
+      if (context?.previousCompleted) queryClient.setQueryData(COMPLETED_KEY, context.previousCompleted)
+      toast.error('Operazione non riuscita, riprova')
+    },
+    onSettled: () => invalidateBoth(queryClient),
   })
 }
 

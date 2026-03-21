@@ -1,6 +1,7 @@
 'use client'
 
-import { Settings } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Settings, LayoutGrid } from 'lucide-react'
 import { useColumns } from '@/hooks/useColumns'
 import { useTasks, tasksByColumn } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
@@ -10,6 +11,8 @@ import { DueDateBadge } from '@/components/projects/DueDateBadge'
 import { PriorityBadge } from '@/components/projects/PriorityBadge'
 import { SyncStatusBadge } from '@/components/ui/SyncStatusBadge'
 import { WidgetConfig } from '@/hooks/useDashboardWidgets'
+import { TaskDetailModal } from '@/components/projects/TaskDetailModal'
+import Link from 'next/link'
 
 interface Props {
   config: WidgetConfig
@@ -17,11 +20,21 @@ interface Props {
 
 export function KanbanColumnWidget({ config }: Props) {
   const { projectId, columnId } = config
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const isConfigured = !!(projectId && columnId)
   const { data: projects = [] } = useProjects()
   const { data: columns = [] } = useColumns(projectId ?? null)
   const { data: allTasks = [], isLoading } = useTasks(projectId ?? null)
   const { lastSyncedAt, isConnectionError } = useLinearConnection({ enabled: isConfigured })
+
+  useEffect(() => {
+    if (!selectedTaskId) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedTaskId(null)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [selectedTaskId])
 
   if (!isConfigured) {
     return (
@@ -62,7 +75,11 @@ export function KanbanColumnWidget({ config }: Props) {
           {tasks.slice(0, 8).map((task) => (
             <div
               key={task.id}
-              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
+              role="button"
+              tabIndex={0}
+              onClick={() => setSelectedTaskId(task.id)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedTaskId(task.id) }}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
             >
               {task.priority && <PriorityBadge priority={task.priority} />}
               <span className="flex-1 text-xs text-gray-300 truncate">{task.title}</span>
@@ -71,7 +88,24 @@ export function KanbanColumnWidget({ config }: Props) {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-gray-600 text-center py-4">Nessuna task in questa colonna</p>
+        <div className="flex flex-col items-center justify-center gap-2 text-center py-6 px-5">
+          <LayoutGrid size={24} className="text-gray-700" />
+          <p className="text-xs text-gray-500">Nessun task in questa colonna</p>
+          <Link
+            href="/projects"
+            className="text-xs text-purple-500/70 hover:text-purple-400 transition-colors"
+          >
+            Apri Progetti →
+          </Link>
+        </div>
+      )}
+
+      {selectedTaskId && projectId && (
+        <TaskDetailModal
+          taskId={selectedTaskId}
+          projectId={projectId}
+          onClose={() => setSelectedTaskId(null)}
+        />
       )}
     </div>
   )
