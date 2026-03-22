@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Target, RefreshCw, Pencil } from 'lucide-react'
+import { Target, RefreshCw, Pencil, AlertCircle } from 'lucide-react'
 import { useFinancialGoals } from '@/hooks/useFinancialGoals'
 import { GoalUpdateModal } from '@/components/finance/GoalUpdateModal'
 import { GoalEditModal } from '@/components/finance/GoalEditModal'
@@ -43,7 +43,11 @@ export function FinancialGoalWidget({ goalId }: Props) {
           <div className="h-2 bg-white/5 rounded animate-pulse" />
         </div>
       ) : !goal ? (
-        <p className="text-xs text-gray-600">Obiettivo non trovato o eliminato</p>
+        <div className="flex flex-col items-center justify-center gap-2 min-h-[120px] text-center">
+          <AlertCircle size={20} className="text-gray-600" />
+          <p className="text-xs text-gray-500">Obiettivo non trovato o eliminato</p>
+          <p className="text-xs text-gray-600">Riconfigura il widget dall&apos;icona ⚙</p>
+        </div>
       ) : (
         <>
           {/* Goal name */}

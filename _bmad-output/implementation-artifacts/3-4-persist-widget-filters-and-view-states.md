@@ -1,6 +1,6 @@
 # Story 3.4: Persist Widget Filters and View States
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -24,17 +24,17 @@ So that I don't have to reconfigure the dashboard every time I open the app.
 
 ## Tasks / Subtasks
 
-### Task 1: Add stale-config detection to KanbanColumnWidget
+### Task 1: Add stale-config detection to KanbanColumnWidget ✅
 
 **File:** `src/components/home/KanbanColumnWidget.tsx`
 
-**Subtask 1.1 — Import `AlertCircle` from lucide-react**
+**Subtask 1.1 — Import `AlertCircle` from lucide-react** ✅
 Add `AlertCircle` to the existing import from `'lucide-react'` alongside `Settings`.
 
-**Subtask 1.2 — Add `isLoading` from `useProjects`**
+**Subtask 1.2 — Add `isLoading` from `useProjects`** ✅
 The `useProjects()` call currently destructures only `data`. Add `isLoading: projectsLoading` from it as well, so we can distinguish "data not yet fetched" from "entity deleted".
 
-**Subtask 1.3 — Derive `isStaleConfig` boolean**
+**Subtask 1.3 — Derive `isStaleConfig` boolean** ✅
 After the existing `project` and `column` lookups, derive:
 ```typescript
 const isStaleConfig =
@@ -47,7 +47,7 @@ const isStaleConfig =
 
 The `projects.length > 0` guard prevents a false positive when the user has no projects at all — in that case the empty projects array is a valid data state and `isConfigured` would be false anyway (since there would be no saved projectId). More precisely, this guard ensures we only flag stale config after data has been fetched and returned at least some content, reducing the risk of flashing an error during the hydration window.
 
-**Subtask 1.4 — Render stale-config empty state**
+**Subtask 1.4 — Render stale-config empty state** ✅
 Immediately after the `if (!isConfigured)` early return, add:
 ```tsx
 if (isStaleConfig) {
@@ -61,7 +61,7 @@ if (isStaleConfig) {
 }
 ```
 
-### Task 2: Add stale-config detection to FinancialGoalWidget
+### Task 2: Add stale-config detection to FinancialGoalWidget ✅
 
 **File:** `src/components/home/FinancialGoalWidget.tsx`
 
@@ -71,10 +71,10 @@ if (isStaleConfig) {
 ```
 This is a partial implementation — it shows a message but **no CTA** to reconfigure.
 
-**Subtask 2.1 — Import `AlertCircle` from lucide-react**
+**Subtask 2.1 — Import `AlertCircle` from lucide-react** ✅
 Add `AlertCircle` to the existing import from `'lucide-react'` alongside `Target`, `RefreshCw`, `Pencil`.
 
-**Subtask 2.2 — Replace the silent "not found" message with a full stale-config empty state**
+**Subtask 2.2 — Replace the silent "not found" message with a full stale-config empty state** ✅
 Locate the `!goal` branch in the JSX (line 45–46 in the current file):
 ```tsx
 ) : !goal ? (
@@ -175,8 +175,16 @@ src/
 claude-sonnet-4-6
 
 ### Debug Log References
+- No test framework found (no jest/vitest/playwright config). TypeScript errors in the project are pre-existing environment issues (missing node_modules — `react`, `lucide-react`, `next/link` types not installed in sandbox). No new errors introduced by this story.
 
 ### Completion Notes List
+- ✅ Task 1 complete: KanbanColumnWidget now detects stale config (deleted project/column) and shows an explicit empty state with reconfigure hint. Loading guard prevents false positives during React Query hydration.
+- ✅ Task 2 complete: FinancialGoalWidget upgraded from bare text message to full empty-state block matching KanbanColumnWidget pattern.
+- AC 1 & AC 2 confirmed already implemented via existing `dashboard_widgets.config` JSONB persistence. No schema changes needed.
+- AC 3 implemented in both widgets. Pattern is consistent: AlertCircle icon + message + reconfigure hint pointing to ⚙ icon.
+
+### Change Log
+- 2026-03-22: Implemented AC 3 — stale-config detection in KanbanColumnWidget and FinancialGoalWidget. Added AlertCircle empty states with reconfigure CTA.
 
 ### File List
 - `src/components/home/KanbanColumnWidget.tsx`

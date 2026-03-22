@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Settings, LayoutGrid } from 'lucide-react'
+import { Settings, LayoutGrid, AlertCircle } from 'lucide-react'
 import { useColumns } from '@/hooks/useColumns'
 import { useTasks, tasksByColumn } from '@/hooks/useTasks'
 import { useProjects } from '@/hooks/useProjects'
@@ -22,8 +22,8 @@ export function KanbanColumnWidget({ config }: Props) {
   const { projectId, columnId } = config
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const isConfigured = !!(projectId && columnId)
-  const { data: projects = [] } = useProjects()
-  const { data: columns = [] } = useColumns(projectId ?? null)
+  const { data: projects = [], isLoading: projectsLoading } = useProjects()
+  const { data: columns = [], isLoading: columnsLoading } = useColumns(projectId ?? null)
   const { data: allTasks = [], isLoading } = useTasks(projectId ?? null)
   const { lastSyncedAt, isConnectionError } = useLinearConnection({ enabled: isConfigured })
 
@@ -48,6 +48,26 @@ export function KanbanColumnWidget({ config }: Props) {
 
   const project = projects.find((p) => p.id === projectId)
   const column = columns.find((c) => c.id === columnId)
+
+  // All three loading states guarded to avoid false-positive stale flash during hydration
+  const isStaleConfig =
+    isConfigured &&
+    !projectsLoading &&
+    !columnsLoading &&
+    !isLoading &&
+    projects.length > 0 &&
+    (!project || !column)
+
+  if (isStaleConfig) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-2 p-5 min-h-[200px] text-center">
+        <AlertCircle size={20} className="text-gray-600" />
+        <p className="text-xs text-gray-500">Progetto o colonna non trovati</p>
+        <p className="text-xs text-gray-600">Riconfigura il widget dall&apos;icona ⚙</p>
+      </div>
+    )
+  }
+
   const tasks = tasksByColumn(allTasks, columnId)
 
   return (
