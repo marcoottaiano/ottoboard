@@ -78,7 +78,7 @@ export default function FinancePage() {
 
       <TransactionList month={selectedMonth} />
 
-      <CSVImport month={selectedMonth} />
+      <CSVImport />
 
       <CategoryManager />
     </main>
