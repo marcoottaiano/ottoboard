@@ -1,6 +1,6 @@
 # Story 4.5: Bulk Transaction Operations
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -34,55 +34,51 @@ The dev team should choose Option A or B explicitly. This story assumes **Option
 
 **File:** `src/components/finance/TransactionList.tsx`
 
-- [ ] **1.1** Add state: `isMultiSelect: boolean` (default false) and `selectedIds: Set<string>` (default empty).
-- [ ] **1.2** Add a "Seleziona" toggle button in the list header (next to or near the filters). On click: `setIsMultiSelect(true)`. Show a "Annulla" button when in multi-select mode to exit (clears selection, sets `isMultiSelect` to false).
-- [ ] **1.3** When `isMultiSelect` is true:
+- [x] **1.1** Add state: `isMultiSelect: boolean` (default false) and `selectedIds: Set<string>` (default empty).
+- [x] **1.2** Add a "Seleziona" toggle button in the list header (next to or near the filters). On click: `setIsMultiSelect(true)`. Show a "Annulla" button when in multi-select mode to exit (clears selection, sets `isMultiSelect` to false).
+- [x] **1.3** When `isMultiSelect` is true:
   - Render a checkbox in the first cell of each transaction row.
   - On checkbox change: add/remove the transaction `id` from `selectedIds`.
-- [ ] **1.4** Add a "select all on page" checkbox in the table header row (first column) that toggles all currently visible transactions.
-- [ ] **1.5** Auto-exit multi-select when `selectedIds` becomes empty (AC 4): in a `useEffect`, if `isMultiSelect && selectedIds.size === 0`, set `isMultiSelect(false)`. Note: do NOT auto-exit on initial entry, only after items were selected and then deselected.
+- [x] **1.4** Add a "select all on page" checkbox in the table header row (first column) that toggles all currently visible transactions.
+- [x] **1.5** Auto-exit multi-select when `selectedIds` becomes empty (AC 4): in a `useEffect`, if `isMultiSelect && selectedIds.size === 0`, set `isMultiSelect(false)`. Note: do NOT auto-exit on initial entry, only after items were selected and then deselected.
 
 ### Task 2: Add bulk action toolbar
 
 **File:** `src/components/finance/TransactionList.tsx`
 
-- [ ] **2.1** When `selectedIds.size > 0`, show a floating or sticky action toolbar above (or below) the list with:
+- [x] **2.1** When `selectedIds.size > 0`, show a floating or sticky action toolbar above (or below) the list with:
   - "{N} selezionate" count label.
   - "Elimina selezionati" button (destructive, red).
   - "Cambia categoria" button (secondary).
-- [ ] **2.2** The toolbar should be visually distinct — a semi-transparent bar that overlays or floats, similar to other selection UIs in the app.
+- [x] **2.2** The toolbar should be visually distinct — a semi-transparent bar that overlays or floats, similar to other selection UIs in the app.
 
 ### Task 3: Implement bulk delete
 
 **File:** `src/components/finance/TransactionList.tsx` + `src/hooks/useFinanceMutations.ts`
 
-- [ ] **3.1** Add `useBulkDeleteTransactions` mutation to `useFinanceMutations.ts`:
-  ```typescript
-  // Deletes multiple transactions by id array
-  // Uses Promise.all for concurrent deletes OR a single RPC if available
-  ```
-  - Prefer: `supabase.from('transactions').delete().in('id', ids)` — Supabase supports `in()` filter for bulk delete in a single request.
-  - Invalidate `['transactions']` on settle.
-- [ ] **3.2** In `TransactionList`, when user clicks "Elimina selezionati":
-  - Show inline confirm state: replace the button text with "Conferma eliminazione" (red) + "Annulla" (secondary) — do NOT use a modal dialog.
+- [x] **3.1** Add `useBulkDeleteTransactions` mutation to `useFinanceMutations.ts`:
+  - Uses `supabase.from('transactions').delete().in('id', ids)` — single HTTP request.
+  - Invalidates `['transactions']` on settle.
+- [x] **3.2** In `TransactionList`, when user clicks "Elimina selezionati":
+  - Show inline confirm state: replace the button text with "Conferma eliminazione" (red) + "Annulla" (secondary) — no modal dialog.
   - On confirm: call `bulkDelete.mutate([...selectedIds])`.
   - On success: clear `selectedIds`, exit multi-select.
-- [ ] **3.3** Optimistic update: remove the selected transactions from the list immediately, restore on error.
+- [x] **3.3** Optimistic update: remove the selected transactions from the list immediately, restore on error.
 
 ### Task 4: Implement bulk recategorize
 
 **File:** `src/components/finance/TransactionList.tsx` + `src/hooks/useFinanceMutations.ts`
 
-- [ ] **4.1** Add `useBulkRecategorizeTransactions` mutation to `useFinanceMutations.ts`:
-  - Use: `supabase.from('transactions').update({ category_id: newCategoryId }).in('id', ids)` — single request.
-  - Invalidate `['transactions']` on settle.
-  - **TODO(4.6):** add `.not('category_locked', 'eq', true)` filter when category_locked column exists. For now, update all selected without filtering.
-- [ ] **4.2** In `TransactionList`, when user clicks "Cambia categoria":
-  - Show an inline category selector (use the existing `Select` component from `components/ui/`) below the toolbar.
-  - Filter categories to show only expense categories (since bulk recategorize makes sense for expense transactions; if mixed selection, show all categories).
+- [x] **4.1** Add `useBulkRecategorizeTransactions` mutation to `useFinanceMutations.ts`:
+  - Uses `supabase.from('transactions').update({ category_id: newCategoryId }).in('id', ids)` — single request.
+  - Invalidates `['transactions']` on settle.
+  - **TODO(4.6):** add `.not('category_locked', 'eq', true)` filter when category_locked column exists. Comment added in code.
+- [x] **4.2** In `TransactionList`, when user clicks "Cambia categoria":
+  - Show an inline category selector (uses existing `Select` component from `components/ui/`) below the toolbar.
+  - Filters categories to show expense + both categories.
   - On category selected: call `bulkRecategorize.mutate({ ids: [...selectedIds], categoryId })`.
   - On success: clear `selectedIds`, exit multi-select.
-- [ ] **4.3** Optimistic update: update `category_id` on all selected transactions in the cache immediately, restore on error.
+- [x] **4.3** Optimistic update: update `category_id` on all selected transactions in cache immediately, restore on error.
 
 ## Dev Notes
 
@@ -127,9 +123,9 @@ No schema changes for this story. The `category_locked` column from Story 4.6 wi
 ```
 src/
 ├── components/finance/
-│   └── TransactionList.tsx         ← MODIFY (Tasks 1, 2, 3, 4)
+│   └── TransactionList.tsx         ← MODIFIED (Tasks 1, 2, 3, 4)
 ├── hooks/
-│   └── useFinanceMutations.ts      ← MODIFY (Tasks 3.1, 4.1: add bulk mutations)
+│   └── useFinanceMutations.ts      ← MODIFIED (Tasks 3.1, 4.1: added bulk mutations)
 ```
 
 ### References
@@ -144,10 +140,23 @@ src/
 
 ### Agent Model Used
 
-_to be filled_
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Added `isMultiSelect` and `selectedIds` state to `TransactionList`. Used a `useRef` (`hasEverSelectedRef`) to distinguish "entered but never selected" from "selected then deselected all", enabling correct AC 4 auto-exit behavior.
+- "Seleziona" button appears in header row; switches to "Annulla" when in multi-select mode.
+- Per-row checkboxes and header "select all on page" checkbox (with indeterminate state support via `ref` callback) render only when `isMultiSelect` is true.
+- Bulk action toolbar renders inside the card (not fixed/floating) when `selectedIds.size > 0`, styled with emerald accent.
+- Inline delete confirm replaces the "Elimina selezionati" button in-place with "Conferma eliminazione" + "Annulla" — no modal.
+- Inline category selector uses the existing `Select` component rendered below the toolbar bar; no `overflow-hidden` on parent to avoid dropdown clipping.
+- `useBulkDeleteTransactions` and `useBulkRecategorizeTransactions` added to `useFinanceMutations.ts` with full optimistic update + rollback, scanning all cache entries matching `['transactions']` query key prefix.
+- TODO(4.6) comment placed in `useBulkRecategorizeTransactions.mutationFn` as specified.
+- `overflow-x-auto overflow-y-hidden` added to table wrapper per CLAUDE.md CSS overflow gotcha.
+
 ### File List
+
+- `src/components/finance/TransactionList.tsx`
+- `src/hooks/useFinanceMutations.ts`
