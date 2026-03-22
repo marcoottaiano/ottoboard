@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { TransactionType, CategoryType, SpendingType } from '@/types'
+import { Category, TransactionType, TransactionWithCategory, CategoryType, SpendingType } from '@/types'
 
 // ─── Transactions ──────────────────────────────────────────────────────────────
 
@@ -24,7 +24,58 @@ export function useCreateTransaction() {
       const { error } = await supabase.from('transactions').insert({ ...input, user_id: user.id })
       if (error) throw error
     },
-    onSuccess: () => {
+    onMutate: async (vars) => {
+      await queryClient.cancelQueries({ queryKey: ['transactions'] })
+
+      const month = vars.date.substring(0, 7)
+      const categories = queryClient.getQueryData<Category[]>(['categories'])
+      const category = categories?.find((c) => c.id === vars.category_id) ?? null
+
+      const tempTx: TransactionWithCategory = {
+        id: 'temp-' + Date.now(),
+        user_id: '',
+        amount: vars.amount,
+        type: vars.type,
+        category_id: vars.category_id,
+        description: vars.description ?? null,
+        date: vars.date,
+        created_at: new Date().toISOString(),
+        category,
+      }
+
+      // Snapshot and update all matching cache entries
+      const queryCache = queryClient.getQueryCache()
+      const txQueries = queryCache.findAll({ queryKey: ['transactions'] })
+      const snapshots: Array<{ queryKey: unknown[]; data: TransactionWithCategory[] | undefined }> = []
+
+      for (const query of txQueries) {
+        const queryKey = query.queryKey as unknown[]
+        // Guard: skip entries with no filter object (unexpected key shape)
+        if (queryKey.length < 2 || typeof queryKey[1] !== 'object' || queryKey[1] === null) continue
+        const filters = queryKey[1] as { month?: string; type?: string; categoryId?: string }
+        // Only inject into cache entries that match this transaction's month/type
+        const monthMatch = !filters.month || filters.month === month
+        const typeMatch = !filters?.type || filters.type === vars.type
+        const categoryMatch = !filters?.categoryId || filters.categoryId === vars.category_id
+        if (monthMatch && typeMatch && categoryMatch) {
+          const prev = queryClient.getQueryData<TransactionWithCategory[]>(queryKey)
+          snapshots.push({ queryKey, data: prev })
+          if (prev) {
+            queryClient.setQueryData<TransactionWithCategory[]>(queryKey, [tempTx, ...prev])
+          }
+        }
+      }
+
+      return { snapshots }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.snapshots) {
+        for (const { queryKey, data } of context.snapshots) {
+          queryClient.setQueryData(queryKey, data)
+        }
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
     },
   })

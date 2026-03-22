@@ -20,7 +20,7 @@ export function TransactionForm() {
   const [categoryId, setCategoryId] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(todayISO)
-  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<{ amount?: string; category?: string; date?: string; submit?: string }>({})
 
   const filteredCategories = categories?.filter(
     (c) => c.type === type || c.type === 'both'
@@ -33,17 +33,23 @@ export function TransactionForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    const newErrors: { amount?: string; category?: string; date?: string } = {}
     const amountNum = parseFloat(amount)
-    if (!amountNum || amountNum <= 0) { setError('Importo non valido'); return }
-    if (!categoryId) { setError('Seleziona una categoria'); return }
+    if (!amountNum || amountNum <= 0) newErrors.amount = 'Importo non valido'
+    if (!categoryId) newErrors.category = 'Seleziona una categoria'
+    if (!date) newErrors.date = 'Data obbligatoria'
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+    setErrors({})
     try {
       await createTx.mutateAsync({ amount: amountNum, type, category_id: categoryId, description: description || undefined, date })
       setAmount('')
       setDescription('')
       setDate(todayISO())
     } catch {
-      setError('Errore durante il salvataggio')
+      setErrors({ submit: 'Errore durante il salvataggio. Riprova.' })
     }
   }
 
@@ -56,14 +62,14 @@ export function TransactionForm() {
           <div className="flex rounded-lg overflow-hidden border border-white/10 flex-shrink-0">
             <button
               type="button"
-              onClick={() => { setType('expense'); setCategoryId('') }}
+              onClick={() => { setType('expense'); setCategoryId(''); setErrors((prev) => ({ ...prev, category: undefined, submit: undefined })) }}
               className={`px-3 py-2 text-xs font-medium transition-colors ${type === 'expense' ? 'bg-red-500/20 text-red-400' : 'text-gray-500 hover:text-gray-300'}`}
             >
               Uscita
             </button>
             <button
               type="button"
-              onClick={() => { setType('income'); setCategoryId('') }}
+              onClick={() => { setType('income'); setCategoryId(''); setErrors((prev) => ({ ...prev, category: undefined, submit: undefined })) }}
               className={`px-3 py-2 text-xs font-medium transition-colors ${type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500 hover:text-gray-300'}`}
             >
               Entrata
@@ -71,35 +77,44 @@ export function TransactionForm() {
           </div>
 
           {/* Importo */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <input
-              type="number"
-              min="0.01"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-              className="w-24 bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-white/30"
-            />
-            <span className={`text-sm font-medium ${type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>€</span>
+          <div className="flex-shrink-0">
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={amount}
+                onChange={(e) => { setAmount(e.target.value); setErrors((prev) => ({ ...prev, amount: undefined })) }}
+                placeholder="0.00"
+                className="w-24 bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-white/30"
+              />
+              <span className={`text-sm font-medium ${type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>€</span>
+            </div>
+            {errors.amount && <p className="text-xs text-red-400 mt-1">{errors.amount}</p>}
           </div>
 
           {/* Categoria */}
-          <Select
-            value={categoryId}
-            onChange={setCategoryId}
-            options={categoryOptions}
-            placeholder="Categoria..."
-            className="min-w-[160px]"
-          />
+          <div className="flex-shrink-0">
+            <Select
+              value={categoryId}
+              onChange={(v) => { setCategoryId(v); setErrors((prev) => ({ ...prev, category: undefined })) }}
+              options={categoryOptions}
+              placeholder="Categoria..."
+              className="min-w-[160px]"
+            />
+            {errors.category && <p className="text-xs text-red-400 mt-1">{errors.category}</p>}
+          </div>
 
           {/* Data */}
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/30"
-          />
+          <div className="flex-shrink-0">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => { setDate(e.target.value); setErrors((prev) => ({ ...prev, date: undefined, submit: undefined })) }}
+              className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/30"
+            />
+            {errors.date && <p className="text-xs text-red-400 mt-1">{errors.date}</p>}
+          </div>
 
           {/* Descrizione */}
           <input
@@ -120,8 +135,7 @@ export function TransactionForm() {
             {createTx.isPending ? 'Salvo...' : 'Aggiungi'}
           </button>
         </div>
-
-        {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
+        {errors.submit && <p className="text-xs text-red-400 mt-2">{errors.submit}</p>}
       </form>
     </div>
   )

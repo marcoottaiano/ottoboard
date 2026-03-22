@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-22 # epic-3 completata
+last_updated: 2026-03-22 # epic-4 stories create
 project: ottoboard
 project_key: NOKEY
 tracking_system: file-system
@@ -76,14 +76,14 @@ development_status:
   epic-3-retrospective: optional
 
   # EPIC 4: Finance Integrity & Intelligence
-  epic-4: backlog
-  4-1-manual-transaction-entry: backlog
-  4-2-csv-import-with-automated-column-mapping: backlog
-  4-3-duplicate-detection-during-csv-import: backlog
-  4-4-monthly-budget-monitoring: backlog
-  4-5-bulk-transaction-operations: backlog
-  4-6-lock-transaction-category: backlog
-  4-7-client-side-spending-insights: backlog
+  epic-4: in-progress
+  4-1-manual-transaction-entry: review
+  4-2-csv-import-with-automated-column-mapping: review
+  4-3-duplicate-detection-during-csv-import: ready-for-dev
+  4-4-monthly-budget-monitoring: review
+  4-5-bulk-transaction-operations: ready-for-dev
+  4-6-lock-transaction-category: ready-for-dev
+  4-7-client-side-spending-insights: ready-for-dev
   epic-4-retrospective: optional
 
   # EPIC 6: Advanced Fitness Analytics

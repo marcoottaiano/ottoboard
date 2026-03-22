@@ -26,6 +26,27 @@ function parseCSV(text: string): string[][] {
     })
 }
 
+function detectColumnMapping(headers: string[]): Partial<ColMapping> {
+  const lower = headers.map((h) => h.toLowerCase().trim())
+  const findCol = (patterns: string[]): number | null => {
+    const idx = lower.findIndex((h) => patterns.some((p) => h.includes(p)))
+    return idx === -1 ? null : idx
+  }
+
+  const dateIdx = findCol(['data', 'date', 'datum', 'fecha', 'giorno', 'day'])
+  const amountIdx = findCol(['importo', 'amount', 'importe', 'betrag', 'valore', 'value', 'cifra', 'totale', 'total'])
+  const descriptionIdx = findCol(['descrizione', 'description', 'desc', 'causale', 'note', 'memo', 'oggetto'])
+  const typeIdx = findCol(['tipo', 'type', 'segno', 'sign'])
+
+  const result: Partial<ColMapping> = {}
+  if (dateIdx !== null) result.date = dateIdx
+  if (amountIdx !== null) result.amount = amountIdx
+  if (descriptionIdx !== null) result.description = descriptionIdx
+  if (typeIdx !== null) result.type = typeIdx
+
+  return result
+}
+
 type Step = 'upload' | 'mapping' | 'preview' | 'done'
 
 interface ColMapping {
@@ -46,6 +67,7 @@ export function CSVImport({ month }: Props) {
   const [rows, setRows] = useState<string[][]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [mapping, setMapping] = useState<ColMapping>({ date: 0, amount: 1, type: null, description: null, categoryName: null })
+  const [autoDetectedFields, setAutoDetectedFields] = useState<Set<keyof ColMapping>>(new Set())
   const [report, setReport] = useState<{ inserted: number; skipped: number } | null>(null)
   const [isImporting, setIsImporting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -60,8 +82,18 @@ export function CSVImport({ month }: Props) {
       const text = e.target?.result as string
       const allRows = parseCSV(text)
       if (allRows.length < 2) return
-      setHeaders(allRows[0])
+      const parsedHeaders = allRows[0]
+      setHeaders(parsedHeaders)
       setRows(allRows.slice(1))
+
+      const detected = detectColumnMapping(parsedHeaders)
+      const detectedKeys = new Set<keyof ColMapping>(Object.keys(detected) as Array<keyof ColMapping>)
+      setAutoDetectedFields(detectedKeys)
+      setMapping((prev) => ({
+        ...prev,
+        ...detected,
+      }))
+
       setStep('mapping')
     }
     reader.readAsText(file)
@@ -121,7 +153,14 @@ export function CSVImport({ month }: Props) {
     setIsImporting(false)
   }
 
-  const reset = () => { setStep('upload'); setRows([]); setHeaders([]); setReport(null) }
+  const reset = () => {
+    setStep('upload')
+    setRows([])
+    setHeaders([])
+    setReport(null)
+    setAutoDetectedFields(new Set())
+    setMapping({ date: 0, amount: 1, type: null, description: null, categoryName: null })
+  }
 
   // Convert headers to SelectOption with string values
   const colOptions: SelectOption[] = headers.map((h, i) => ({
@@ -136,6 +175,8 @@ export function CSVImport({ month }: Props) {
     { key: 'description', label: 'Descrizione', required: false },
     { key: 'categoryName', label: 'Categoria', required: false },
   ]
+
+  const PREVIEW_LIMIT = 10
 
   return (
     <div className="rounded-xl bg-white/5 border border-white/10">
@@ -172,12 +213,25 @@ export function CSVImport({ month }: Props) {
                 {FIELDS.map(({ key, label, required }) => {
                   const currentVal = mapping[key]
                   const strVal = currentVal !== null ? String(currentVal) : ''
+                  const isAutoDetected = autoDetectedFields.has(key)
                   return (
                     <div key={key}>
-                      <label className="text-xs text-gray-500 block mb-1">{label}</label>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <label className="text-xs text-gray-500">{label}</label>
+                        {isAutoDetected && (
+                          <span className="text-xs text-emerald-400">rilevato</span>
+                        )}
+                      </div>
                       <Select
                         value={strVal}
-                        onChange={(v) => setMapping((m) => ({ ...m, [key]: v === '' ? null : Number(v) }))}
+                        onChange={(v) => {
+                          setMapping((m) => ({ ...m, [key]: v === '' ? null : Number(v) }))
+                          setAutoDetectedFields((prev) => {
+                            const next = new Set(prev)
+                            next.delete(key)
+                            return next
+                          })
+                        }}
                         options={colOptions}
                         placeholder="— Non mappare"
                         showPlaceholder={!required}
@@ -197,8 +251,8 @@ export function CSVImport({ month }: Props) {
 
           {step === 'preview' && (
             <div className="mt-4 space-y-3">
-              <p className="text-xs text-gray-500">Anteprima prime 5 righe:</p>
-              <div className="overflow-x-auto">
+              <p className="text-xs text-gray-500">Anteprima prime {PREVIEW_LIMIT} righe:</p>
+              <div className="overflow-x-auto overflow-y-hidden">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="text-left text-gray-600 border-b border-white/5">
@@ -209,7 +263,7 @@ export function CSVImport({ month }: Props) {
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.slice(0, 5).map((row, i) => (
+                    {rows.slice(0, PREVIEW_LIMIT).map((row, i) => (
                       <tr key={i} className="border-b border-white/5">
                         <td className="py-1 text-gray-400">{row[mapping.date]}</td>
                         <td className="py-1 text-gray-300">{row[mapping.amount]}</td>
@@ -220,6 +274,11 @@ export function CSVImport({ month }: Props) {
                   </tbody>
                 </table>
               </div>
+              {rows.length > PREVIEW_LIMIT && (
+                <p className="text-xs text-gray-600">
+                  Mostrando {PREVIEW_LIMIT} di {rows.length} righe — tutte verranno importate
+                </p>
+              )}
               <div className="flex gap-2">
                 <button onClick={handleImport} disabled={isImporting} className="flex-1 py-2 text-xs rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50">
                   {isImporting ? 'Importando...' : `Importa ${rows.length} righe`}
@@ -231,8 +290,9 @@ export function CSVImport({ month }: Props) {
 
           {step === 'done' && report && (
             <div className="mt-4 p-4 rounded-lg bg-white/5 text-center space-y-1">
-              <p className="text-emerald-400 text-sm font-medium">{report.inserted} transazioni importate</p>
-              {report.skipped > 0 && <p className="text-gray-500 text-xs">{report.skipped} saltate (duplicate o dati mancanti)</p>}
+              <p className="text-emerald-400 text-sm font-medium">
+                {report.inserted} transazioni importate, {report.skipped} righe saltate
+              </p>
               <button onClick={reset} className="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors">Importa altro file</button>
             </div>
           )}

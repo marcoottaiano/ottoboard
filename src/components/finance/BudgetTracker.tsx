@@ -113,7 +113,7 @@ export function BudgetTracker({ month }: Props) {
           <p className="text-xs text-blue-300 leading-relaxed">
             I <strong>budget</strong> ti permettono di impostare un limite mensile per ogni categoria di spesa.
             La barra mostra quanto hai già speso: <span className="text-emerald-400">verde</span> = ok,{' '}
-            <span className="text-yellow-400">giallo</span> = quasi al limite,{' '}
+            <span className="text-amber-400">ambra</span> = quasi al limite,{' '}
             <span className="text-red-400">rosso</span> = sforato. Clicca l&apos;importo per modificarlo.
           </p>
         </div>
@@ -168,7 +168,7 @@ export function BudgetTracker({ month }: Props) {
           {budgets.map((budget) => {
             const spent = spentByCategory.get(budget.category_id) ?? 0
             const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0
-            const barColor = pct < 80 ? 'bg-emerald-500' : pct < 100 ? 'bg-yellow-500' : 'bg-red-500'
+            const barColor = pct < 80 ? 'bg-emerald-500' : pct < 100 ? 'bg-amber-500' : 'bg-red-500'
             const isEditing = editingId === budget.category_id
             const isConfirmingDelete = deletingId === budget.id
 
@@ -244,6 +244,11 @@ export function BudgetTracker({ month }: Props) {
                     style={{ width: `${Math.min(pct, 100)}%` }}
                   />
                 </div>
+                {pct >= 100 && (
+                  <p className="text-red-400 text-xs mt-0.5">
+                    Sforato di €{(spent - budget.amount).toFixed(2)}
+                  </p>
+                )}
               </div>
             )
           })}
