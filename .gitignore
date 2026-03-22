@@ -45,3 +45,4 @@ next-env.d.ts
 
 # MCP
 /.playwright-mcp
+.claude/worktrees/
