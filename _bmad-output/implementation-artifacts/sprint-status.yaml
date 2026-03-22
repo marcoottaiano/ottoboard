@@ -83,7 +83,7 @@ development_status:
   4-4-monthly-budget-monitoring: review
   4-5-bulk-transaction-operations: ready-for-dev
   4-6-lock-transaction-category: ready-for-dev
-  4-7-client-side-spending-insights: ready-for-dev
+  4-7-client-side-spending-insights: review
   epic-4-retrospective: optional
 
   # EPIC 6: Advanced Fitness Analytics

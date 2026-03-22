@@ -88,15 +88,21 @@ export function SpendingPieChart({ month }: Props) {
         </div>
 
         <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-          {chartData.slice(0, 6).map((d, i) => (
-            <div key={i} className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: d.color }} />
-                <span className="text-xs text-gray-400 truncate">{d.name}</span>
+          {chartData.slice(0, 6).map((d, i) => {
+            const pct = totalExpense > 0 ? (d.total / totalExpense) * 100 : 0
+            return (
+              <div key={i} className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: d.color }} />
+                  <span className="text-xs text-gray-400 truncate">{d.name}</span>
+                </div>
+                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                  <span className="text-xs text-gray-500">{pct.toFixed(1)}%</span>
+                  <span className="text-xs text-white">{formatEur(d.total)}</span>
+                </div>
               </div>
-              <span className="text-xs text-white whitespace-nowrap">{formatEur(d.total)}</span>
-            </div>
-          ))}
+            )
+          })}
           {chartData.length > 6 && (
             <span className="text-xs text-gray-600">+{chartData.length - 6} altre</span>
           )}
