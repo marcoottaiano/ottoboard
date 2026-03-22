@@ -23,7 +23,7 @@ export function KanbanColumnWidget({ config }: Props) {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const isConfigured = !!(projectId && columnId)
   const { data: projects = [], isLoading: projectsLoading } = useProjects()
-  const { data: columns = [] } = useColumns(projectId ?? null)
+  const { data: columns = [], isLoading: columnsLoading } = useColumns(projectId ?? null)
   const { data: allTasks = [], isLoading } = useTasks(projectId ?? null)
   const { lastSyncedAt, isConnectionError } = useLinearConnection({ enabled: isConfigured })
 
@@ -49,9 +49,11 @@ export function KanbanColumnWidget({ config }: Props) {
   const project = projects.find((p) => p.id === projectId)
   const column = columns.find((c) => c.id === columnId)
 
+  // All three loading states guarded to avoid false-positive stale flash during hydration
   const isStaleConfig =
     isConfigured &&
     !projectsLoading &&
+    !columnsLoading &&
     !isLoading &&
     projects.length > 0 &&
     (!project || !column)
