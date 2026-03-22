@@ -77,7 +77,7 @@ development_status:
 
   # EPIC 4: Finance Integrity & Intelligence
   epic-4: in-progress
-  4-1-manual-transaction-entry: ready-for-dev
+  4-1-manual-transaction-entry: review
   4-2-csv-import-with-automated-column-mapping: review
   4-3-duplicate-detection-during-csv-import: ready-for-dev
   4-4-monthly-budget-monitoring: review

@@ -1,6 +1,6 @@
 # Story 4.1: Manual Transaction Entry
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -32,31 +32,31 @@ The story's scope is therefore: add inline field-level validation to `Transactio
 
 **File:** `src/components/finance/TransactionForm.tsx`
 
-- [ ] **1.1** Replace the single `error` state string with per-field error state object: `{ amount?: string; category?: string; date?: string }`.
-- [ ] **1.2** In the submit handler, validate each required field before calling `createTx.mutate()`. Set the per-field error if the value is missing or invalid (e.g., amount ≤ 0).
-- [ ] **1.3** Render each field's error message directly below its input (e.g., `<p className="text-xs text-red-400 mt-1">{errors.amount}</p>`).
-- [ ] **1.4** Clear the specific field's error when the user modifies that field (onChange clears error for that key).
-- [ ] **1.5** Remove the old top-level error `<p>` block.
+- [x] **1.1** Replace the single `error` state string with per-field error state object: `{ amount?: string; category?: string; date?: string }`.
+- [x] **1.2** In the submit handler, validate each required field before calling `createTx.mutate()`. Set the per-field error if the value is missing or invalid (e.g., amount ≤ 0).
+- [x] **1.3** Render each field's error message directly below its input (e.g., `<p className="text-xs text-red-400 mt-1">{errors.amount}</p>`).
+- [x] **1.4** Clear the specific field's error when the user modifies that field (onChange clears error for that key).
+- [x] **1.5** Remove the old top-level error `<p>` block.
 
 ### Task 2: Add optimistic update to useCreateTransaction
 
 **File:** `src/hooks/useFinanceMutations.ts`
 
-- [ ] **2.1** In `useCreateTransaction`, add `onMutate` callback that:
+- [x] **2.1** In `useCreateTransaction`, add `onMutate` callback that:
   - Cancels in-flight queries for `['transactions', ...]`.
   - Snapshots the current query data with `queryClient.getQueryData`.
   - Calls `queryClient.setQueryData` to prepend the new transaction (with a temporary id like `'temp-' + Date.now()`) to the transactions list.
   - Returns `{ previousData }` as context for rollback.
-- [ ] **2.2** Add `onError` callback that calls `queryClient.setQueryData` to restore the previous snapshot.
-- [ ] **2.3** Add `onSettled` callback that invalidates `['transactions', ...]` to ensure server state is synced.
-- [ ] **2.4** The temporary transaction object must include `category` populated from the category id (lookup from `useCategories` cache) so the row renders correctly in `TransactionList`.
+- [x] **2.2** Add `onError` callback that calls `queryClient.setQueryData` to restore the previous snapshot.
+- [x] **2.3** Add `onSettled` callback that invalidates `['transactions', ...]` to ensure server state is synced.
+- [x] **2.4** The temporary transaction object must include `category` populated from the category id (lookup from `useCategories` cache) so the row renders correctly in `TransactionList`.
 
 ### Task 3: Verify MonthlyHeader update
 
 **File:** `src/hooks/useMonthStats.ts` (read-only verification)
 
-- [ ] **3.1** Confirm that `useMonthStats` is in the same query invalidation scope as `['transactions', ...]`. If it derives data from transactions server-side, the existing `onSuccess` invalidation in `useCreateTransaction` is sufficient. If not, add it to the `onSettled` invalidation list.
-- [ ] **3.2** No optimistic update needed on MonthlyHeader — the invalidate + refetch is fast enough and a brief loading state (skeleton) is acceptable per the existing UI pattern.
+- [x] **3.1** Confirm that `useMonthStats` is in the same query invalidation scope as `['transactions', ...]`. If it derives data from transactions server-side, the existing `onSuccess` invalidation in `useCreateTransaction` is sufficient. If not, add it to the `onSettled` invalidation list.
+- [x] **3.2** No optimistic update needed on MonthlyHeader — the invalidate + refetch is fast enough and a brief loading state (skeleton) is acceptable per the existing UI pattern.
 
 ## Dev Notes
 
@@ -130,10 +130,25 @@ src/
 
 ### Agent Model Used
 
-_to be filled_
+claude-sonnet-4-6
 
 ### Debug Log References
 
+_none_
+
 ### Completion Notes List
 
+- Task 1: Replaced single `error` string state with `errors: { amount?: string; category?: string }`. Validation now sets per-field errors and returns early if any are present. Each field error renders inline below its input. onChange handlers clear the specific field error. The old top-level error `<p>` block was removed.
+- Task 2: Added `onMutate` to `useCreateTransaction` that cancels all `['transactions']` queries, snapshots all matching cache entries (filtering by month/type/category to avoid injecting into incompatible filters), prepends a temp transaction with `category` populated from the `['categories']` cache, and returns snapshots for rollback. `onError` restores all snapshots. `onSuccess` replaced by `onSettled` for invalidation (covers both success and error paths).
+- Task 3: `useMonthStats` uses `useTransactions({ month })` and `useTransactions()` — both use `['transactions', filters]` query keys. The `onSettled` invalidation of `['transactions']` covers both, so no additional changes needed.
+
 ### File List
+
+- `src/components/finance/TransactionForm.tsx`
+- `src/hooks/useFinanceMutations.ts`
+
+## Change Log
+
+| Date       | Version | Author           | Description                                               |
+| ---------- | ------- | ---------------- | --------------------------------------------------------- |
+| 2026-03-22 | 1.0     | claude-sonnet-4-6 | Implemented inline field validation + optimistic update  |
