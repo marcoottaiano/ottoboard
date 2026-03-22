@@ -226,3 +226,107 @@ export function useDeleteBudget() {
     },
   })
 }
+
+// ─── Bulk Operations ────────────────────────────────────────────────────────────
+
+export function useBulkDeleteTransactions() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      // P8: guard against empty array — Supabase .in('id', []) behavior is version-dependent
+      if (ids.length === 0) return
+      const supabase = createClient()
+      const { error } = await supabase.from('transactions').delete().in('id', ids)
+      if (error) throw error
+    },
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: ['transactions'] })
+      const idsSet = new Set(ids)
+      const queryCache = queryClient.getQueryCache()
+      const txQueries = queryCache.findAll({ queryKey: ['transactions'] })
+      const snapshots: Array<{ queryKey: unknown[]; data: TransactionWithCategory[] | undefined }> = []
+      for (const query of txQueries) {
+        const queryKey = query.queryKey as unknown[]
+        const prev = queryClient.getQueryData<TransactionWithCategory[]>(queryKey)
+        snapshots.push({ queryKey, data: prev })
+        if (prev) {
+          queryClient.setQueryData<TransactionWithCategory[]>(
+            queryKey,
+            prev.filter((t) => !idsSet.has(t.id))
+          )
+        }
+      }
+      return { snapshots }
+    },
+    onError: (_err, _ids, context) => {
+      if (context?.snapshots) {
+        for (const { queryKey, data } of context.snapshots) {
+          queryClient.setQueryData(queryKey, data)
+        }
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+}
+
+interface BulkRecategorizeInput {
+  ids: string[]
+  categoryId: string
+}
+
+export function useBulkRecategorizeTransactions() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, categoryId }: BulkRecategorizeInput) => {
+      // P8: guard against empty/invalid inputs
+      if (ids.length === 0 || !categoryId) return
+      const supabase = createClient()
+      // TODO(4.6): add .not('category_locked', 'eq', true) filter when category_locked column exists
+      const { error } = await supabase
+        .from('transactions')
+        .update({ category_id: categoryId })
+        .in('id', ids)
+      if (error) throw error
+    },
+    onMutate: async ({ ids, categoryId }) => {
+      await queryClient.cancelQueries({ queryKey: ['transactions'] })
+      const idsSet = new Set(ids)
+      const categories = queryClient.getQueryData<Category[]>(['categories'])
+      const newCategory = categories?.find((c) => c.id === categoryId) ?? null
+      const queryCache = queryClient.getQueryCache()
+      const txQueries = queryCache.findAll({ queryKey: ['transactions'] })
+      const snapshots: Array<{ queryKey: unknown[]; data: TransactionWithCategory[] | undefined }> = []
+      for (const query of txQueries) {
+        const queryKey = query.queryKey as unknown[]
+        const prev = queryClient.getQueryData<TransactionWithCategory[]>(queryKey)
+        snapshots.push({ queryKey, data: prev })
+        if (prev) {
+          queryClient.setQueryData<TransactionWithCategory[]>(
+            queryKey,
+            prev.map((t) => {
+              if (!idsSet.has(t.id)) return t
+              // P9: only update category object when it's available in cache to avoid setting category: null
+              // If newCategory is null (cache miss), update only category_id and let refetch hydrate the full object
+              return newCategory
+                ? { ...t, category_id: categoryId, category: newCategory }
+                : { ...t, category_id: categoryId }
+            })
+          )
+        }
+      }
+      return { snapshots }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.snapshots) {
+        for (const { queryKey, data } of context.snapshots) {
+          queryClient.setQueryData(queryKey, data)
+        }
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+}

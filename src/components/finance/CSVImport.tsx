@@ -1,12 +1,13 @@
 'use client'
 
 import { useCategories } from '@/hooks/useCategories'
-import { useTransactions } from '@/hooks/useTransactions'
 import { useCreateTransaction } from '@/hooks/useFinanceMutations'
 import { Select, SelectOption } from '@/components/ui/Select'
 import { TransactionType } from '@/types'
 import { Upload, ChevronDown, ChevronUp } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useRef, useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { createClient } from '@/lib/supabase/client'
 
 function parseCSV(text: string): string[][] {
   return text
@@ -47,6 +48,14 @@ function detectColumnMapping(headers: string[]): Partial<ColMapping> {
   return result
 }
 
+// P6: use amount.toFixed(2) to avoid float precision mismatches between CSV parsing and DB values
+// P16: omit trailing pipe when description is absent, matching the fallback spec (date|amount)
+const makeFingerprint = (date: string, amount: number, desc: string | null): string => {
+  const normalizedDesc = (desc ?? '').toLowerCase().trim()
+  const base = `${date}|${amount.toFixed(2)}`
+  return normalizedDesc ? `${base}|${normalizedDesc}` : base
+}
+
 type Step = 'upload' | 'mapping' | 'preview' | 'done'
 
 interface ColMapping {
@@ -57,24 +66,71 @@ interface ColMapping {
   categoryName: number | null
 }
 
-interface Props {
-  month: string
-}
-
-export function CSVImport({ month }: Props) {
+// P1: removed unused `month` prop — dedup now queries all transactions, not just current month
+export function CSVImport() {
   const [isOpen, setIsOpen] = useState(false)
   const [step, setStep] = useState<Step>('upload')
   const [rows, setRows] = useState<string[][]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [mapping, setMapping] = useState<ColMapping>({ date: 0, amount: 1, type: null, description: null, categoryName: null })
   const [autoDetectedFields, setAutoDetectedFields] = useState<Set<keyof ColMapping>>(new Set())
-  const [report, setReport] = useState<{ inserted: number; skipped: number } | null>(null)
+  // P4: separate counters for accurate summary message
+  const [report, setReport] = useState<{ inserted: number; duplicatesSkipped: number; parseErrors: number } | null>(null)
   const [isImporting, setIsImporting] = useState(false)
+  // userIncludedRows: tracks rows the user explicitly chose to include despite being flagged as duplicates
+  const [userIncludedRows, setUserIncludedRows] = useState<Set<number>>(new Set())
   const inputRef = useRef<HTMLInputElement>(null)
 
   const { data: categories } = useCategories()
-  const { data: existingTx } = useTransactions({ month })
   const createTx = useCreateTransaction()
+
+  // Fetch all transactions for dedup (no month filter), only when in preview step
+  const { data: allTxns = [], isLoading: txnsLoading, isError: txnsError } = useQuery({
+    queryKey: ['transactions', 'all'],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('transactions')
+        .select('date, amount, description')
+        .order('date', { ascending: false })
+      return (data ?? []) as { date: string; amount: number; description: string | null }[]
+    },
+    staleTime: 60_000,
+    enabled: step === 'preview',
+  })
+
+  // Build fingerprint set from existing transactions
+  const existingFingerprints = useMemo((): Set<string> => {
+    return new Set(
+      allTxns.map((t) => makeFingerprint(t.date, t.amount, t.description))
+    )
+  }, [allTxns])
+
+  // Compute duplicate row indices whenever rows, mapping, or fingerprint set changes
+  const duplicateRowIndices = useMemo((): Set<number> => {
+    if (txnsLoading || txnsError) return new Set()
+    const dupes = new Set<number>()
+    rows.forEach((row, i) => {
+      const date = row[mapping.date]?.trim() ?? ''
+      const amountRaw = row[mapping.amount]?.replace(',', '.').replace(/[^\d.]/g, '')
+      const amount = parseFloat(amountRaw)
+      if (!date || isNaN(amount)) return
+      const desc = mapping.description !== null ? (row[mapping.description] ?? null) : null
+      if (existingFingerprints.has(makeFingerprint(date, amount, desc))) {
+        dupes.add(i)
+      }
+    })
+    return dupes
+  }, [rows, mapping, existingFingerprints, txnsLoading, txnsError])
+
+  const isRowExcluded = (i: number): boolean =>
+    duplicateRowIndices.has(i) && !userIncludedRows.has(i)
+
+  // P2: count excluded duplicates across ALL rows (not just the preview window)
+  const totalExcludedDuplicates = useMemo(
+    () => rows.filter((_, i) => duplicateRowIndices.has(i) && !userIncludedRows.has(i)).length,
+    [rows, duplicateRowIndices, userIncludedRows]
+  )
 
   const handleFile = (file: File) => {
     const reader = new FileReader()
@@ -89,10 +145,7 @@ export function CSVImport({ month }: Props) {
       const detected = detectColumnMapping(parsedHeaders)
       const detectedKeys = new Set<keyof ColMapping>(Object.keys(detected) as Array<keyof ColMapping>)
       setAutoDetectedFields(detectedKeys)
-      setMapping((prev) => ({
-        ...prev,
-        ...detected,
-      }))
+      setMapping((prev) => ({ ...prev, ...detected }))
 
       setStep('mapping')
     }
@@ -105,33 +158,69 @@ export function CSVImport({ month }: Props) {
     if (file?.name.endsWith('.csv')) handleFile(file)
   }
 
+  const handleGoToPreview = () => {
+    // P3: reset user overrides whenever (re-)entering preview, so stale inclusions from previous mapping don't persist
+    setUserIncludedRows(new Set())
+    setStep('preview')
+  }
+
+  const handleToggleInclude = (rowIndex: number, include: boolean) => {
+    setUserIncludedRows((prev) => {
+      const next = new Set(prev)
+      if (include) {
+        next.add(rowIndex)
+      } else {
+        next.delete(rowIndex)
+      }
+      return next
+    })
+  }
+
   const handleImport = async () => {
     setIsImporting(true)
-    const existingKeys = new Set(
-      (existingTx ?? []).map((t) => `${t.date}|${t.amount}`)
-    )
+
+    // Snapshot exclusion state at import time to avoid stale-closure issues mid-loop
+    const dupeIndicesSnapshot = duplicateRowIndices
+    const userIncludedSnapshot = userIncludedRows
+    const isExcluded = (i: number) => dupeIndicesSnapshot.has(i) && !userIncludedSnapshot.has(i)
+
+    // in-memory dedup key includes description (P6/P16: uses toFixed(2) + no trailing pipe)
+    const seenKeys = new Set<string>()
 
     let inserted = 0
-    let skipped = 0
+    let duplicatesSkipped = 0
+    // P4: track parse/validation errors separately from duplicates
+    let parseErrors = 0
 
-    for (const row of rows) {
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i]
+
+      // Skip rows excluded as server-side duplicates
+      if (isExcluded(i)) {
+        duplicatesSkipped++
+        continue
+      }
+
       const date = row[mapping.date]?.trim()
       const amountRaw = row[mapping.amount]?.replace(',', '.').replace(/[^\d.]/g, '')
       const amount = parseFloat(amountRaw)
-      if (!date || !amount) { skipped++; continue }
+      if (!date || !amount) { parseErrors++; continue }
 
-      const key = `${date}|${amount}`
-      if (existingKeys.has(key)) { skipped++; continue }
+      const descValue = mapping.description !== null ? (row[mapping.description] ?? null) : null
+
+      // in-memory dedup (within-file duplicates)
+      const key = makeFingerprint(date, amount, descValue)
+      if (seenKeys.has(key)) { duplicatesSkipped++; continue }
 
       const typeRaw = mapping.type !== null ? row[mapping.type]?.toLowerCase() : 'expense'
       const type: TransactionType = typeRaw?.includes('entrat') || typeRaw?.includes('income') ? 'income' : 'expense'
 
-      const description = mapping.description !== null ? row[mapping.description] : undefined
+      const description = descValue ?? undefined
       const catName = mapping.categoryName !== null ? row[mapping.categoryName]?.trim() : undefined
       const category = catName ? categories?.find((c) => c.name.toLowerCase() === catName.toLowerCase()) : undefined
 
       const defaultCategory = categories?.find((c) => c.name === 'Altro')
-      if (!defaultCategory && !category) { skipped++; continue }
+      if (!defaultCategory && !category) { parseErrors++; continue }
 
       try {
         await createTx.mutateAsync({
@@ -141,14 +230,14 @@ export function CSVImport({ month }: Props) {
           description,
           date,
         })
-        existingKeys.add(key)
+        seenKeys.add(key)
         inserted++
       } catch {
-        skipped++
+        parseErrors++
       }
     }
 
-    setReport({ inserted, skipped })
+    setReport({ inserted, duplicatesSkipped, parseErrors })
     setStep('done')
     setIsImporting(false)
   }
@@ -160,9 +249,9 @@ export function CSVImport({ month }: Props) {
     setReport(null)
     setAutoDetectedFields(new Set())
     setMapping({ date: 0, amount: 1, type: null, description: null, categoryName: null })
+    setUserIncludedRows(new Set())
   }
 
-  // Convert headers to SelectOption with string values
   const colOptions: SelectOption[] = headers.map((h, i) => ({
     label: h || `Colonna ${i + 1}`,
     value: String(i),
@@ -241,7 +330,7 @@ export function CSVImport({ month }: Props) {
                 })}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setStep('preview')} className="flex-1 py-2 text-xs rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
+                <button onClick={handleGoToPreview} className="flex-1 py-2 text-xs rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors">
                   Anteprima →
                 </button>
                 <button onClick={reset} className="px-3 py-2 text-xs rounded-lg hover:bg-white/10 text-gray-500 transition-colors">Annulla</button>
@@ -251,6 +340,21 @@ export function CSVImport({ month }: Props) {
 
           {step === 'preview' && (
             <div className="mt-4 space-y-3">
+              {/* Loading indicator */}
+              {txnsLoading && (
+                <p className="text-xs text-amber-400">Rilevamento duplicati in corso...</p>
+              )}
+              {/* P5: non-blocking error warning */}
+              {txnsError && (
+                <p className="text-xs text-amber-500">Impossibile verificare i duplicati — controlla manualmente prima di importare</p>
+              )}
+              {/* P2: show total across ALL rows, not just preview window */}
+              {!txnsLoading && !txnsError && totalExcludedDuplicates > 0 && (
+                <p className="text-xs text-amber-400">
+                  {totalExcludedDuplicates} probabil{totalExcludedDuplicates === 1 ? 'e duplicato rilevato' : 'i duplicati rilevati'} nel file
+                  {rows.length > PREVIEW_LIMIT && ' (solo i primi 10 sono visibili nell\'anteprima)'}
+                </p>
+              )}
               <p className="text-xs text-gray-500">Anteprima prime {PREVIEW_LIMIT} righe:</p>
               <div className="overflow-x-auto overflow-y-hidden">
                 <table className="w-full text-xs">
@@ -260,17 +364,40 @@ export function CSVImport({ month }: Props) {
                       <th className="pb-1.5 font-normal">Importo</th>
                       <th className="pb-1.5 font-normal">Tipo</th>
                       <th className="pb-1.5 font-normal">Descrizione</th>
+                      <th className="pb-1.5 font-normal"></th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.slice(0, PREVIEW_LIMIT).map((row, i) => (
-                      <tr key={i} className="border-b border-white/5">
-                        <td className="py-1 text-gray-400">{row[mapping.date]}</td>
-                        <td className="py-1 text-gray-300">{row[mapping.amount]}</td>
-                        <td className="py-1 text-gray-400">{mapping.type !== null ? row[mapping.type] : '—'}</td>
-                        <td className="py-1 text-gray-500 max-w-[160px] truncate">{mapping.description !== null ? row[mapping.description] : '—'}</td>
-                      </tr>
-                    ))}
+                    {rows.slice(0, PREVIEW_LIMIT).map((row, i) => {
+                      const isDuplicate = duplicateRowIndices.has(i)
+                      const isExcluded = isRowExcluded(i)
+                      return (
+                        <tr key={i} className={`border-b border-white/5 ${isExcluded ? 'opacity-50' : ''}`}>
+                          <td className="py-1 text-gray-400">{row[mapping.date]}</td>
+                          <td className="py-1 text-gray-300">{row[mapping.amount]}</td>
+                          <td className="py-1 text-gray-400">{mapping.type !== null ? row[mapping.type] : '—'}</td>
+                          <td className="py-1 text-gray-500 max-w-[160px] truncate">{mapping.description !== null ? row[mapping.description] : '—'}</td>
+                          <td className="py-1 pl-2">
+                            {isDuplicate && (
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="px-1.5 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 whitespace-nowrap">
+                                  Probabile duplicato
+                                </span>
+                                <label className="flex items-center gap-1 cursor-pointer text-gray-500 hover:text-gray-300 transition-colors whitespace-nowrap">
+                                  <input
+                                    type="checkbox"
+                                    checked={!isExcluded}
+                                    onChange={(e) => handleToggleInclude(i, e.target.checked)}
+                                    className="accent-emerald-400 w-3 h-3"
+                                  />
+                                  <span className="text-[10px]">Includi comunque</span>
+                                </label>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -280,7 +407,12 @@ export function CSVImport({ month }: Props) {
                 </p>
               )}
               <div className="flex gap-2">
-                <button onClick={handleImport} disabled={isImporting} className="flex-1 py-2 text-xs rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50">
+                {/* P5: disable also when txnsError; update label to signal degraded state */}
+                <button
+                  onClick={handleImport}
+                  disabled={isImporting || txnsLoading || txnsError}
+                  className="flex-1 py-2 text-xs rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
+                >
                   {isImporting ? 'Importando...' : `Importa ${rows.length} righe`}
                 </button>
                 <button onClick={() => setStep('mapping')} className="px-3 py-2 text-xs rounded-lg hover:bg-white/10 text-gray-500 transition-colors">← Indietro</button>
@@ -288,10 +420,12 @@ export function CSVImport({ month }: Props) {
             </div>
           )}
 
+          {/* P4: accurate summary — duplicates and parse errors counted separately */}
           {step === 'done' && report && (
             <div className="mt-4 p-4 rounded-lg bg-white/5 text-center space-y-1">
               <p className="text-emerald-400 text-sm font-medium">
-                {report.inserted} transazioni importate, {report.skipped} righe saltate
+                {report.inserted} transazioni importate, {report.duplicatesSkipped} duplicate ignorate
+                {report.parseErrors > 0 && `, ${report.parseErrors} righe non valide`}
               </p>
               <button onClick={reset} className="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors">Importa altro file</button>
             </div>
