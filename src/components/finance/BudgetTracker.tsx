@@ -168,7 +168,7 @@ export function BudgetTracker({ month }: Props) {
           {budgets.map((budget) => {
             const spent = spentByCategory.get(budget.category_id) ?? 0
             const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0
-            const barColor = pct < 80 ? 'bg-emerald-500' : pct < 100 ? 'bg-yellow-500' : 'bg-red-500'
+            const barColor = pct < 80 ? 'bg-emerald-500' : pct < 100 ? 'bg-amber-500' : 'bg-red-500'
             const isEditing = editingId === budget.category_id
             const isConfirmingDelete = deletingId === budget.id
 
@@ -244,6 +244,11 @@ export function BudgetTracker({ month }: Props) {
                     style={{ width: `${Math.min(pct, 100)}%` }}
                   />
                 </div>
+                {pct >= 100 && (
+                  <p className="text-red-400 text-xs mt-0.5">
+                    Sforato di €{(spent - budget.amount).toFixed(2)}
+                  </p>
+                )}
               </div>
             )
           })}

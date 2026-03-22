@@ -1,6 +1,6 @@
 # Story 4.4: Monthly Budget Monitoring
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -39,22 +39,22 @@ so that I can control overspending before the month ends.
 
 **File:** `src/components/finance/BudgetTracker.tsx`
 
-- [ ] **1.1** Read the full component. Locate where progress bar color is determined (likely a conditional className on the progress bar div).
-- [ ] **1.2** Document current thresholds (if any).
+- [x] **1.1** Read the full component. Locate where progress bar color is determined (likely a conditional className on the progress bar div).
+- [x] **1.2** Document current thresholds (if any).
 
 ### Task 2: Implement/fix color thresholds (if not present or incorrect)
 
 **File:** `src/components/finance/BudgetTracker.tsx`
 
-- [ ] **2.1** Compute `pct = (spent / budget) * 100`.
-- [ ] **2.2** Derive progress bar color:
+- [x] **2.1** Compute `pct = (spent / budget) * 100`.
+- [x] **2.2** Derive progress bar color:
   - `pct < 80` → `bg-emerald-500` (green — under control)
   - `pct >= 80 && pct < 100` → `bg-amber-500` (amber — warning)
   - `pct >= 100` → `bg-red-500` (red — over budget)
-- [ ] **2.3** When `pct >= 100`, show the overspent amount below the progress bar:
+- [x] **2.3** When `pct >= 100`, show the overspent amount below the progress bar:
   - Text: `"Sforato di €{(spent - budget).toFixed(2)}"` in `text-red-400 text-xs`.
   - Ensure the progress bar does not exceed 100% width visually (cap `width` at `100%`).
-- [ ] **2.4** At 80% threshold (amber), show a warning label:
+- [x] **2.4** At 80% threshold (amber), show a warning label:
   - Text: `"Attenzione: {pct.toFixed(0)}% del budget"` or similar in `text-amber-400 text-xs`.
   - This is optional if the color change alone is sufficient — use judgement to keep UI clean.
 
@@ -62,9 +62,9 @@ so that I can control overspending before the month ends.
 
 **File:** `src/components/finance/BudgetTracker.tsx`
 
-- [ ] **3.1** Confirm that the budget amount input for a category is editable inline or via a modal.
-- [ ] **3.2** Confirm that `useBudgets` and `useFinanceMutations` (create/update budget) work correctly for the selected month.
-- [ ] **3.3** No changes needed if the CRUD flow already works.
+- [x] **3.1** Confirm that the budget amount input for a category is editable inline or via a modal.
+- [x] **3.2** Confirm that `useBudgets` and `useFinanceMutations` (create/update budget) work correctly for the selected month.
+- [x] **3.3** No changes needed if the CRUD flow already works.
 
 ## Dev Notes
 
@@ -128,10 +128,24 @@ src/
 
 ### Agent Model Used
 
-_to be filled_
+claude-sonnet-4-6
 
 ### Debug Log References
 
+None.
+
 ### Completion Notes List
 
+- Task 1: `BudgetTracker.tsx` already had color threshold logic. The `pct` variable was computed on line 170. The progress bar used `bg-yellow-500` for the 80–100% range (not `bg-amber-500` as required by AC 2). Bar width was already capped with `Math.min(pct, 100)`. An inline `+{formatEur(...)}` overspent indicator was already present in the header row but not below the bar as specified.
+- Task 2: Fixed `bg-yellow-500` → `bg-amber-500` for the warning threshold. Added "Sforato di €X.XX" paragraph below the progress bar in `text-red-400 text-xs` when `pct >= 100`. The inline overspent indicator in the header row was kept as it provides a complementary summary view. Task 2.4 (amber warning label) was intentionally skipped — the color change alone provides a clean, sufficient warning UI without cluttering the row.
+- Task 3: Budget CRUD is fully functional. Inline edit (click amount to edit in-place), add new budget via "+ Aggiungi" form with category selector, delete with confirm inline. `useUpsertBudget` and `useDeleteBudget` from `useFinanceMutations` are wired correctly. No changes needed.
+
 ### File List
+
+- `src/components/finance/BudgetTracker.tsx` — fixed amber threshold color, added "Sforato di €X" below progress bar
+
+## Change Log
+
+| Date       | Version | Description                                                                  | Author              |
+| ---------- | ------- | ---------------------------------------------------------------------------- | ------------------- |
+| 2026-03-22 | 1.0     | Implemented: fixed amber threshold (yellow→amber), added overspent label below bar | claude-sonnet-4-6 |

@@ -1,6 +1,6 @@
 # Story 4.2: CSV Import with Automated Column Mapping
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -43,31 +43,31 @@ The scope of THIS story (4.2) is: add auto-detection logic to pre-fill column ma
 
 **File:** `src/components/finance/CSVImport.tsx`
 
-- [ ] **1.1** After CSV headers are parsed (first row), run a `detectColumnMapping(headers: string[])` function that returns a `ColumnMapping` object with pre-filled values.
-- [ ] **1.2** Implement the detection logic using case-insensitive substring matching on the header names:
+- [x] **1.1** After CSV headers are parsed (first row), run a `detectColumnMapping(headers: string[])` function that returns a `ColumnMapping` object with pre-filled values.
+- [x] **1.2** Implement the detection logic using case-insensitive substring matching on the header names:
   - **date column:** match headers containing `data`, `date`, `datum`, `fecha`, `giorno`, `day`
   - **amount column:** match headers containing `importo`, `amount`, `importe`, `betrag`, `valore`, `value`, `cifra`, `totale`, `total`
   - **description column:** match headers containing `descrizione`, `description`, `desc`, `causale`, `note`, `memo`, `oggetto`
   - **type column (optional):** match headers containing `tipo`, `type`, `segno`, `sign`
   - Return `undefined` for a field if no match found (user must map manually).
-- [ ] **1.3** Initialize the `mapping` state with the auto-detected values when transitioning to the `mapping` step.
-- [ ] **1.4** Show a visual indicator in the UI when a column was auto-detected vs manually selected (e.g., a small "rilevato automaticamente" label or green dot on auto-detected dropdowns). This makes the UX clear that the user should verify the detection.
+- [x] **1.3** Initialize the `mapping` state with the auto-detected values when transitioning to the `mapping` step.
+- [x] **1.4** Show a visual indicator in the UI when a column was auto-detected vs manually selected (e.g., a small "rilevato automaticamente" label or green dot on auto-detected dropdowns). This makes the UX clear that the user should verify the detection.
 
 ### Task 2: Cap preview to first 10 rows
 
 **File:** `src/components/finance/CSVImport.tsx`
 
-- [ ] **2.1** In the preview step, render only the first 10 parsed rows (use `.slice(0, 10)` before mapping to table rows).
-- [ ] **2.2** If the file has more than 10 rows, show a note below the table: "Mostrando 10 di X righe — tutte verranno importate".
-- [ ] **2.3** The actual import operation still processes ALL rows (not just the 10 shown).
+- [x] **2.1** In the preview step, render only the first 10 parsed rows (use `.slice(0, 10)` before mapping to table rows).
+- [x] **2.2** If the file has more than 10 rows, show a note below the table: "Mostrando 10 di X righe — tutte verranno importate".
+- [x] **2.3** The actual import operation still processes ALL rows (not just the 10 shown).
 
 ### Task 3: Align summary toast copy
 
 **File:** `src/components/finance/CSVImport.tsx`
 
-- [ ] **3.1** Locate the final summary/toast message after import completes.
-- [ ] **3.2** Ensure the format matches: "X transazioni importate, Y duplicate ignorate". Adjust wording if different.
-- [ ] **3.3** Use the existing toast/notification pattern in the codebase (check how other components show success messages — likely a `toast()` call or an inline message state).
+- [x] **3.1** Locate the final summary/toast message after import completes.
+- [x] **3.2** Ensure the format matches: "X transazioni importate, Y duplicate ignorate". Adjust wording if different.
+- [x] **3.3** Use the existing toast/notification pattern in the codebase (check how other components show success messages — likely a `toast()` call or an inline message state).
 
 ## Dev Notes
 
@@ -138,10 +138,26 @@ src/
 
 ### Agent Model Used
 
-_to be filled_
+claude-sonnet-4-6
 
 ### Debug Log References
 
+None.
+
 ### Completion Notes List
 
+- Task 1: Added pure `detectColumnMapping(headers: string[])` function above the component. Called in `handleFile` after parsing headers; detected fields are merged into mapping state and tracked in `autoDetectedFields` Set. Auto-detected fields show a small "rilevato" label in emerald-400; the label is removed when the user manually changes that dropdown.
+- Task 2: Preview now uses `rows.slice(0, PREVIEW_LIMIT)` (constant = 10). An informational note "Mostrando 10 di X righe — tutte verranno importate" is shown when total rows exceed 10. The import loop still iterates over all `rows`.
+- Task 3: Summary message unified to a single `<p>`: "X transazioni importate, Y duplicate ignorate". The previous two-line format (inserted on one line, skipped on another) was replaced with the required single-line format.
+- Also fixed: `reset()` now restores `autoDetectedFields` to empty Set and resets `mapping` to defaults.
+- Added `overflow-y-hidden` to the preview table container (alongside existing `overflow-x-auto`) per CLAUDE.md CSS gotcha.
+
 ### File List
+
+- `src/components/finance/CSVImport.tsx`
+
+## Change Log
+
+| Date       | Author             | Description                                                                        |
+| ---------- | ------------------ | ---------------------------------------------------------------------------------- |
+| 2026-03-22 | claude-sonnet-4-6  | Implemented auto column detection, 10-row preview cap, aligned summary toast copy  |
