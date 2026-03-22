@@ -20,7 +20,7 @@ export function TransactionForm() {
   const [categoryId, setCategoryId] = useState('')
   const [description, setDescription] = useState('')
   const [date, setDate] = useState(todayISO)
-  const [errors, setErrors] = useState<{ amount?: string; category?: string }>({})
+  const [errors, setErrors] = useState<{ amount?: string; category?: string; date?: string; submit?: string }>({})
 
   const filteredCategories = categories?.filter(
     (c) => c.type === type || c.type === 'both'
@@ -33,19 +33,24 @@ export function TransactionForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const newErrors: { amount?: string; category?: string } = {}
+    const newErrors: { amount?: string; category?: string; date?: string } = {}
     const amountNum = parseFloat(amount)
     if (!amountNum || amountNum <= 0) newErrors.amount = 'Importo non valido'
     if (!categoryId) newErrors.category = 'Seleziona una categoria'
+    if (!date) newErrors.date = 'Data obbligatoria'
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
     }
     setErrors({})
-    await createTx.mutateAsync({ amount: amountNum, type, category_id: categoryId, description: description || undefined, date })
-    setAmount('')
-    setDescription('')
-    setDate(todayISO())
+    try {
+      await createTx.mutateAsync({ amount: amountNum, type, category_id: categoryId, description: description || undefined, date })
+      setAmount('')
+      setDescription('')
+      setDate(todayISO())
+    } catch {
+      setErrors({ submit: 'Errore durante il salvataggio. Riprova.' })
+    }
   }
 
   return (
@@ -57,14 +62,14 @@ export function TransactionForm() {
           <div className="flex rounded-lg overflow-hidden border border-white/10 flex-shrink-0">
             <button
               type="button"
-              onClick={() => { setType('expense'); setCategoryId(''); setErrors((prev) => ({ ...prev, category: undefined })) }}
+              onClick={() => { setType('expense'); setCategoryId(''); setErrors((prev) => ({ ...prev, category: undefined, submit: undefined })) }}
               className={`px-3 py-2 text-xs font-medium transition-colors ${type === 'expense' ? 'bg-red-500/20 text-red-400' : 'text-gray-500 hover:text-gray-300'}`}
             >
               Uscita
             </button>
             <button
               type="button"
-              onClick={() => { setType('income'); setCategoryId(''); setErrors((prev) => ({ ...prev, category: undefined })) }}
+              onClick={() => { setType('income'); setCategoryId(''); setErrors((prev) => ({ ...prev, category: undefined, submit: undefined })) }}
               className={`px-3 py-2 text-xs font-medium transition-colors ${type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500 hover:text-gray-300'}`}
             >
               Entrata
@@ -101,12 +106,15 @@ export function TransactionForm() {
           </div>
 
           {/* Data */}
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/30"
-          />
+          <div className="flex-shrink-0">
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => { setDate(e.target.value); setErrors((prev) => ({ ...prev, date: undefined, submit: undefined })) }}
+              className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/30"
+            />
+            {errors.date && <p className="text-xs text-red-400 mt-1">{errors.date}</p>}
+          </div>
 
           {/* Descrizione */}
           <input
@@ -127,6 +135,7 @@ export function TransactionForm() {
             {createTx.isPending ? 'Salvo...' : 'Aggiungi'}
           </button>
         </div>
+        {errors.submit && <p className="text-xs text-red-400 mt-2">{errors.submit}</p>}
       </form>
     </div>
   )

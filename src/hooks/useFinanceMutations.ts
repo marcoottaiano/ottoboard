@@ -50,9 +50,11 @@ export function useCreateTransaction() {
 
       for (const query of txQueries) {
         const queryKey = query.queryKey as unknown[]
-        const filters = queryKey[1] as { month?: string; type?: string; categoryId?: string } | undefined
+        // Guard: skip entries with no filter object (unexpected key shape)
+        if (queryKey.length < 2 || typeof queryKey[1] !== 'object' || queryKey[1] === null) continue
+        const filters = queryKey[1] as { month?: string; type?: string; categoryId?: string }
         // Only inject into cache entries that match this transaction's month/type
-        const monthMatch = !filters?.month || filters.month === month
+        const monthMatch = !filters.month || filters.month === month
         const typeMatch = !filters?.type || filters.type === vars.type
         const categoryMatch = !filters?.categoryId || filters.categoryId === vars.category_id
         if (monthMatch && typeMatch && categoryMatch) {

@@ -156,8 +156,15 @@ None.
 
 - `src/components/finance/CSVImport.tsx`
 
+## Code Review Record
+
+### Review Findings Applied
+
+- **P4 (CSVImport.tsx):** Changed summary copy from `{report.skipped} duplicate ignorate` to `{report.skipped} righe saltate` — more accurate since `skipped` includes rows with missing required data (date/amount), not only duplicates.
+
 ## Change Log
 
 | Date       | Author             | Description                                                                        |
 | ---------- | ------------------ | ---------------------------------------------------------------------------------- |
 | 2026-03-22 | claude-sonnet-4-6  | Implemented auto column detection, 10-row preview cap, aligned summary toast copy  |
+| 2026-03-22 | claude-sonnet-4-6  | Applied code review patch P4: summary copy fix                                     |

@@ -291,7 +291,7 @@ export function CSVImport({ month }: Props) {
           {step === 'done' && report && (
             <div className="mt-4 p-4 rounded-lg bg-white/5 text-center space-y-1">
               <p className="text-emerald-400 text-sm font-medium">
-                {report.inserted} transazioni importate, {report.skipped} duplicate ignorate
+                {report.inserted} transazioni importate, {report.skipped} righe saltate
               </p>
               <button onClick={reset} className="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors">Importa altro file</button>
             </div>

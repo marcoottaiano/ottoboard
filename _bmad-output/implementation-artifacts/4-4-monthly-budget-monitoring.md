@@ -144,8 +144,15 @@ None.
 
 - `src/components/finance/BudgetTracker.tsx` — fixed amber threshold color, added "Sforato di €X" below progress bar
 
+## Code Review Record
+
+### Review Findings Applied
+
+- **P5 (BudgetTracker.tsx):** Changed help text span from `text-yellow-400` with label "giallo" to `text-amber-400` with label "ambra" — aligns with the actual amber color used in the progress bar, removing the inconsistency between text description and visual rendering.
+
 ## Change Log
 
 | Date       | Version | Description                                                                  | Author              |
 | ---------- | ------- | ---------------------------------------------------------------------------- | ------------------- |
 | 2026-03-22 | 1.0     | Implemented: fixed amber threshold (yellow→amber), added overspent label below bar | claude-sonnet-4-6 |
+| 2026-03-22 | 1.1     | Applied code review patch P5: help text color/label consistency fix          | claude-sonnet-4-6 |

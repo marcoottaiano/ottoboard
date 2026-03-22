@@ -147,8 +147,17 @@ _none_
 - `src/components/finance/TransactionForm.tsx`
 - `src/hooks/useFinanceMutations.ts`
 
+## Code Review Record
+
+### Review Findings Applied
+
+- **P1 (TransactionForm.tsx):** Added `try/catch` around `createTx.mutateAsync()` to catch network/server errors and surface them via `errors.submit` field instead of swallowing silently.
+- **P2 (useFinanceMutations.ts):** Added defensive guard in `onMutate` cache loop: `if (queryKey.length < 2 || typeof queryKey[1] !== 'object' || queryKey[1] === null) continue` — protects against unexpected cache key shapes.
+- **P3 (TransactionForm.tsx):** Added `date` field to error state type and submit validation. Date input wrapped in a div with inline `errors.date` display. Type toggle buttons also clear `submit` error.
+
 ## Change Log
 
 | Date       | Version | Author           | Description                                               |
 | ---------- | ------- | ---------------- | --------------------------------------------------------- |
 | 2026-03-22 | 1.0     | claude-sonnet-4-6 | Implemented inline field validation + optimistic update  |
+| 2026-03-22 | 1.1     | claude-sonnet-4-6 | Applied code review patches P1, P2, P3                   |

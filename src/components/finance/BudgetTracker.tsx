@@ -113,7 +113,7 @@ export function BudgetTracker({ month }: Props) {
           <p className="text-xs text-blue-300 leading-relaxed">
             I <strong>budget</strong> ti permettono di impostare un limite mensile per ogni categoria di spesa.
             La barra mostra quanto hai già speso: <span className="text-emerald-400">verde</span> = ok,{' '}
-            <span className="text-yellow-400">giallo</span> = quasi al limite,{' '}
+            <span className="text-amber-400">ambra</span> = quasi al limite,{' '}
             <span className="text-red-400">rosso</span> = sforato. Clicca l&apos;importo per modificarlo.
           </p>
         </div>
