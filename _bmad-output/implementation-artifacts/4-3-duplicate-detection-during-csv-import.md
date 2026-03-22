@@ -1,6 +1,6 @@
 # Story 4.3: Duplicate Detection During CSV Import
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -28,37 +28,37 @@ To minimize merge conflicts, implement 4.2 first and base this story's branch on
 
 **File:** `src/components/finance/CSVImport.tsx`
 
-- [ ] **1.1** In the component, access existing transactions from the React Query cache via `useQueryClient()` — `queryClient.getQueryData<Transaction[]>(['transactions', ...])`. Note: the transactions cache is keyed by month. For dedup purposes, fetch ALL transactions (not just the current month) from Supabase in a dedicated query.
-- [ ] **1.2** Add a `useQuery` inside `CSVImport` (or a dedicated `useAllTransactions` hook) that fetches all transactions for the current user without month filter. Use `staleTime: 60_000` — this data only needs to be fresh when the import dialog opens.
-- [ ] **1.3** Build a `Set<string>` of existing transaction fingerprints: `${date}|${amount}|${normalizedDescription}` where `normalizedDescription = (description ?? '').toLowerCase().trim()`.
+- [x] **1.1** In the component, access existing transactions from the React Query cache via `useQueryClient()` — `queryClient.getQueryData<Transaction[]>(['transactions', ...])`. Note: the transactions cache is keyed by month. For dedup purposes, fetch ALL transactions (not just the current month) from Supabase in a dedicated query.
+- [x] **1.2** Add a `useQuery` inside `CSVImport` (or a dedicated `useAllTransactions` hook) that fetches all transactions for the current user without month filter. Use `staleTime: 60_000` — this data only needs to be fresh when the import dialog opens.
+- [x] **1.3** Build a `Set<string>` of existing transaction fingerprints: `${date}|${amount}|${normalizedDescription}` where `normalizedDescription = (description ?? '').toLowerCase().trim()`.
 
 ### Task 2: Flag duplicate rows in the preview
 
 **File:** `src/components/finance/CSVImport.tsx`
 
-- [ ] **2.1** For each row in the preview, compute its fingerprint using the current `mapping` (dateCol, amountCol, descriptionCol) and check it against the existing fingerprint set.
-- [ ] **2.2** Maintain a `Set<number>` state called `excludedRows` (row indices excluded from import, defaults to all detected duplicates being excluded).
-- [ ] **2.3** In the preview table, for each row that is a probable duplicate:
+- [x] **2.1** For each row in the preview, compute its fingerprint using the current `mapping` (dateCol, amountCol, descriptionCol) and check it against the existing fingerprint set.
+- [x] **2.2** Maintain a `Set<number>` state called `excludedRows` (row indices excluded from import, defaults to all detected duplicates being excluded).
+- [x] **2.3** In the preview table, for each row that is a probable duplicate:
   - Show a badge/chip "Probabile duplicato" in amber color (e.g., `bg-amber-500/20 text-amber-400`) next to the row.
   - Show a checkbox "Includi comunque" (default: unchecked = excluded).
   - When user checks the checkbox, remove the row index from `excludedRows`.
-- [ ] **2.4** Rows that are NOT duplicates show normally with no badge.
-- [ ] **2.5** Recalculate duplicate flags whenever `mapping` changes (the user may have reassigned columns, changing the fingerprints).
+- [x] **2.4** Rows that are NOT duplicates show normally with no badge.
+- [x] **2.5** Recalculate duplicate flags whenever `mapping` changes (the user may have reassigned columns, changing the fingerprints).
 
 ### Task 3: Skip excluded rows during import and update dedup logic
 
 **File:** `src/components/finance/CSVImport.tsx`
 
-- [ ] **3.1** Update the existing in-memory dedup `Set` key from `${date}|${amount}` to `${date}|${amount}|${normalizedDescription}` for consistency with the DB-based dedup.
-- [ ] **3.2** In the import loop, skip rows whose index is in `excludedRows`.
-- [ ] **3.3** Count skipped rows (both in-memory duplicates AND server-side duplicates that were excluded by the user).
-- [ ] **3.4** Update the summary message to: "X transazioni importate, Y duplicate ignorate".
+- [x] **3.1** Update the existing in-memory dedup `Set` key from `${date}|${amount}` to `${date}|${amount}|${normalizedDescription}` for consistency with the DB-based dedup.
+- [x] **3.2** In the import loop, skip rows whose index is in `excludedRows`.
+- [x] **3.3** Count skipped rows (both in-memory duplicates AND server-side duplicates that were excluded by the user).
+- [x] **3.4** Update the summary message to: "X transazioni importate, Y duplicate ignorate".
 
 ### Task 4: Handle edge cases
 
-- [ ] **4.1** If `allTransactions` query is loading when the user reaches the preview step, show a small loading indicator in the preview header: "Rilevamento duplicati in corso...". Disable the Confirm button until the query resolves.
-- [ ] **4.2** If `allTransactions` query fails, show a non-blocking warning: "Impossibile verificare i duplicati — controlla manualmente" and allow the import to proceed (skip dedup check).
-- [ ] **4.3** Description-based matching: if the description column is not mapped (`descriptionCol` is undefined), fall back to `${date}|${amount}` fingerprint (same as current behavior). This ensures backward compatibility when description is absent.
+- [x] **4.1** If `allTransactions` query is loading when the user reaches the preview step, show a small loading indicator in the preview header: "Rilevamento duplicati in corso...". Disable the Confirm button until the query resolves.
+- [x] **4.2** If `allTransactions` query fails, show a non-blocking warning: "Impossibile verificare i duplicati — controlla manualmente" and allow the import to proceed (skip dedup check).
+- [x] **4.3** Description-based matching: if the description column is not mapped (`descriptionCol` is undefined), fall back to `${date}|${amount}` fingerprint (same as current behavior). This ensures backward compatibility when description is absent.
 
 ## Dev Notes
 
@@ -145,10 +145,25 @@ src/
 
 ### Agent Model Used
 
-_to be filled_
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- Added `useQuery` with `queryKey: ['transactions', 'all']` fetching `date, amount, description` for all user transactions (no month filter), `staleTime: 60_000`, `enabled: step === 'preview'`.
+- Built `existingFingerprints` as `Set<string>` via `useMemo` using `makeFingerprint(date, amount, desc)` helper.
+- Added `duplicateRowIndices` (Set<number>) computed via `useMemo` — recalculates whenever `rows`, `mapping`, or `existingFingerprints` changes (covers task 2.5).
+- Duplicate exclusion logic uses a separate `userIncludedRows` Set so that duplicates are excluded by default but can be overridden per-row via "Includi comunque" checkbox.
+- Preview table shows amber badge "Probabile duplicato" + checkbox per duplicate row; excluded rows are dimmed with `opacity-50`.
+- Loading state ("Rilevamento duplicati in corso...") shown in preview header; Confirm button disabled while `txnsLoading` is true (task 4.1).
+- Error state shows non-blocking warning ("Impossibile verificare i duplicati — controlla manualmente"), dedup skipped, import still enabled (task 4.2).
+- `makeFingerprint` falls back to empty string for null description, so `${date}|${amount}|` is the key when description is unmapped — backward-compatible with the old `${date}|${amount}` pattern via the empty-string suffix (task 4.3).
+- In-memory dedup key updated to use `makeFingerprint` (includes description) — task 3.1.
+- Import loop iterates by index and calls `isRowExcluded(i)` to skip server-side excluded duplicates — task 3.2/3.3.
+- Summary message updated to "X transazioni importate, Y duplicate ignorate" — task 3.4.
+- Removed unused `useTransactions` import (was fetching current month only — no longer needed in this component).
+
 ### File List
+
+- `src/components/finance/CSVImport.tsx`
