@@ -233,6 +233,8 @@ export function useBulkDeleteTransactions() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (ids: string[]) => {
+      // P8: guard against empty array — Supabase .in('id', []) behavior is version-dependent
+      if (ids.length === 0) return
       const supabase = createClient()
       const { error } = await supabase.from('transactions').delete().in('id', ids)
       if (error) throw error
@@ -278,6 +280,8 @@ export function useBulkRecategorizeTransactions() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ ids, categoryId }: BulkRecategorizeInput) => {
+      // P8: guard against empty/invalid inputs
+      if (ids.length === 0 || !categoryId) return
       const supabase = createClient()
       // TODO(4.6): add .not('category_locked', 'eq', true) filter when category_locked column exists
       const { error } = await supabase
@@ -301,11 +305,14 @@ export function useBulkRecategorizeTransactions() {
         if (prev) {
           queryClient.setQueryData<TransactionWithCategory[]>(
             queryKey,
-            prev.map((t) =>
-              idsSet.has(t.id)
+            prev.map((t) => {
+              if (!idsSet.has(t.id)) return t
+              // P9: only update category object when it's available in cache to avoid setting category: null
+              // If newCategory is null (cache miss), update only category_id and let refetch hydrate the full object
+              return newCategory
                 ? { ...t, category_id: categoryId, category: newCategory }
-                : t
-            )
+                : { ...t, category_id: categoryId }
+            })
           )
         }
       }
