@@ -1,6 +1,6 @@
 # Story 4.7: Client-Side Spending Insights
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -38,35 +38,33 @@ so that I can understand my financial patterns without any server-side processin
 
 **File:** `src/components/finance/MonthlyBarChart.tsx`
 
-- [ ] **1.1** Read the component. Check what time window it uses (selected month only vs. last N months).
-- [ ] **1.2** If it only shows the selected month's data or fewer than 6 months:
+- [x] **1.1** Read the component. Check what time window it uses (selected month only vs. last N months).
+- [x] **1.2** If it only shows the selected month's data or fewer than 6 months:
   - Fetch transactions for the last 6 months in the component or pass data from the parent.
   - Group by month client-side: `transactions.reduce((acc, tx) => { ... }, {})`.
   - Render bars for the last 6 months in chronological order.
-- [ ] **1.3** If it already covers 6 months, no changes needed.
+- [x] **1.3** If it already covers 6 months, no changes needed. — Already implemented correctly: uses `useTransactions({})` (no month filter), computes last 6 months via `last6Months()` helper, filters and aggregates client-side.
 
 ### Task 2: Verify SpendingPieChart is fully client-side
 
 **File:** `src/components/finance/SpendingPieChart.tsx`
 
-- [ ] **2.1** Read the component. Confirm it derives data from `useTransactions` (client-side) and not from a server aggregation endpoint.
-- [ ] **2.2** Confirm it shows percentage breakdown (not just amounts). If it shows amounts only, add percentage labels to the tooltip or legend: `"{pct.toFixed(1)}%"`.
-- [ ] **2.3** If already correct, no changes needed.
+- [x] **2.1** Read the component. Confirm it derives data from `useTransactions` (client-side) and not from a server aggregation endpoint. — Already implemented correctly: derives all data from `useTransactions({ month, type: 'expense' })`.
+- [x] **2.2** Confirm it shows percentage breakdown (not just amounts). If it shows amounts only, add percentage labels to the tooltip or legend: `"{pct.toFixed(1)}%"`. — **Fixed**: the legend only showed amounts; added `{pct.toFixed(1)}%` label next to each category in the legend list.
+- [x] **2.3** If already correct, no changes needed.
 
 ### Task 3: Add budget alert indicator (AC 3)
 
 **File:** `src/components/finance/BudgetTracker.tsx`
 
-- [ ] **3.1** Check if Story 4.4 already adds a red indicator when spending > budget. If yes, AC 3 is covered by the color threshold and this task is a no-op.
-- [ ] **3.2** If no visual indicator exists beyond the progress bar color, add a small alert icon or badge on the category row when `pct >= 100`:
-  - Example: `<AlertCircle size={14} className="text-red-400" />` next to the category name when over budget.
-  - This makes the over-budget state visible even if the user is scrolled past the progress bar.
+- [x] **3.1** Check if Story 4.4 already adds a red indicator when spending > budget. If yes, AC 3 is covered by the color threshold and this task is a no-op. — Already implemented correctly: Story 4.4 added `barColor` logic (emerald/amber/red) and a `<p className="text-red-400">Sforato di €X.XX</p>` text indicator below the bar when `pct >= 100`. AC 3 is covered.
+- [x] **3.2** If no visual indicator exists beyond the progress bar color, add a small alert icon or badge on the category row when `pct >= 100`. — No-op: indicator already present via red bar color + "Sforato di €X" text.
 
 ### Task 4: Ensure insights are reactive without reload
 
-- [ ] **4.1** Verify that both `MonthlyBarChart` and `SpendingPieChart` re-render when transactions are added/deleted/modified (i.e., they react to React Query cache invalidation, not static props).
-- [ ] **4.2** If any chart component memoizes its data with `useMemo`, ensure the dependency array includes the transactions array (not just its length).
-- [ ] **4.3** No changes needed if the components already use reactive hooks (useTransactions, useQuery, etc.).
+- [x] **4.1** Verify that both `MonthlyBarChart` and `SpendingPieChart` re-render when transactions are added/deleted/modified. — Already implemented correctly: both components call `useTransactions` directly; React Query cache invalidation triggers automatic re-renders.
+- [x] **4.2** If any chart component memoizes its data with `useMemo`, ensure the dependency array includes the transactions array. — No `useMemo` used; all derivations are inline in the render function, so they recompute on every render naturally.
+- [x] **4.3** No changes needed if the components already use reactive hooks. — Confirmed: no changes needed.
 
 ## Dev Notes
 
@@ -131,10 +129,17 @@ src/
 
 ### Agent Model Used
 
-_to be filled_
+claude-sonnet-4-6
 
 ### Debug Log References
 
 ### Completion Notes List
 
+- **Task 1 (MonthlyBarChart)**: Already fully implemented. Fetches all transactions with `useTransactions({})` (no month filter), computes last 6 months via `last6Months()` helper, aggregates income/expenses client-side, renders a bar+line ComposedChart. No changes needed.
+- **Task 2 (SpendingPieChart)**: Component was already client-side (using `useTransactions`), but only showed amounts in the legend — percentage was missing. Fixed by computing `pct = (d.total / totalExpense) * 100` for each category and rendering `{pct.toFixed(1)}%` next to the amount in the legend list.
+- **Task 3 (BudgetTracker)**: Already fully covered by Story 4.4 implementation. Red progress bar color + "Sforato di €X.XX" text message are both shown when `pct >= 100`. No additional alert icon needed.
+- **Task 4 (Reactivity)**: Both components directly call `useTransactions` with no intermediate memoization. React Query cache invalidation automatically triggers re-renders. No changes needed.
+
 ### File List
+
+- `src/components/finance/SpendingPieChart.tsx` — added percentage labels to legend
