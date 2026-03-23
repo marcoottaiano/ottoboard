@@ -5,6 +5,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { useBulkDeleteTransactions, useBulkRecategorizeTransactions } from '@/hooks/useFinanceMutations'
 import { Select, SelectOption } from '@/components/ui/Select'
 import { TransactionType, TransactionWithCategory } from '@/types'
+import { Lock } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { TransactionEditModal } from './TransactionEditModal'
 
@@ -141,7 +142,7 @@ export function TransactionList({ month }: Props) {
   }
 
   function handleConfirmRecategorize() {
-    if (!pendingCategoryId) return
+    if (!pendingCategoryId || bulkRecategorize.isPending) return
     const ids = Array.from(selectedIds)
     bulkRecategorize.mutate({ ids, categoryId: pendingCategoryId }, {
       onSuccess: () => {
@@ -353,9 +354,12 @@ export function TransactionList({ month }: Props) {
                     {t.category ? (
                       <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md" style={{ background: `${t.category.color}20`, color: t.category.color ?? undefined }}>
                         {t.category.icon} {t.category.name}
+                        {t.category_locked && <Lock size={10} className="shrink-0 text-amber-400" />}
                       </span>
                     ) : (
-                      <span className="text-xs text-gray-600">—</span>
+                      <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+                        —{t.category_locked && <Lock size={10} className="text-amber-400" />}
+                      </span>
                     )}
                   </td>
                   <td className="py-2.5 text-gray-400 max-w-[200px] truncate">{t.description ?? '—'}</td>

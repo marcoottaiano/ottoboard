@@ -42,6 +42,7 @@ export interface Transaction {
   description: string | null
   date: string
   created_at: string
+  category_locked: boolean
   category?: Category
 }
 
