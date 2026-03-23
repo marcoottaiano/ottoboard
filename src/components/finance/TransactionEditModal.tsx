@@ -4,7 +4,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { useDeleteTransaction, useUpdateTransaction } from '@/hooks/useFinanceMutations'
 import { Select, SelectOption } from '@/components/ui/Select'
 import { TransactionWithCategory, TransactionType } from '@/types'
-import { X } from 'lucide-react'
+import { Lock, LockOpen, X } from 'lucide-react'
 import { useState } from 'react'
 
 interface Props {
@@ -22,6 +22,7 @@ export function TransactionEditModal({ transaction, onClose }: Props) {
   const [categoryId, setCategoryId] = useState(transaction.category_id ?? '')
   const [description, setDescription] = useState(transaction.description ?? '')
   const [date, setDate] = useState(transaction.date)
+  const [categoryLocked, setCategoryLocked] = useState(transaction.category_locked ?? false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,7 +38,7 @@ export function TransactionEditModal({ transaction, onClose }: Props) {
     const amountNum = parseFloat(amount)
     if (!amountNum || amountNum <= 0) { setError('Importo non valido'); return }
     try {
-      await updateTx.mutateAsync({ id: transaction.id, amount: amountNum, type, category_id: categoryId, description: description || undefined, date })
+      await updateTx.mutateAsync({ id: transaction.id, amount: amountNum, type, category_id: categoryId, description: description || undefined, date, category_locked: categoryLocked })
       onClose()
     } catch {
       setError('Errore durante il salvataggio')
@@ -92,6 +93,19 @@ export function TransactionEditModal({ transaction, onClose }: Props) {
               className="w-full"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={() => setCategoryLocked((v) => !v)}
+            className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg border text-xs transition-colors ${
+              categoryLocked
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            {categoryLocked ? <Lock size={12} /> : <LockOpen size={12} />}
+            <span>{categoryLocked ? 'Categoria bloccata (esclusa da operazioni bulk)' : 'Blocca categoria'}</span>
+          </button>
 
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Descrizione</label>

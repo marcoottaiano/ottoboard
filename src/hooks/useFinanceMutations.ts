@@ -1,6 +1,7 @@
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { Category, TransactionType, TransactionWithCategory, CategoryType, SpendingType } from '@/types'
 
@@ -40,6 +41,7 @@ export function useCreateTransaction() {
         description: vars.description ?? null,
         date: vars.date,
         created_at: new Date().toISOString(),
+        category_locked: false,
         category,
       }
 
@@ -88,6 +90,7 @@ interface UpdateTransactionInput {
   category_id?: string
   description?: string
   date?: string
+  category_locked?: boolean
 }
 
 export function useUpdateTransaction() {
@@ -283,20 +286,34 @@ export function useBulkRecategorizeTransactions() {
       // P8: guard against empty/invalid inputs
       if (ids.length === 0 || !categoryId) return
       const supabase = createClient()
-      // TODO(4.6): add .not('category_locked', 'eq', true) filter when category_locked column exists
+      // Server-side guard: .eq('category_locked', false) ensures locked transactions are never
+      // updated even if client-side filtering diverges (e.g., stale cache)
       const { error } = await supabase
         .from('transactions')
         .update({ category_id: categoryId })
         .in('id', ids)
+        .eq('category_locked', false)
       if (error) throw error
     },
     onMutate: async ({ ids, categoryId }) => {
       await queryClient.cancelQueries({ queryKey: ['transactions'] })
-      const idsSet = new Set(ids)
+
+      // Compute locked IDs ONCE here from the current cache snapshot.
+      // Both the optimistic update and the onSuccess toast use this same snapshot,
+      // avoiding the race condition that would occur if mutationFn re-read the cache.
+      const lockedIds = new Set(
+        queryClient.getQueryCache()
+          .findAll({ queryKey: ['transactions'] })
+          .flatMap((q) => queryClient.getQueryData<TransactionWithCategory[]>(q.queryKey) ?? [])
+          .filter((t) => t.category_locked)
+          .map((t) => t.id)
+      )
+      const unlockedSet = new Set(ids.filter((id) => !lockedIds.has(id)))
+      const skipped = ids.length - unlockedSet.size
+
       const categories = queryClient.getQueryData<Category[]>(['categories'])
       const newCategory = categories?.find((c) => c.id === categoryId) ?? null
-      const queryCache = queryClient.getQueryCache()
-      const txQueries = queryCache.findAll({ queryKey: ['transactions'] })
+      const txQueries = queryClient.getQueryCache().findAll({ queryKey: ['transactions'] })
       const snapshots: Array<{ queryKey: unknown[]; data: TransactionWithCategory[] | undefined }> = []
       for (const query of txQueries) {
         const queryKey = query.queryKey as unknown[]
@@ -306,7 +323,8 @@ export function useBulkRecategorizeTransactions() {
           queryClient.setQueryData<TransactionWithCategory[]>(
             queryKey,
             prev.map((t) => {
-              if (!idsSet.has(t.id)) return t
+              // Skip locked and unselected transactions in the optimistic update
+              if (!unlockedSet.has(t.id)) return t
               // P9: only update category object when it's available in cache to avoid setting category: null
               // If newCategory is null (cache miss), update only category_id and let refetch hydrate the full object
               return newCategory
@@ -316,7 +334,15 @@ export function useBulkRecategorizeTransactions() {
           )
         }
       }
-      return { snapshots }
+      return { snapshots, skipped, unlockedCount: unlockedSet.size }
+    },
+    onSuccess: (_data, _vars, context) => {
+      if (!context) return
+      if (context.unlockedCount === 0) {
+        toast.error('Nessuna transazione modificabile — tutte bloccate')
+      } else if (context.skipped > 0) {
+        toast.info(`${context.skipped} transazion${context.skipped === 1 ? 'e bloccata esclusa' : 'i bloccate escluse'}`)
+      }
     },
     onError: (_err, _vars, context) => {
       if (context?.snapshots) {
