@@ -7,6 +7,7 @@ import { ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { ActivityBadge } from './ActivityBadge'
 import { ActivityModal } from './ActivityModal'
+import { toLocalDateStr } from '@/lib/dateUtils'
 
 const PAGE_SIZE = 20
 
@@ -48,7 +49,7 @@ export function ActivityList() {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null)
 
   const after = periodDays > 0
-    ? new Date(Date.now() - periodDays * 86400000).toISOString().slice(0, 10)
+    ? toLocalDateStr(new Date(Date.now() - periodDays * 86400000))
     : undefined
 
   const filters: ActivityFilters = {

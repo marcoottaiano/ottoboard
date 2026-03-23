@@ -4,6 +4,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { ExtendedBodyPart, Slug } from 'react-muscle-highlighter'
 import type { BodyMeasurement } from '@/types'
+import { PrivacyValue } from '@/components/ui/PrivacyValue'
 
 const Body = dynamic(() => import('./MuscleBody'), { ssr: false })
 
@@ -198,13 +199,13 @@ export function BodyCanvas({ measurements }: Props) {
                   <span className="text-xs text-gray-400">{m.label}</span>
                   {val != null ? (
                     <span className="flex items-center gap-2 text-xs">
-                      <span className="text-white font-medium">{val} {m.unit}</span>
+                      <span className="text-white font-medium"><PrivacyValue>{val} {m.unit}</PrivacyValue></span>
                       {delta !== null && (
                         <span className={
                           delta > 0 ? 'text-green-400' :
                           delta < 0 ? 'text-red-400' : 'text-gray-400'
                         }>
-                          {delta > 0 ? '+' : ''}{delta}
+                          <PrivacyValue>{delta > 0 ? '+' : ''}{delta}</PrivacyValue>
                         </span>
                       )}
                     </span>

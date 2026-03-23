@@ -2,6 +2,8 @@
 
 import { useTransactions } from '@/hooks/useTransactions'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts'
+import { PrivacyValue } from '@/components/ui/PrivacyValue'
+import { usePrivacyMode } from '@/hooks/usePrivacyMode'
 
 function formatEur(n: number) {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n)
@@ -13,6 +15,7 @@ interface Props {
 
 export function SpendingPieChart({ month }: Props) {
   const { data: transactions, isLoading } = useTransactions({ month, type: 'expense' })
+  const { isPrivate } = usePrivacyMode()
 
   if (isLoading) {
     return (
@@ -81,7 +84,7 @@ export function SpendingPieChart({ month }: Props) {
                   borderRadius: '8px',
                   fontSize: '12px',
                 }}
-                formatter={(v, name) => [formatEur(Number(v)), String(name)]}
+                formatter={(v, name) => [isPrivate ? '••••' : formatEur(Number(v)), String(name)]}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -98,7 +101,7 @@ export function SpendingPieChart({ month }: Props) {
                 </div>
                 <div className="flex items-center gap-1.5 whitespace-nowrap">
                   <span className="text-xs text-gray-500">{pct.toFixed(1)}%</span>
-                  <span className="text-xs text-white">{formatEur(d.total)}</span>
+                  <span className="text-xs text-white"><PrivacyValue>{formatEur(d.total)}</PrivacyValue></span>
                 </div>
               </div>
             )
@@ -108,7 +111,7 @@ export function SpendingPieChart({ month }: Props) {
           )}
           <div className="mt-1 pt-1.5 border-t border-white/10 flex justify-between">
             <span className="text-xs text-gray-500">Totale</span>
-            <span className="text-xs font-medium text-white">{formatEur(totalExpense)}</span>
+            <span className="text-xs font-medium text-white"><PrivacyValue>{formatEur(totalExpense)}</PrivacyValue></span>
           </div>
         </div>
       </div>

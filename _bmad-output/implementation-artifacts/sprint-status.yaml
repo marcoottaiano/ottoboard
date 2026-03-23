@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-23 # epic-6 in-progress, tutte le stories ready-for-dev
+last_updated: 2026-03-23
 project: ottoboard
 project_key: NOKEY
 tracking_system: file-system
@@ -88,9 +88,9 @@ development_status:
 
   # EPIC 6: Advanced Fitness Analytics
   epic-6: in-progress
-  6-1-strava-activity-visualization-with-correct-timezone: ready-for-dev
+  6-1-strava-activity-visualization-with-correct-timezone: review
   6-2-body-measurement-recording: ready-for-dev
   6-3-body-composition-charts: ready-for-dev
   6-4-interactive-bodycanvas: ready-for-dev
-  6-5-privacy-mode-blur-sensitive-data: ready-for-dev
+  6-5-privacy-mode-blur-sensitive-data: review
   epic-6-retrospective: optional

@@ -1,6 +1,6 @@
 # Story 6.5: Privacy Mode — Blur Sensitive Data
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -22,25 +22,25 @@ So that I can use the dashboard in public without exposing personal financial or
 
 ## Tasks / Subtasks
 
-- [ ] Create `usePrivacyMode` Zustand store + localStorage sync (AC: #1, #2, #3, #4)
-  - [ ] Store in `src/hooks/usePrivacyMode.ts` (or `src/store/privacyMode.ts`)
-  - [ ] State: `{ isPrivate: boolean; toggle: () => void }`
-  - [ ] Persist to `localStorage` key `'ottoboard-privacy-mode'`
-  - [ ] Initialize from `localStorage` on store creation
-- [ ] Create `PrivacyValue` component (AC: #1, #3)
-  - [ ] `<PrivacyValue>` wraps any sensitive value and applies blur when `isPrivate === true`
-  - [ ] CSS blur: `filter: blur(8px); user-select: none; pointer-events: none`
-  - [ ] Transition: `transition-all duration-200`
-  - [ ] Location: `src/components/ui/PrivacyValue.tsx`
-- [ ] Add Privacy Mode toggle to UI (AC: #5)
-  - [ ] Add toggle button in sidebar (desktop) and/or header
-  - [ ] Icon: `EyeOff` (Lucide) when private, `Eye` when visible
-  - [ ] Active state: subtle indicator (orange dot or text "Privato")
-- [ ] Wrap sensitive values across modules (AC: #1)
-  - [ ] **Finance:** `TotalBalanceWidget`, `MonthlyHeader` (saldo, entrate, uscite), `TransactionList` (amounts), `SpendingPieChart` labels
-  - [ ] **Fitness:** `WeightChart` Y-axis values, `BodyFatChart` values, `WeekStatsCard` (km, calorie)
-  - [ ] **Home widgets:** `MonthFinanceWidget`, `TotalBalanceWidget`
-  - [ ] Do NOT blur: dates, category names, activity types, labels
+- [x] Create `usePrivacyMode` Zustand store + localStorage sync (AC: #1, #2, #3, #4)
+  - [x] Store in `src/hooks/usePrivacyMode.ts` (or `src/store/privacyMode.ts`)
+  - [x] State: `{ isPrivate: boolean; toggle: () => void }`
+  - [x] Persist to `localStorage` key `'ottoboard-privacy-mode'`
+  - [x] Initialize from `localStorage` on store creation
+- [x] Create `PrivacyValue` component (AC: #1, #3)
+  - [x] `<PrivacyValue>` wraps any sensitive value and applies blur when `isPrivate === true`
+  - [x] CSS blur: `filter: blur(8px); user-select: none; pointer-events: none`
+  - [x] Transition: `transition-all duration-200`
+  - [x] Location: `src/components/ui/PrivacyValue.tsx`
+- [x] Add Privacy Mode toggle to UI (AC: #5)
+  - [x] Add toggle button in sidebar (desktop) and/or header
+  - [x] Icon: `EyeOff` (Lucide) when private, `Eye` when visible
+  - [x] Active state: subtle indicator (orange dot or text "Privato")
+- [x] Wrap sensitive values across modules (AC: #1)
+  - [x] **Finance:** `TotalBalanceWidget`, `MonthlyHeader` (saldo, entrate, uscite), `TransactionList` (amounts), `SpendingPieChart` labels
+  - [x] **Fitness:** `WeightChart` Y-axis values, `BodyFatChart` values, `WeekStatsCard` (km, calorie)
+  - [x] **Home widgets:** `MonthFinanceWidget`, `TotalBalanceWidget`
+  - [x] Do NOT blur: dates, category names, activity types, labels
 
 ## Dev Notes
 
@@ -122,8 +122,41 @@ export function PrivacyValue({ children, className }: { children: React.ReactNod
 
 ### Agent Model Used
 
+claude-sonnet-4-6
+
 ### Debug Log References
+
+No issues encountered. TypeScript check passed with no errors.
 
 ### Completion Notes List
 
+- Created `src/hooks/usePrivacyMode.ts` — Zustand store with `isPrivate` boolean and `toggle()`, persisted to `localStorage` key `ottoboard-privacy-mode`, initialized from localStorage on store creation.
+- Created `src/components/ui/PrivacyValue.tsx` — wrapper component applying `blur-sm select-none pointer-events-none` with `transition-all duration-200` when `isPrivate` is true.
+- Updated `src/components/ui/Sidebar.tsx` — added `Eye`/`EyeOff` toggle button in both desktop sidebar bottom section and mobile top header. Active state shows orange color, "Privato" text (desktop), and orange dot indicator.
+- Finance module: wrapped all sensitive monetary values in `MonthlyHeader` (saldo, entrate, uscite), `TransactionList` (transaction amounts), `SpendingPieChart` (per-category amounts and total), `TotalBalanceWidget` (balance, income, expense).
+- Home widgets: wrapped values in `MonthFinanceWidget` (balance, income, expense totals, top-3 category amounts) and `TotalBalanceWidget` (already covered above).
+- Fitness module: wrapped distance and duration values in `WeekStatsCard`; applied privacy-aware `tickFormatter` and tooltip `formatter` in `WeightChart`, `BodyFatChart`, `BodyCompositionChart`, `SkinfoldsTrendChart`, `MeasurementsDeltaChart`, `CircumferencesRadarChart` (charts use `isPrivate` directly since Recharts formatters are not React render props).
+- Body tab: wrapped all measurement values in `MeasurementHistoryTable` (table cells and detail modal), and body zone tooltip values in `BodyCanvas`.
+- Dates, labels, category names, activity types, and non-numeric content are NOT blurred.
+
 ### File List
+
+- src/hooks/usePrivacyMode.ts (created)
+- src/components/ui/PrivacyValue.tsx (created)
+- src/components/ui/Sidebar.tsx (modified)
+- src/components/finance/MonthlyHeader.tsx (modified)
+- src/components/finance/TransactionList.tsx (modified)
+- src/components/finance/SpendingPieChart.tsx (modified)
+- src/components/home/TotalBalanceWidget.tsx (modified)
+- src/components/home/MonthFinanceWidget.tsx (modified)
+- src/components/fitness/WeekStatsCard.tsx (modified)
+- src/components/fitness/WeightChart.tsx (modified)
+- src/components/fitness/BodyFatChart.tsx (modified)
+- src/components/fitness/BodyCompositionChart.tsx (modified)
+- src/components/fitness/BodyCanvas.tsx (modified)
+- src/components/fitness/MeasurementHistoryTable.tsx (modified)
+- src/components/fitness/SkinfoldsTrendChart.tsx (modified)
+- src/components/fitness/MeasurementsDeltaChart.tsx (modified)
+- src/components/fitness/CircumferencesRadarChart.tsx (modified)
+- _bmad-output/implementation-artifacts/6-5-privacy-mode-blur-sensitive-data.md (modified)
+- _bmad-output/implementation-artifacts/sprint-status.yaml (modified)

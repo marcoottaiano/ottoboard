@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useActivities } from '@/hooks/useActivities'
 import { Activity } from '@/types'
+import { toLocalDateStr } from '@/lib/dateUtils'
 
 const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic']
 const DAYS = ['L', 'M', 'M', 'G', 'V', 'S', 'D']
@@ -24,14 +25,6 @@ const INTENSITY_CLASSES = [
   'bg-orange-500',
 ]
 
-// "YYYY-MM-DD" in tempo locale (non UTC) per evitare sfasamenti di fuso orario
-function toLocalDateStr(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
 // "Lun 15 Gen 2025" per il tooltip
 function formatCellDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number)
@@ -45,9 +38,11 @@ function buildGrid(activities: Activity[], year: number) {
   const today = toLocalDateStr(new Date())
 
   // Mappa solo le attività di quell'anno (doppio filtro: query + qui)
+  // Usa toLocalDateStr per evitare sfasamenti UTC: una run alle 23:30 CET
+  // sarebbe il giorno precedente in UTC, spostandola sulla cella sbagliata.
   const activityMap = new Map<string, Activity>()
   for (const a of activities) {
-    const d = a.start_date.slice(0, 10)
+    const d = toLocalDateStr(new Date(a.start_date))
     if (!d.startsWith(`${year}-`)) continue
     if (!activityMap.has(d)) activityMap.set(d, a)
   }

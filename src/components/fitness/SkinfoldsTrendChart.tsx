@@ -6,6 +6,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import type { BodyMeasurement } from '@/types'
+import { usePrivacyMode } from '@/hooks/usePrivacyMode'
 
 interface Props {
   measurements: BodyMeasurement[]
@@ -22,6 +23,7 @@ const SITES: { field: keyof BodyMeasurement; label: string; color: string }[] = 
 ]
 
 export function SkinfoldsTrendChart({ measurements }: Props) {
+  const { isPrivate } = usePrivacyMode()
   const [showIndividual, setShowIndividual] = useState(false)
 
   const filtered = [...measurements]
@@ -59,10 +61,10 @@ export function SkinfoldsTrendChart({ measurements }: Props) {
         <LineChart data={data} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
           <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6b7280' }} />
-          <YAxis tick={{ fontSize: 10, fill: '#6b7280' }} tickFormatter={v => `${v}`} />
+          <YAxis tick={{ fontSize: 10, fill: '#6b7280' }} tickFormatter={v => isPrivate ? '••' : `${v}`} />
           <Tooltip
             contentStyle={{ background: '#12121f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
-            formatter={(v, name) => [`${v} mm`, name === 'sum' ? 'Σ pliche' : String(name)]}
+            formatter={(v, name) => [isPrivate ? '••••' : `${v} mm`, name === 'sum' ? 'Σ pliche' : String(name)]}
             labelStyle={{ color: '#9ca3af' }}
           />
           {!showIndividual ? (
