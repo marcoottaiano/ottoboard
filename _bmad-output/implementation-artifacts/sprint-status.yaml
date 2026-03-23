@@ -89,7 +89,7 @@ development_status:
   # EPIC 6: Advanced Fitness Analytics
   epic-6: in-progress
   6-1-strava-activity-visualization-with-correct-timezone: review
-  6-2-body-measurement-recording: ready-for-dev
+  6-2-body-measurement-recording: done
   6-3-body-composition-charts: ready-for-dev
   6-4-interactive-bodycanvas: ready-for-dev
   6-5-privacy-mode-blur-sensitive-data: review
