@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-23 # epic-4 story 4.6 done, epic-4 complete
+last_updated: 2026-03-23 # epic-6 in-progress, tutte le stories ready-for-dev
 project: ottoboard
 project_key: NOKEY
 tracking_system: file-system
@@ -82,15 +82,15 @@ development_status:
   4-3-duplicate-detection-during-csv-import: done
   4-4-monthly-budget-monitoring: done
   4-5-bulk-transaction-operations: done
-  4-6-lock-transaction-category: review
+  4-6-lock-transaction-category: done
   4-7-client-side-spending-insights: done
   epic-4-retrospective: optional
 
   # EPIC 6: Advanced Fitness Analytics
-  epic-6: backlog
-  6-1-strava-activity-visualization-with-correct-timezone: backlog
-  6-2-body-measurement-recording: backlog
-  6-3-body-composition-charts: backlog
-  6-4-interactive-bodycanvas: backlog
-  6-5-privacy-mode-blur-sensitive-data: backlog
+  epic-6: in-progress
+  6-1-strava-activity-visualization-with-correct-timezone: ready-for-dev
+  6-2-body-measurement-recording: ready-for-dev
+  6-3-body-composition-charts: ready-for-dev
+  6-4-interactive-bodycanvas: ready-for-dev
+  6-5-privacy-mode-blur-sensitive-data: ready-for-dev
   epic-6-retrospective: optional
