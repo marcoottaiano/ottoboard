@@ -87,10 +87,10 @@ development_status:
   epic-4-retrospective: optional
 
   # EPIC 6: Advanced Fitness Analytics
-  epic-6: in-progress
-  6-1-strava-activity-visualization-with-correct-timezone: review
+  epic-6: done
+  6-1-strava-activity-visualization-with-correct-timezone: done
   6-2-body-measurement-recording: done
-  6-3-body-composition-charts: ready-for-dev
-  6-4-interactive-bodycanvas: ready-for-dev
-  6-5-privacy-mode-blur-sensitive-data: review
+  6-3-body-composition-charts: done
+  6-4-interactive-bodycanvas: done
+  6-5-privacy-mode-blur-sensitive-data: done
   epic-6-retrospective: optional
