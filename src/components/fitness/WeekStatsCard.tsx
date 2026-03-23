@@ -2,6 +2,7 @@
 
 import { useWeekStats } from '@/hooks/useWeekStats'
 import { Route, Timer, Dumbbell } from 'lucide-react'
+import { PrivacyValue } from '@/components/ui/PrivacyValue'
 
 const TYPE_LABELS: Record<string, string> = {
   Run: 'Corsa',
@@ -75,7 +76,7 @@ export function WeekStatsCard({ bare = false }: { bare?: boolean }) {
             <Dumbbell size={12} />
             Allenamenti
           </div>
-          <span className="text-2xl font-bold text-white">{current.count}</span>
+          <span className="text-2xl font-bold text-white"><PrivacyValue>{current.count}</PrivacyValue></span>
           <Delta value={delta?.count ?? 0} />
           {typeEntries.length > 0 && (
             <div className="flex flex-col gap-0.5 mt-1">
@@ -95,7 +96,7 @@ export function WeekStatsCard({ bare = false }: { bare?: boolean }) {
             Distanza
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-white">{current.distanceKm.toFixed(2)}</span>
+            <span className="text-2xl font-bold text-white"><PrivacyValue>{current.distanceKm.toFixed(2)}</PrivacyValue></span>
             <span className="text-xs text-gray-500">km</span>
           </div>
           <Delta value={delta?.distanceKm ?? 0} />
@@ -108,7 +109,7 @@ export function WeekStatsCard({ bare = false }: { bare?: boolean }) {
             Durata totale
           </div>
           <span className="text-lg font-bold text-white leading-tight">
-            {formatHoursDuration(current.durationHours)}
+            <PrivacyValue>{formatHoursDuration(current.durationHours)}</PrivacyValue>
           </span>
           <Delta value={delta?.durationHours ?? 0} />
         </div>

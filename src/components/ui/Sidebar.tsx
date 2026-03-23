@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Activity, Wallet, Kanban, Target, PanelLeftClose, PanelLeftOpen, LogOut, User } from "lucide-react";
+import { LayoutDashboard, Activity, Wallet, Kanban, Target, PanelLeftClose, PanelLeftOpen, LogOut, User, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { usePrivacyMode } from "@/hooks/usePrivacyMode";
 
 const NAV_ITEMS = [
   {
@@ -86,8 +87,10 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const activeModule = getActiveModule(pathname);
+  const { isPrivate, toggle: togglePrivacy, hydrate: hydratePrivacy } = usePrivacyMode();
 
   useEffect(() => {
+    hydratePrivacy();
     const client = createClient();
     client.auth.getUser().then(({ data }) => {
       setUserName(data.user?.email?.split("@")[0] ?? null);
@@ -146,6 +149,21 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
             </div>
             {!collapsed && <span className="text-xs text-white/40 truncate flex-1">{userName ?? "…"}</span>}
           </div>
+          <button
+            onClick={togglePrivacy}
+            title={collapsed ? (isPrivate ? "Privacy Mode attiva" : "Attiva Privacy Mode") : undefined}
+            className={["flex items-center w-full rounded-xl px-2 py-2 transition-all duration-200", "border", isPrivate ? "text-orange-400 bg-orange-500/10 border-orange-500/20" : "text-white/30 hover:text-white/60 hover:bg-white/[0.04] border-transparent hover:border-white/[0.06]", collapsed ? "justify-center" : "gap-2.5"].join(" ")}
+          >
+            {isPrivate ? <EyeOff size={15} className="flex-shrink-0" /> : <Eye size={15} className="flex-shrink-0" />}
+            {!collapsed && (
+              <span className="text-xs font-medium flex-1">
+                {isPrivate ? "Privato" : "Privacy Mode"}
+              </span>
+            )}
+            {!collapsed && isPrivate && (
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
+            )}
+          </button>
           <button onClick={handleLogout} title={collapsed ? "Logout" : undefined} className={["flex items-center w-full rounded-xl px-2 py-2 transition-all duration-200", "text-white/30 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20", collapsed ? "justify-center" : "gap-2.5"].join(" ")}>
             <LogOut size={15} className="flex-shrink-0" />
             {!collapsed && <span className="text-xs font-medium">Logout</span>}
@@ -163,6 +181,14 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
 
         {/* User + logout */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={togglePrivacy}
+            title={isPrivate ? "Privacy Mode attiva — tocca per disattivare" : "Attiva Privacy Mode"}
+            className={["w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 relative", isPrivate ? "text-orange-400 bg-orange-500/10" : "text-white/30 hover:text-white/60 hover:bg-white/[0.06]"].join(" ")}
+          >
+            {isPrivate ? <EyeOff size={15} /> : <Eye size={15} />}
+            {isPrivate && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-orange-400" />}
+          </button>
           <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
               <User size={11} className="text-white/60" />

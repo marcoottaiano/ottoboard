@@ -2,6 +2,7 @@
 
 import { TrendingDown, TrendingUp } from 'lucide-react'
 import { useTransactions } from '@/hooks/useTransactions'
+import { PrivacyValue } from '@/components/ui/PrivacyValue'
 
 function formatEur(n: number) {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n)
@@ -70,7 +71,7 @@ export function TotalBalanceWidget({ bare = false }: { bare?: boolean }) {
           <span
             className={`text-2xl font-bold ${balancePositive ? 'text-emerald-400' : 'text-red-400'}`}
           >
-            {formatEur(balance)}
+            <PrivacyValue>{formatEur(balance)}</PrivacyValue>
           </span>
         </div>
 
@@ -78,12 +79,12 @@ export function TotalBalanceWidget({ bare = false }: { bare?: boolean }) {
         <div className="flex items-center gap-4 mt-2">
           <div>
             <p className="text-[10px] text-gray-600 uppercase tracking-wide">Entrate</p>
-            <p className="text-sm font-medium text-emerald-400/80">{formatEur(totalIncome)}</p>
+            <p className="text-sm font-medium text-emerald-400/80"><PrivacyValue>{formatEur(totalIncome)}</PrivacyValue></p>
           </div>
           <div className="w-px h-8 bg-white/10" />
           <div>
             <p className="text-[10px] text-gray-600 uppercase tracking-wide">Uscite</p>
-            <p className="text-sm font-medium text-red-400/80">{formatEur(totalExpense)}</p>
+            <p className="text-sm font-medium text-red-400/80"><PrivacyValue>{formatEur(totalExpense)}</PrivacyValue></p>
           </div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useTransactions } from '@/hooks/useTransactions'
 import { useMonthStats } from '@/hooks/useMonthStats'
 import { TransactionWithCategory } from '@/types'
 import Link from 'next/link'
+import { PrivacyValue } from '@/components/ui/PrivacyValue'
 
 function getCurrentMonth(): string {
   const now = new Date()
@@ -84,7 +85,7 @@ export function MonthFinanceWidget() {
           <span
             className={`text-2xl font-bold ${balancePositive ? 'text-emerald-400' : 'text-red-400'}`}
           >
-            {formatEur(balance)}
+            <PrivacyValue>{formatEur(balance)}</PrivacyValue>
           </span>
           {delta && (
             <span
@@ -102,10 +103,10 @@ export function MonthFinanceWidget() {
         {current && (
           <div className="flex items-center gap-3 mt-1.5">
             <span className="text-xs text-gray-600">
-              <span className="text-emerald-500/70">↑</span> {formatEur(current.totalIncome)}
+              <span className="text-emerald-500/70">↑</span> <PrivacyValue>{formatEur(current.totalIncome)}</PrivacyValue>
             </span>
             <span className="text-xs text-gray-600">
-              <span className="text-red-500/70">↓</span> {formatEur(current.totalExpense)}
+              <span className="text-red-500/70">↓</span> <PrivacyValue>{formatEur(current.totalExpense)}</PrivacyValue>
             </span>
           </div>
         )}
@@ -121,7 +122,7 @@ export function MonthFinanceWidget() {
                   {cat.icon && <span>{cat.icon}</span>}
                   {cat.name}
                 </span>
-                <span className="text-gray-500">{formatEur(cat.total)}</span>
+                <span className="text-gray-500"><PrivacyValue>{formatEur(cat.total)}</PrivacyValue></span>
               </div>
               <div className="h-1 rounded-full bg-white/5">
                 <div

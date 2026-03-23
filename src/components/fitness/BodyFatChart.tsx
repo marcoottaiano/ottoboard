@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 import type { BodyMeasurement, UserBodyProfile } from '@/types'
+import { usePrivacyMode } from '@/hooks/usePrivacyMode'
 
 interface Props {
   measurements: BodyMeasurement[]
@@ -26,6 +27,7 @@ const FEMALE_ZONES = [
 ]
 
 export function BodyFatChart({ measurements, profile }: Props) {
+  const { isPrivate } = usePrivacyMode()
   const filtered = [...measurements]
     .filter(m => m.body_fat_pct != null)
     .reverse()
@@ -55,11 +57,11 @@ export function BodyFatChart({ measurements, profile }: Props) {
           <YAxis
             domain={[0, 'auto']}
             tick={{ fontSize: 10, fill: '#6b7280' }}
-            tickFormatter={v => `${v}%`}
+            tickFormatter={v => isPrivate ? '••' : `${v}%`}
           />
           <Tooltip
             contentStyle={{ background: '#12121f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
-            formatter={v => [`${v}%`, '% Grasso']}
+            formatter={v => [isPrivate ? '••••' : `${v}%`, '% Grasso']}
             labelStyle={{ color: '#9ca3af' }}
           />
           {zones.map(z => (

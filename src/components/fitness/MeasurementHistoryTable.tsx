@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useDeleteBodyMeasurement } from '@/hooks/useBodyMeasurements'
 import type { BodyMeasurement } from '@/types'
+import { PrivacyValue } from '@/components/ui/PrivacyValue'
 
 const PAGE_SIZE = 20
 
@@ -50,7 +51,7 @@ function DetailModal({ m, onClose, onDelete, isDeleting }: DetailModalProps) {
           {fields.map(f => (
             <div key={f.label}>
               <p className="text-[10px] text-gray-500">{f.label}</p>
-              <p className="text-sm text-white font-medium">{f.value} {f.unit}</p>
+              <p className="text-sm text-white font-medium"><PrivacyValue>{f.value} {f.unit}</PrivacyValue></p>
             </div>
           ))}
         </div>
@@ -120,11 +121,11 @@ export function MeasurementHistoryTable({ measurements }: Props) {
                     onClick={() => setSelected(m)}
                   >
                     <td className="px-4 py-3 text-gray-300">{m.measured_at}</td>
-                    <td className="px-3 py-3 text-right text-white">{m.weight_kg != null ? `${m.weight_kg} kg` : '—'}</td>
-                    <td className="px-3 py-3 text-right text-orange-300">{m.body_fat_pct != null ? `${m.body_fat_pct}%` : '—'}</td>
-                    <td className="px-3 py-3 text-right text-teal-300">{m.lean_mass_kg != null ? `${m.lean_mass_kg} kg` : '—'}</td>
-                    <td className="px-3 py-3 text-right text-gray-300 hidden sm:table-cell">{sumPliche ? `${sumPliche} mm` : '—'}</td>
-                    <td className="px-3 py-3 text-right text-gray-300 hidden sm:table-cell">{m.circ_waist != null ? `${m.circ_waist} cm` : '—'}</td>
+                    <td className="px-3 py-3 text-right text-white"><PrivacyValue>{m.weight_kg != null ? `${m.weight_kg} kg` : '—'}</PrivacyValue></td>
+                    <td className="px-3 py-3 text-right text-orange-300"><PrivacyValue>{m.body_fat_pct != null ? `${m.body_fat_pct}%` : '—'}</PrivacyValue></td>
+                    <td className="px-3 py-3 text-right text-teal-300"><PrivacyValue>{m.lean_mass_kg != null ? `${m.lean_mass_kg} kg` : '—'}</PrivacyValue></td>
+                    <td className="px-3 py-3 text-right text-gray-300 hidden sm:table-cell"><PrivacyValue>{sumPliche ? `${sumPliche} mm` : '—'}</PrivacyValue></td>
+                    <td className="px-3 py-3 text-right text-gray-300 hidden sm:table-cell"><PrivacyValue>{m.circ_waist != null ? `${m.circ_waist} cm` : '—'}</PrivacyValue></td>
                   </tr>
                 )
               })}

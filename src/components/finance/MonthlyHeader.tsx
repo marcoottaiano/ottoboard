@@ -2,6 +2,7 @@
 
 import { useMonthStats } from '@/hooks/useMonthStats'
 import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { PrivacyValue } from '@/components/ui/PrivacyValue'
 
 function formatEur(n: number) {
   return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n)
@@ -76,7 +77,7 @@ export function MonthlyHeader({ selectedMonth, onMonthChange }: Props) {
           <div className="text-center mb-4">
             <p className="text-xs text-gray-500 mb-1">Saldo</p>
             <p className={`text-4xl font-bold ${(current?.balance ?? 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-              {formatEur(current?.balance ?? 0)}
+              <PrivacyValue>{formatEur(current?.balance ?? 0)}</PrivacyValue>
             </p>
             {delta && <div className="mt-1"><Delta value={delta.balance} /></div>}
           </div>
@@ -88,7 +89,7 @@ export function MonthlyHeader({ selectedMonth, onMonthChange }: Props) {
                 <TrendingUp size={12} />
                 Entrate
               </div>
-              <span className="text-xl font-bold text-white">{formatEur(current?.totalIncome ?? 0)}</span>
+              <span className="text-xl font-bold text-white"><PrivacyValue>{formatEur(current?.totalIncome ?? 0)}</PrivacyValue></span>
               {delta && <Delta value={delta.income} />}
             </div>
             <div className="flex flex-col gap-1 p-3 rounded-lg bg-white/5">
@@ -96,7 +97,7 @@ export function MonthlyHeader({ selectedMonth, onMonthChange }: Props) {
                 <TrendingDown size={12} />
                 Uscite
               </div>
-              <span className="text-xl font-bold text-white">{formatEur(current?.totalExpense ?? 0)}</span>
+              <span className="text-xl font-bold text-white"><PrivacyValue>{formatEur(current?.totalExpense ?? 0)}</PrivacyValue></span>
               {delta && <Delta value={delta.expense} />}
             </div>
           </div>

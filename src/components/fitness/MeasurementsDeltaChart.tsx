@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, Cell, ReferenceLine,
 } from 'recharts'
 import type { BodyMeasurement } from '@/types'
+import { usePrivacyMode } from '@/hooks/usePrivacyMode'
 
 interface Props {
   measurements: BodyMeasurement[]
@@ -25,6 +26,7 @@ const METRICS: { field: keyof BodyMeasurement; label: string; lowerIsBetter: boo
 ]
 
 export function MeasurementsDeltaChart({ measurements }: Props) {
+  const { isPrivate } = usePrivacyMode()
   const sorted = [...measurements].reverse() // ASC
   const first = sorted[0]
   const last = sorted[sorted.length - 1]
@@ -68,12 +70,12 @@ export function MeasurementsDeltaChart({ measurements }: Props) {
           margin={{ top: 4, right: 40, left: 60, bottom: 0 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 10, fill: '#6b7280' }} />
+          <XAxis type="number" tick={{ fontSize: 10, fill: '#6b7280' }} tickFormatter={v => isPrivate ? '••' : `${v}`} />
           <YAxis type="category" dataKey="label" tick={{ fontSize: 10, fill: '#9ca3af' }} width={56} />
           <ReferenceLine x={0} stroke="rgba(255,255,255,0.2)" />
           <Tooltip
             contentStyle={{ background: '#12121f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
-            formatter={v => [`${Number(v) > 0 ? '+' : ''}${v}`, 'Variazione']}
+            formatter={v => [isPrivate ? '••••' : `${Number(v) > 0 ? '+' : ''}${v}`, 'Variazione']}
             labelStyle={{ color: '#9ca3af' }}
           />
           <Bar dataKey="delta" radius={[0, 3, 3, 0]}>

@@ -5,12 +5,14 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import type { BodyMeasurement } from '@/types'
+import { usePrivacyMode } from '@/hooks/usePrivacyMode'
 
 interface Props {
   measurements: BodyMeasurement[]
 }
 
 export function BodyCompositionChart({ measurements }: Props) {
+  const { isPrivate } = usePrivacyMode()
   const filtered = [...measurements]
     .filter(m => m.fat_mass_kg != null && m.lean_mass_kg != null)
     .reverse()
@@ -56,10 +58,10 @@ export function BodyCompositionChart({ measurements }: Props) {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
           <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6b7280' }} />
-          <YAxis tick={{ fontSize: 10, fill: '#6b7280' }} tickFormatter={v => `${v}`} />
+          <YAxis tick={{ fontSize: 10, fill: '#6b7280' }} tickFormatter={v => isPrivate ? '••' : `${v}`} />
           <Tooltip
             contentStyle={{ background: '#12121f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
-            formatter={(v, name) => [`${v} kg`, name === 'magra' ? 'Massa magra' : 'Massa grassa']}
+            formatter={(v, name) => [isPrivate ? '••••' : `${v} kg`, name === 'magra' ? 'Massa magra' : 'Massa grassa']}
             labelStyle={{ color: '#9ca3af' }}
           />
           <Area

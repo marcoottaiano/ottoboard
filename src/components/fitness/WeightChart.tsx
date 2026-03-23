@@ -5,6 +5,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import type { BodyMeasurement } from '@/types'
+import { usePrivacyMode } from '@/hooks/usePrivacyMode'
 
 interface Props {
   measurements: BodyMeasurement[]
@@ -19,6 +20,7 @@ function movingAverage(data: number[], window: number): (number | null)[] {
 }
 
 export function WeightChart({ measurements }: Props) {
+  const { isPrivate } = usePrivacyMode()
   const filtered = [...measurements]
     .filter(m => m.weight_kg != null)
     .reverse()
@@ -50,11 +52,11 @@ export function WeightChart({ measurements }: Props) {
           <YAxis
             domain={['auto', 'auto']}
             tick={{ fontSize: 10, fill: '#6b7280' }}
-            tickFormatter={v => `${v}`}
+            tickFormatter={v => isPrivate ? '••' : `${v}`}
           />
           <Tooltip
             contentStyle={{ background: '#12121f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
-            formatter={(v, name) => [`${v} kg`, name === 'peso' ? 'Peso' : 'Media 7gg']}
+            formatter={(v, name) => [isPrivate ? '••••' : `${v} kg`, name === 'peso' ? 'Peso' : 'Media 7gg']}
             labelStyle={{ color: '#9ca3af' }}
           />
           <Line

@@ -6,6 +6,7 @@ import { useBulkDeleteTransactions, useBulkRecategorizeTransactions } from '@/ho
 import { Select, SelectOption } from '@/components/ui/Select'
 import { TransactionType, TransactionWithCategory } from '@/types'
 import { Lock } from 'lucide-react'
+import { PrivacyValue } from '@/components/ui/PrivacyValue'
 import { useEffect, useRef, useState } from 'react'
 import { TransactionEditModal } from './TransactionEditModal'
 
@@ -364,7 +365,7 @@ export function TransactionList({ month }: Props) {
                   </td>
                   <td className="py-2.5 text-gray-400 max-w-[200px] truncate">{t.description ?? '—'}</td>
                   <td className={`py-2.5 font-medium text-right whitespace-nowrap ${t.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {t.type === 'income' ? '+' : '-'}{formatEur(t.amount)}
+                    <PrivacyValue>{t.type === 'income' ? '+' : '-'}{formatEur(t.amount)}</PrivacyValue>
                   </td>
                 </tr>
               ))}

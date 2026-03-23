@@ -6,6 +6,7 @@ import {
   ResponsiveContainer, Tooltip,
 } from 'recharts'
 import type { BodyMeasurement } from '@/types'
+import { usePrivacyMode } from '@/hooks/usePrivacyMode'
 
 interface Props {
   measurements: BodyMeasurement[]
@@ -23,6 +24,7 @@ const CIRC_FIELDS: { field: keyof BodyMeasurement; label: string }[] = [
 ]
 
 export function CircumferencesRadarChart({ measurements }: Props) {
+  const { isPrivate } = usePrivacyMode()
   const withCirc = measurements.filter(m =>
     CIRC_FIELDS.some(f => m[f.field] != null)
   )
@@ -117,6 +119,7 @@ export function CircumferencesRadarChart({ measurements }: Props) {
               const raw = _name === dateA
                 ? (props.payload as { rawA?: number })?.rawA
                 : (props.payload as { rawB?: number })?.rawB
+              if (isPrivate) return raw != null ? ['•••• cm', String(_name)] : ['—', String(_name)]
               return raw != null ? [`${raw} cm`, String(_name)] : ['—', String(_name)]
             }}
           />
