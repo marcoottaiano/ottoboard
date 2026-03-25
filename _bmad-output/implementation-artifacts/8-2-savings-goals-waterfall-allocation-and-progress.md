@@ -1,6 +1,6 @@
 # Story 8.2: Savings Goals — Waterfall Allocation & Progress
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -20,91 +20,105 @@ So that I know which goals are funded and how far along each one is.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Create waterfall utility function (AC: 1, 5, 6, 7)
-  - [ ] Create `src/lib/finance/waterfall.ts` (or inline in GoalsSection if simple)
-  - [ ] Function signature: `computeWaterfall(goals: FinancialGoal[], totalBalance: number): Map<string, number>`
-  - [ ] Returns Map of `goal.id → allocatedAmount`
-  - [ ] Skip `completed` goals, allocate to active goals in order
-  - [ ] Clamp allocation: `min(remainingBalance, goal.target_amount)`
+- [x] Task 1 — Create waterfall utility function (AC: 1, 5, 6, 7)
+  - [x] Create `src/lib/finance/waterfall.ts` (or inline in GoalsSection if simple)
+  - [x] Function signature: `computeWaterfall(goals: FinancialGoal[], totalBalance: number): Map<string, number>`
+  - [x] Returns Map of `goal.id → allocatedAmount`
+  - [x] Skip `completed` goals, allocate to active goals in order
+  - [x] Clamp allocation: `min(remainingBalance, goal.target_amount)`
 
-- [ ] Task 2 — Update `GoalCard` to accept `allocatedAmount` prop (AC: 2, 3)
-  - [ ] Add optional prop `allocatedAmount?: number` to GoalCard interface
-  - [ ] When `allocatedAmount` is provided: use it for progress bar and display
-  - [ ] Keep `current_amount` as fallback when `allocatedAmount` is undefined
-  - [ ] Add state badge: "Raggiunto" (emerald), "In corso" (amber), "Non avviato" (gray)
-  - [ ] Remove the `onUpdate` button from GoalCard — manual current_amount update is obsolete in waterfall mode
+- [x] Task 2 — Update `GoalCard` to accept `allocatedAmount` prop (AC: 2, 3)
+  - [x] Add optional prop `allocatedAmount?: number` to GoalCard interface
+  - [x] When `allocatedAmount` is provided: use it for progress bar and display
+  - [x] Keep `current_amount` as fallback when `allocatedAmount` is undefined
+  - [x] Add state badge: "Raggiunto" (emerald), "In corso" (amber), "Non avviato" (gray)
+  - [x] Remove the `onUpdate` button from GoalCard — manual current_amount update is obsolete in waterfall mode
 
-- [ ] Task 3 — Update `GoalsSection` to compute and pass waterfall (AC: 1, 4)
-  - [ ] Call `useTransactions({})` to get all transactions (no month filter)
-  - [ ] Compute `totalBalance = incomeSum - expenseSum`
-  - [ ] Call `computeWaterfall(activeGoals, totalBalance)`
-  - [ ] Pass `allocatedAmount={waterfallMap.get(goal.id) ?? 0}` to each GoalCard
-  - [ ] Keep completed goals section — they show "Completato" badge (existing behavior)
+- [x] Task 3 — Update `GoalsSection` to compute and pass waterfall (AC: 1, 4)
+  - [x] Call `useTransactions({})` to get all transactions (no month filter)
+  - [x] Compute `totalBalance = incomeSum - expenseSum`
+  - [x] Call `computeWaterfall(activeGoals, totalBalance)`
+  - [x] Pass `allocatedAmount={waterfallMap.get(goal.id) ?? 0}` to each GoalCard
+  - [x] Keep completed goals section — they show "Completato" badge (existing behavior)
 
-- [ ] Task 4 — Build verification
-  - [ ] `npm run build` — zero TypeScript errors
-  - [ ] Verify waterfall recalculates after adding a transaction (React Query cache invalidation already handles this)
+- [x] Task 4 — Build verification
+  - [x] `npm run build` — zero TypeScript errors
+  - [x] Verify waterfall recalculates after adding a transaction (React Query cache invalidation already handles this)
 
 ## Dev Notes
 
 ### Waterfall Algorithm (Pure Function)
+
 ```typescript
 // src/lib/finance/waterfall.ts
-import { FinancialGoal } from '@/types'
+import { FinancialGoal } from "@/types";
 
 export function computeWaterfall(
   goals: FinancialGoal[],
-  totalBalance: number
+  totalBalance: number,
 ): Map<string, number> {
-  const result = new Map<string, number>()
-  let remaining = Math.max(0, totalBalance)
+  const result = new Map<string, number>();
+  let remaining = Math.max(0, totalBalance);
 
   // Only allocate to non-completed goals, in position order (already sorted by useFinancialGoals)
   for (const goal of goals) {
-    if (goal.completed) continue
-    const allocated = Math.min(remaining, goal.target_amount)
-    result.set(goal.id, allocated)
-    remaining -= allocated
+    if (goal.completed) continue;
+    const allocated = Math.min(remaining, goal.target_amount);
+    result.set(goal.id, allocated);
+    remaining -= allocated;
   }
 
-  return result
+  return result;
 }
 ```
 
 ### Getting Total Balance in GoalsSection
+
 ```typescript
 // Call useTransactions without filter to get ALL transactions
-const { data: allTransactions = [] } = useTransactions({})
+const { data: allTransactions = [] } = useTransactions({});
 
 const totalBalance = allTransactions.reduce((sum, t) => {
-  return sum + (t.type === 'income' ? t.amount : -t.amount)
-}, 0)
+  return sum + (t.type === "income" ? t.amount : -t.amount);
+}, 0);
 ```
+
 This is the same formula used in `src/components/home/TotalBalanceWidget.tsx` — single source of truth.
 
 ### GoalCard Prop Update
+
 ```typescript
 interface Props {
-  goal: FinancialGoal
-  allocatedAmount?: number   // NEW — from waterfall; overrides current_amount display
-  onEdit: () => void
+  goal: FinancialGoal;
+  allocatedAmount?: number; // NEW — from waterfall; overrides current_amount display
+  onEdit: () => void;
   // onUpdate removed — manual current_amount update is replaced by waterfall
 }
 ```
+
 Display logic:
+
 ```typescript
-const displayAmount = allocatedAmount ?? goal.current_amount
-const pct = goal.target_amount > 0 ? Math.min((displayAmount / goal.target_amount) * 100, 100) : 0
+const displayAmount = allocatedAmount ?? goal.current_amount;
+const pct =
+  goal.target_amount > 0
+    ? Math.min((displayAmount / goal.target_amount) * 100, 100)
+    : 0;
 ```
 
 ### State Badge
+
 Add status badge below the progress bar in GoalCard:
+
 ```typescript
-const state = allocatedAmount !== undefined
-  ? allocatedAmount >= goal.target_amount ? 'raggiunto'
-    : allocatedAmount > 0 ? 'in-corso'
-    : 'non-avviato'
-  : null
+const state =
+  allocatedAmount !== undefined
+    ? allocatedAmount >= goal.target_amount
+      ? "raggiunto"
+      : allocatedAmount > 0
+        ? "in-corso"
+        : "non-avviato"
+    : null;
 
 // Classes:
 // raggiunto: text-emerald-400 bg-emerald-400/10
@@ -113,15 +127,19 @@ const state = allocatedAmount !== undefined
 ```
 
 ### GoalUpdateModal Cleanup
+
 `GoalUpdateModal` (manual current_amount entry) is no longer needed in the waterfall flow. However:
+
 - Do NOT delete it in this story — delete it in story 8.3 or leave as dead code for now
 - Remove the `onUpdate` prop and `<GoalUpdateModal>` from `GoalsSection` in this story
 - The `GoalEditModal` still exists for editing name/target/color/deadline
 
 ### React Query Cache — Automatic Recalculation
+
 When `useTransactions` data changes (new transaction added), React Query invalidates `['transactions', {}]` query, causing `GoalsSection` to re-render with new `totalBalance` → waterfall recalculates automatically. No extra logic needed.
 
 ### Project Structure Notes
+
 - New file: `src/lib/finance/waterfall.ts` (pure utility, no React)
 - Modified: `src/components/finance/GoalCard.tsx` — add `allocatedAmount` prop, state badge
 - Modified: `src/components/finance/GoalsSection.tsx` — add transaction fetch + waterfall compute
@@ -129,6 +147,7 @@ When `useTransactions` data changes (new transaction added), React Query invalid
 - Finance module color: `emerald` — use `emerald-400/500` for Raggiunto, `amber-400` for In corso
 
 ### References
+
 - TotalBalanceWidget balance formula: `src/components/home/TotalBalanceWidget.tsx` lines 28-36
 - useTransactions hook: `src/hooks/useTransactions.ts`
 - Existing GoalCard: `src/components/finance/GoalCard.tsx`
@@ -139,10 +158,22 @@ When `useTransactions` data changes (new transaction added), React Query invalid
 
 ### Agent Model Used
 
-claude-sonnet-4-6
+GPT-5.3-Codex
 
 ### Debug Log References
 
+- `npm.cmd run lint` passed with no warnings or errors
+- `cmd /c npm run build` passed type-check after fixing Map iteration compatibility in insights utility
+
 ### Completion Notes List
 
+- Implemented waterfall allocation utility in `src/lib/finance/waterfall.ts` with sequential allocation and completed-goal exclusion.
+- Updated `GoalCard` to support `allocatedAmount`, waterfall-based progress rendering, and state badge (`Raggiunto`, `In corso`, `Non avviato`).
+- Removed manual update button flow from `GoalCard` and removed `GoalUpdateModal` wiring from `GoalsSection`.
+- Updated `GoalsSection` to derive total balance from all transactions and pass waterfall allocations to active goals.
+
 ### File List
+
+- `src/lib/finance/waterfall.ts` (new)
+- `src/components/finance/GoalCard.tsx` (modified)
+- `src/components/finance/GoalsSection.tsx` (modified)
