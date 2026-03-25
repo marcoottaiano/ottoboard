@@ -89,49 +89,6 @@ export interface RecurringTransaction {
   category?: Category
 }
 
-export type ProjectStatus = 'active' | 'archived'
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
-
-export interface Project {
-  id: string
-  name: string
-  description: string | null
-  color: string | null
-  status: ProjectStatus
-  created_at: string
-  linear_project_id?: string | null
-  linear_team_id?: string | null
-  icon?: string | null
-}
-
-export interface Column {
-  id: string
-  project_id: string
-  name: string
-  position: number
-  color: string | null
-  linear_state_id?: string | null
-  linear_state_color?: string | null
-}
-
-export interface Task {
-  id: string
-  column_id: string
-  project_id: string
-  title: string
-  description: string | null
-  priority: TaskPriority | null
-  due_date: string | null
-  labels: string[]
-  position: number
-  created_at: string
-  linear_issue_id?: string | null
-  linear_issue_url?: string | null
-  linear_identifier?: string | null
-  assignee_name?: string | null
-  assignee_avatar?: string | null
-}
-
 // ─── Reminder Types ───────────────────────────────────────────────────────────
 
 export type ReminderPriority = 'none' | 'low' | 'medium' | 'high' | 'urgent'
@@ -225,12 +182,3 @@ export type UpdateFinancialGoalProgressInput = {
 /** Union per il hook generico */
 export type UpdateFinancialGoalInput = UpdateFinancialGoalMetadataInput | UpdateFinancialGoalProgressInput
 
-// ─── UI Types ─────────────────────────────────────────────────────────────────
-
-export type Module = 'fitness' | 'finance' | 'projects'
-
-export interface NavItem {
-  href: string
-  label: string
-  module: Module | 'home'
-}

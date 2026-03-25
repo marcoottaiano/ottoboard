@@ -25,7 +25,6 @@ import { AddWidgetModal, ConfigureWidgetModal } from '@/components/home/AddWidge
 import { LastActivityCard } from '@/components/fitness/LastActivityCard'
 import { WeekStatsCard } from '@/components/fitness/WeekStatsCard'
 import { MonthFinanceWidget } from '@/components/home/MonthFinanceWidget'
-import { KanbanColumnWidget } from '@/components/home/KanbanColumnWidget'
 import { TotalBalanceWidget } from '@/components/home/TotalBalanceWidget'
 import { RemindersWidget } from '@/components/home/RemindersWidget'
 import { HabitsWidget } from '@/components/home/HabitsWidget'
@@ -36,7 +35,6 @@ export const dynamic = 'force-dynamic'
 
 function getWidgetHref(type: WidgetType): string | undefined {
   if (type === 'month-finance' || type === 'total-balance' || type === 'financial-goal') return '/finance'
-  if (type === 'kanban-column') return '/projects'
   if (type === 'reminders') return undefined
   if (type === 'habits') return '/habits'
   return '/fitness'
@@ -52,8 +50,6 @@ function WidgetRenderer({ widget }: { widget: DashboardWidget }) {
       return <MonthFinanceWidget />
     case 'total-balance':
       return <TotalBalanceWidget bare />
-    case 'kanban-column':
-      return <KanbanColumnWidget config={widget.config} />
     case 'reminders':
       return <RemindersWidget />
     case 'habits':
@@ -117,7 +113,7 @@ export default function HomePage() {
                   key={w.id}
                   widgetId={w.id}
                   href={getWidgetHref(w.type) ?? undefined}
-                  configurable={w.type === 'kanban-column' || w.type === 'financial-goal'}
+                  configurable={w.type === 'financial-goal'}
                   onConfigure={() => setConfiguringWidget(w)}
                 >
                   <WidgetRenderer widget={w} />
