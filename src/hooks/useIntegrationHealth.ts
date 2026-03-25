@@ -4,14 +4,13 @@ import { useQuery } from '@tanstack/react-query'
 
 export interface IntegrationErrorLog {
   id: string
-  service: 'linear' | 'strava'
+  service: 'strava'
   error_message: string
   error_code: string | null
   occurred_at: string
 }
 
 interface IntegrationHealth {
-  linear: IntegrationErrorLog[]
   strava: IntegrationErrorLog[]
 }
 

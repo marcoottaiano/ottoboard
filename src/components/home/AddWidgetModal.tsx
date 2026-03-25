@@ -2,9 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { X, Activity, BarChart2, Wallet, PiggyBank, Columns, BellRing, Target, TrendingUp } from 'lucide-react'
-import { useProjects } from '@/hooks/useProjects'
-import { useColumns } from '@/hooks/useColumns'
+import { X, Activity, BarChart2, Wallet, PiggyBank, BellRing, Target, TrendingUp } from 'lucide-react'
 import { useFinancialGoals } from '@/hooks/useFinancialGoals'
 import { Select } from '@/components/ui/Select'
 import {
@@ -49,12 +47,6 @@ const WIDGET_CATALOGUE: WidgetEntry[] = [
     description: 'Bilancio complessivo entrate/uscite',
   },
   {
-    type: 'kanban-column',
-    icon: <Columns size={20} />,
-    label: 'Colonna progetto',
-    description: 'Task di una colonna Kanban',
-  },
-  {
     type: 'reminders',
     icon: <BellRing size={20} />,
     label: 'Promemoria',
@@ -74,44 +66,6 @@ const WIDGET_CATALOGUE: WidgetEntry[] = [
   },
 ]
 
-// ─── Kanban config pickers (shared) ──────────────────────────────────────────
-
-function KanbanPickers({
-  projectId,
-  columnId,
-  onProjectChange,
-  onColumnChange,
-}: {
-  projectId: string
-  columnId: string
-  onProjectChange: (id: string) => void
-  onColumnChange: (id: string) => void
-}) {
-  const { data: projects = [] } = useProjects()
-  const { data: columns = [] } = useColumns(projectId || null)
-
-  return (
-    <div className="space-y-2">
-      <Select
-        value={projectId}
-        onChange={(v) => { onProjectChange(v); onColumnChange('') }}
-        options={projects.map((p) => ({ value: p.id, label: p.name }))}
-        placeholder="Seleziona progetto..."
-        showPlaceholder={false}
-      />
-      <Select
-        value={columnId}
-        onChange={onColumnChange}
-        dropUp
-        options={columns.map((c) => ({ value: c.id, label: c.name }))}
-        placeholder="Seleziona colonna..."
-        showPlaceholder={false}
-        disabled={!projectId}
-      />
-    </div>
-  )
-}
-
 // ─── Add widget modal ─────────────────────────────────────────────────────────
 
 interface AddWidgetModalProps {
@@ -130,8 +84,6 @@ const SINGLETON_TYPES: WidgetType[] = [
 
 export function AddWidgetModal({ onClose, existingTypes }: AddWidgetModalProps) {
   const [selected, setSelected] = useState<WidgetType | null>(null)
-  const [projectId, setProjectId] = useState('')
-  const [columnId, setColumnId] = useState('')
   const [goalId, setGoalId] = useState('')
   const addWidget = useAddWidget()
   const { data: goals = [] } = useFinancialGoals()
@@ -145,17 +97,11 @@ export function AddWidgetModal({ onClose, existingTypes }: AddWidgetModalProps) 
 
   const canAdd =
     selected !== null &&
-    (selected !== 'kanban-column' || (!!projectId && !!columnId)) &&
     (selected !== 'financial-goal' || !!goalId)
 
   const handleAdd = () => {
     if (!selected || !canAdd) return
-    const config =
-      selected === 'kanban-column'
-        ? { projectId, columnId }
-        : selected === 'financial-goal'
-        ? { goalId }
-        : {}
+    const config = selected === 'financial-goal' ? { goalId } : {}
     addWidget.mutate(
       { type: selected, config },
       {
@@ -186,8 +132,6 @@ export function AddWidgetModal({ onClose, existingTypes }: AddWidgetModalProps) 
               key={w.type}
               onClick={() => {
                 setSelected(w.type)
-                setProjectId('')
-                setColumnId('')
                 setGoalId('')
               }}
               className={`flex flex-col gap-2 p-3 rounded-xl border text-left transition-colors ${
@@ -211,18 +155,6 @@ export function AddWidgetModal({ onClose, existingTypes }: AddWidgetModalProps) 
             </p>
           )}
         </div>
-
-        {/* Kanban config pickers */}
-        {selected === 'kanban-column' && (
-          <div className="px-4 pb-2">
-            <KanbanPickers
-              projectId={projectId}
-              columnId={columnId}
-              onProjectChange={setProjectId}
-              onColumnChange={setColumnId}
-            />
-          </div>
-        )}
 
         {/* Financial goal picker */}
         {selected === 'financial-goal' && (
@@ -256,7 +188,7 @@ export function AddWidgetModal({ onClose, existingTypes }: AddWidgetModalProps) 
   )
 }
 
-// ─── Configure widget modal (kanban-column only) ──────────────────────────────
+// ─── Configure widget modal (financial-goal only) ─────────────────────────────
 
 interface ConfigureWidgetModalProps {
   widget: DashboardWidget
@@ -264,23 +196,15 @@ interface ConfigureWidgetModalProps {
 }
 
 export function ConfigureWidgetModal({ widget, onClose }: ConfigureWidgetModalProps) {
-  const [projectId, setProjectId] = useState(widget.config.projectId ?? '')
-  const [columnId, setColumnId] = useState(widget.config.columnId ?? '')
   const [goalId, setGoalId] = useState(widget.config.goalId ?? '')
   const updateConfig = useUpdateWidgetConfig()
   const { data: goals = [] } = useFinancialGoals()
 
-  const canSave =
-    (widget.type === 'kanban-column' && !!projectId && !!columnId) ||
-    (widget.type === 'financial-goal' && !!goalId)
+  const canSave = widget.type === 'financial-goal' && !!goalId
 
   const handleSave = () => {
     if (!canSave) return
-    const config =
-      widget.type === 'kanban-column'
-        ? { projectId, columnId }
-        : { goalId }
-    updateConfig.mutate({ id: widget.id, config }, { onSuccess: onClose })
+    updateConfig.mutate({ id: widget.id, config: { goalId } }, { onSuccess: onClose })
   }
 
   return (
@@ -299,14 +223,6 @@ export function ConfigureWidgetModal({ widget, onClose }: ConfigureWidgetModalPr
 
         {/* Pickers */}
         <div className="p-4">
-          {widget.type === 'kanban-column' && (
-            <KanbanPickers
-              projectId={projectId}
-              columnId={columnId}
-              onProjectChange={(v) => { setProjectId(v); setColumnId('') }}
-              onColumnChange={setColumnId}
-            />
-          )}
           {widget.type === 'financial-goal' && (
             <Select
               value={goalId}

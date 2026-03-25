@@ -3,8 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 import { AccountInfoSection } from '@/components/profile/AccountInfoSection'
 import { ChangePasswordForm } from '@/components/profile/ChangePasswordForm'
 import { StravaIntegrationCard } from '@/components/profile/StravaIntegrationCard'
-import { LinearIntegrationCard } from '@/components/profile/LinearIntegrationCard'
-import { NotificationsCard } from '@/components/profile/NotificationsCard'
 import { BodyProfileSection } from '@/components/profile/BodyProfileSection'
 import { IntegrationHealthSection } from '@/components/profile/IntegrationHealthSection'
 
@@ -32,15 +30,13 @@ export default async function ProfilePage() {
           <ChangePasswordForm />
         </div>
 
-        {/* Integrazioni — 3 colonne su desktop */}
+        {/* Integrazioni — 2 colonne su desktop */}
         <div className="space-y-2">
           <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest px-1">
             Integrazioni
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             <StravaIntegrationCard />
-            <LinearIntegrationCard />
-            <NotificationsCard />
           </div>
         </div>
 

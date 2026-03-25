@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-25
+last_updated: 2026-03-25  # Epic 7 done
 project: ottoboard
 project_key: NOKEY
 tracking_system: file-system
@@ -96,9 +96,9 @@ development_status:
   epic-6-retrospective: optional
 
   # EPIC 7: App Simplification — Remove Projects & Push Notifications
-  epic-7: backlog
-  7-1-remove-projects-module: backlog
-  7-2-remove-push-notifications-system: backlog
+  epic-7: done
+  7-1-remove-projects-module: done
+  7-2-remove-push-notifications-system: done
   epic-7-retrospective: optional
 
   # EPIC 8: Enhanced Financial Planning
