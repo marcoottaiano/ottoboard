@@ -4,6 +4,7 @@ inputDocuments:
   - _bmad-output/planning_artifacts/prd.md
   - _bmad-output/planning_artifacts/architecture.md
   - _bmad-output/planning_artifacts/ux-design-specification.md
+  - _bmad-output/brainstorming/brainstorming-session-2026-03-23.md
 ---
 
 # ottoboard - Epic Breakdown
@@ -130,6 +131,30 @@ FR31: Epic 3 — Persistenza filtri/stati widget
 FR32: Epic 4 — Bulk operations transazioni
 FR33: Epic 4 — Lock categoria transazione
 FR34: Epic 2 — In-app Notification Center (fallback push)
+FR-NEW-1: Epic 7 — Rimozione modulo Progetti
+FR-NEW-2: Epic 7 — Rimozione sistema Push Notifications
+FR-NEW-3: Epic 8 — Creazione savings goal
+FR-NEW-4: Epic 8 — Waterfall allocation saldo
+FR-NEW-5: Epic 8 — Riordino goals drag & drop
+FR-NEW-6: Epic 8 — Visualizzazione progresso goal
+FR-NEW-7: Epic 8 — Ricalcolo automatico al variare del saldo
+FR-NEW-8: Epic 9 — Weekly review modal lunedì
+FR-NEW-9: Epic 9 — Persistenza stato "già mostrato"
+FR-NEW-10: Epic 10 — Creazione viaggio (meta, date, note)
+FR-NEW-11: Epic 10 — Itinerario drag & drop con slot orari
+FR-NEW-12: Epic 10 — Ristoranti e attrazioni con link
+FR-NEW-13: Epic 10 — Alloggi con link
+FR-NEW-14: Epic 10 — Budget aggregato viaggio
+FR-NEW-15: Epic 10 — Export/import itinerario
+FR-NEW-16: Epic 10 — Generazione percorso Maps
+FR-NEW-17: Epic 10 — Condivisione pubblica read-only via link
+FR-NEW-18: Epic 11 — Item wishlist (nome, link, prezzo, foto)
+FR-NEW-19: Epic 11 — Status item (desired/received/purchased)
+FR-NEW-20: Epic 11 — Organizzazione per categoria/occasione
+FR-NEW-21: Epic 11 — Condivisione pubblica read-only via link
+FR-NEW-22: Epic 8 — Insight spese rule-based
+FR-NEW-23: Epic 12 — Bookmark ricette con tag
+FR-NEW-24: Epic 12 — Lista della spesa da ingredienti
 
 ## Epic List
 
@@ -162,6 +187,36 @@ Nuovi utenti configurano autonomamente Strava e Linear tramite un wizard guidato
 
 Gli utenti accedono ad analisi avanzate della composizione corporea (BodyCanvas navigabile da tastiera, grafici peso/grasso/pliche), visualizzano attività Strava con corretto timezone locale, e controllano la visibilità dei dati sensibili con Privacy Mode.
 **FRs covered:** FR15, FR16, FR17, FR18, FR25, FR27
+
+### Epic 7: App Simplification — Remove Projects & Push Notifications
+
+L'utente dispone di un'app più snella e affidabile, senza moduli rotti o non utilizzati. La rimozione del modulo Progetti (Kanban, Linear, KanbanColumnWidget) e dell'intero sistema Push Notifications riduce il surface area tecnico e migliora la stabilità generale.
+**FRs covered:** FR-NEW-1, FR-NEW-2
+
+### Epic 8: Enhanced Financial Planning
+
+L'utente può pianificare obiettivi di risparmio in ordine di priorità e ricevere insight automatici sulle proprie spese — senza costi AI. Il saldo totale viene allocato in cascata sugli obiettivi ordinati, e insight rule-based segnalano anomalie di spesa in tempo reale.
+**FRs covered:** FR-NEW-3, FR-NEW-4, FR-NEW-5, FR-NEW-6, FR-NEW-7, FR-NEW-22
+
+### Epic 9: Weekly Life Review
+
+Ogni lunedì, l'utente riceve automaticamente un resoconto visivo della settimana precedente (fitness, abitudini, finanze) in una modale non invasiva, senza dover navigare tra sezioni.
+**FRs covered:** FR-NEW-8, FR-NEW-9
+
+### Epic 10: Travel Planning Module
+
+L'utente può pianificare viaggi completi — itinerari giornalieri drag & drop, ristoranti, attrazioni, alloggi, budget — e condividere il piano con altri in sola lettura tramite link pubblico, senza richiedere registrazione ai destinatari.
+**FRs covered:** FR-NEW-10, FR-NEW-11, FR-NEW-12, FR-NEW-13, FR-NEW-14, FR-NEW-15, FR-NEW-16, FR-NEW-17
+
+### Epic 11: Gift & Wishlist
+
+L'utente può gestire una lista desideri personale con prodotti, link, prezzi e foto, organizzata per categoria o occasione, condivisibile via link pubblico per facilitare i regali.
+**FRs covered:** FR-NEW-18, FR-NEW-19, FR-NEW-20, FR-NEW-21
+
+### Epic 12: Recipe Collection (low priority)
+
+L'utente può salvare link a ricette da qualsiasi fonte, organizzarle con tag personali e generare una lista della spesa dagli ingredienti. Nessun scraping — solo bookmarking.
+**FRs covered:** FR-NEW-23, FR-NEW-24
 
 ---
 
@@ -934,3 +989,473 @@ So that I can use the app in public without exposing personal financial or healt
 **Given** I close and reopen the app with Privacy Mode active
 **When** the app loads
 **Then** Privacy Mode state is restored from localStorage (persists across sessions)
+
+---
+
+## Epic 7: App Simplification — Remove Projects & Push Notifications
+
+L'utente dispone di un'app più snella e affidabile, senza moduli rotti o non utilizzati.
+
+### Story 7.1: Remove Projects Module
+
+As a developer maintaining Ottoboard,
+I want to remove the entire Projects module from the codebase,
+So that the app is leaner, has no broken routes, and no dead code referencing Linear.
+
+**Acceptance Criteria:**
+
+**Given** the app is running
+**When** I navigate to `/projects`
+**Then** the route does not exist (404 or redirect to home)
+**And** the sidebar/bottom nav has no "Progetti" entry
+
+**Given** the home dashboard widget list
+**When** a user tries to add a widget
+**Then** `kanban-column` type is not offered
+**And** any existing `kanban-column` widgets in `dashboard_widgets` are removed via migration
+
+**Given** the database
+**When** the cleanup migration runs
+**Then** tables `projects`, `columns`, `tasks` are dropped
+**And** columns `linear_project_id`, `linear_team_id`, `linear_state_id`, `linear_issue_id` etc. are gone
+**And** `user_integrations` rows with `service = 'linear'` are deleted
+
+**Given** the Profile page
+**When** the user visits `/profile`
+**Then** no Linear integration card is visible
+**And** no Linear API key field or team selector exists
+
+---
+
+### Story 7.2: Remove Push Notifications System
+
+As a developer maintaining Ottoboard,
+I want to remove the entire push notifications subsystem,
+So that there is no dead service worker code, no unused DB table, and no broken permission UI.
+
+**Acceptance Criteria:**
+
+**Given** the custom service worker
+**When** the app loads
+**Then** no `push` event handler is registered
+**And** no `notificationclick` handler is registered
+
+**Given** the database
+**When** the cleanup migration runs
+**Then** table `push_subscriptions` is dropped
+**And** column `notified_at` is removed from `reminders`
+
+**Given** the home dashboard
+**When** the user has reminder widgets active
+**Then** no `NotificationPermissionBanner` is rendered anywhere
+
+**Given** the Profile page
+**When** the user visits `/profile`
+**Then** no "Notifiche" section exists
+**And** `useNotificationPermission` hook is deleted from codebase
+
+**Given** Vercel configuration
+**When** reviewing `vercel.json` and environment variables
+**Then** any push-notification cron config is removed
+**And** `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` vars are no longer referenced in code
+
+---
+
+## Epic 8: Enhanced Financial Planning
+
+L'utente pianifica obiettivi di risparmio in cascata e riceve insight automatici sulle spese senza costi AI.
+
+### Story 8.1: Savings Goals — Data Model & CRUD
+
+As a user,
+I want to create, edit, and delete savings goals with a name and target amount,
+So that I can define what I'm saving for.
+
+**Acceptance Criteria:**
+
+**Given** the Finance page
+**When** I navigate to a new "Goals" section/tab
+**Then** I see a list of my savings goals (empty state if none)
+**And** a "+ Nuovo Obiettivo" button is visible
+
+**Given** the goal creation form
+**When** I enter a name and target amount and save
+**Then** the goal appears in the list
+**And** is persisted in a new `savings_goals` table with RLS (`user_id DEFAULT auth.uid()`)
+
+**Given** an existing goal
+**When** I click edit and change name or amount
+**Then** the change is saved immediately (optimistic update)
+
+**Given** an existing goal
+**When** I click delete and confirm
+**Then** the goal is removed from list and DB
+
+---
+
+### Story 8.2: Savings Goals — Waterfall Allocation & Progress
+
+As a user,
+I want to see how my total balance is automatically distributed across my savings goals in priority order,
+So that I know which goals are funded and how far along each one is.
+
+**Acceptance Criteria:**
+
+**Given** a total balance (from existing `transactions` data) and a list of ordered goals
+**When** the Goals section renders
+**Then** the system allocates the balance to goals sequentially: goal 1 fills first, surplus flows to goal 2, etc.
+**And** each goal shows a progress bar with amount allocated / target amount
+**And** goals show one of three states: "Raggiunto" (100%), "In corso" (partially funded), "Non avviato" (0%)
+
+**Given** the balance changes (new transaction added)
+**When** the Goals section re-renders
+**Then** allocations are recalculated automatically (client-side, React Query derived state)
+
+**Given** a goal with target €1000 and balance of €600 total
+**When** goal 1 has target €500 and goal 2 has target €800
+**Then** goal 1 shows €500 / €500 (Raggiunto), goal 2 shows €100 / €800 (In corso)
+
+---
+
+### Story 8.3: Savings Goals — Manual Reordering
+
+As a user,
+I want to drag & drop savings goals to change their priority order,
+So that I control which goal gets funded first.
+
+**Acceptance Criteria:**
+
+**Given** a list of savings goals
+**When** I drag a goal to a new position
+**Then** the order updates immediately (optimistic update)
+**And** the new `position` values are persisted to DB via individual `update()` calls (not upsert)
+**And** the waterfall allocation recalculates based on the new order
+
+**Given** a failed DB update during reorder
+**When** the Supabase call returns an error
+**Then** the list rolls back to the previous order visually
+
+---
+
+### Story 8.4: Finance Rule-Based Spending Insights
+
+As a user,
+I want to see automatic insights about my spending patterns,
+So that I can identify anomalies without manually analyzing my transactions.
+
+**Acceptance Criteria:**
+
+**Given** at least 3 months of transaction history
+**When** I open the Finance module
+**Then** an "Insights" card displays rule-based alerts, e.g.:
+- "La categoria X è aumentata del Y% rispetto alla media degli ultimi 3 mesi"
+- "Hai superato il budget della categoria X di €Y"
+- "Il tuo giorno più costoso è tipicamente il venerdì"
+
+**Given** insufficient data (< 1 month of history)
+**When** the insights card renders
+**Then** it shows "Aggiungi più transazioni per sbloccare gli insight" (no crash, no empty card)
+
+**Given** all calculations
+**When** insights are computed
+**Then** all logic runs client-side in the browser (no API call, no Edge Function, zero server cost)
+
+---
+
+## Epic 9: Weekly Life Review
+
+Ogni lunedì l'utente riceve automaticamente un resoconto della settimana precedente in una modale non invasiva.
+
+### Story 9.1: Weekly Review Modal
+
+As a user,
+I want to see a weekly summary modal on Monday mornings when I open Ottoboard,
+So that I can start the week with a clear picture of what happened the previous week.
+
+**Acceptance Criteria:**
+
+**Given** it is Monday and the user opens Ottoboard for the first time that day
+**When** the home page mounts
+**Then** a modal opens automatically showing the previous week's summary:
+- **Fitness:** n° sessioni, km totali, calorie totali, minuti totali
+- **Abitudini:** % completamento per ogni abitudine schedolata nella settimana
+- **Finanze:** entrate totali, uscite totali, categoria con più spesa, delta uscite vs settimana precedente
+
+**Given** the modal is open
+**When** the user clicks "Chiudi" or outside the modal
+**Then** the modal closes and a flag is saved (`localStorage` key: `last_weekly_review_shown: YYYY-MM-DD`) with the current Monday's date
+
+**Given** the flag is already set to the current Monday's date
+**When** the user opens Ottoboard again the same day (or later in the week)
+**Then** the modal does NOT reopen
+
+**Given** it is any day other than Monday
+**When** the home page mounts
+**Then** the modal is never triggered
+
+**Given** insufficient data for a section (e.g. no activities logged last week)
+**When** the modal renders that section
+**Then** it shows a friendly empty state ("Nessun allenamento la settimana scorsa") without crashing
+
+---
+
+## Epic 10: Travel Planning Module
+
+L'utente pianifica viaggi completi con itinerario drag & drop e condivisione pubblica via link.
+
+### Story 10.1: Trip Creation & Management
+
+As a user,
+I want to create, edit, and delete trips with destination, dates, and notes,
+So that I have a dedicated space for each of my travels.
+
+**Acceptance Criteria:**
+
+**Given** a new `/travel` route in the app
+**When** I navigate to it
+**Then** I see a list of my trips (empty state if none)
+**And** the sidebar/bottom nav has a "Viaggi" entry with `amber` color theme
+
+**Given** the trip creation form
+**When** I enter destination, start date, end date, and optional notes
+**Then** the trip is saved to a new `trips` table (RLS: `user_id DEFAULT auth.uid()`)
+**And** appears in the trips list
+
+**Given** an existing trip
+**When** I click on it
+**Then** I navigate to the trip detail page `/travel/[id]`
+
+**Given** an existing trip
+**When** I delete it
+**Then** all associated data (days, cards, accommodations) is cascade-deleted
+
+---
+
+### Story 10.2: Restaurants, Attractions & Accommodations
+
+As a user,
+I want to save restaurants, attractions, and accommodation links for a trip,
+So that I have all my research organized in one place.
+
+**Acceptance Criteria:**
+
+**Given** a trip detail page
+**When** I open the "Ristoranti" section
+**Then** I can add entries with name and Google Maps link
+**And** entries are saved to `trip_places` table with `type: 'restaurant' | 'attraction'`
+
+**Given** the "Attrazioni" section
+**When** I add an attraction
+**Then** it has name and link fields, saved with `type: 'attraction'`
+
+**Given** the "Alloggi" section
+**When** I add an accommodation
+**Then** I can save a URL (Booking, Airbnb, etc.) with an optional label
+**And** the link opens in a new tab
+
+**Given** any saved place
+**When** I delete it
+**Then** it is removed from both UI and DB (optimistic update + rollback on error)
+
+---
+
+### Story 10.3: Day Itinerary with Drag & Drop
+
+As a user,
+I want to build a day-by-day itinerary by dragging restaurants and attractions into time slots,
+So that I can plan each day of my trip visually.
+
+**Acceptance Criteria:**
+
+**Given** a trip detail page with at least one saved place
+**When** I open the "Itinerario" section
+**Then** I see a day-by-day layout (one column per trip day)
+**And** each day has 6 fixed time slots: Colazione / Mattina / Pranzo / Pomeriggio / Cena / Sera
+
+**Given** the itinerary view
+**When** I drag a place card into a time slot
+**Then** the card is placed in that slot and the assignment is persisted to `trip_itinerary_items` table
+
+**Given** a placed card
+**When** I drag it to a different slot or day
+**Then** the assignment updates (optimistic update)
+
+**Given** a placed card
+**When** I remove it from the slot
+**Then** it returns to the unassigned places pool
+
+---
+
+### Story 10.4: Trip Expense Summary
+
+As a user,
+I want to see a summary of my trip expenses,
+So that I know the total cost of the trip at a glance.
+
+**Acceptance Criteria:**
+
+**Given** a trip detail page
+**When** I open the "Budget" section
+**Then** I see a list of expense entries I can add manually (description, amount, category: transport/accommodation/food/attractions/other)
+
+**Given** one or more expense entries
+**When** the budget section renders
+**Then** it shows the total sum and a breakdown by category
+
+**Given** no expense entries
+**When** the budget section renders
+**Then** it shows a friendly empty state with a "+ Aggiungi spesa" CTA
+
+---
+
+### Story 10.5: Itinerary Export & Public Sharing
+
+As a user,
+I want to export my itinerary and share it as a read-only public link,
+So that travel companions can view the plan without needing an Ottoboard account.
+
+**Acceptance Criteria:**
+
+**Given** a trip detail page
+**When** I click "Esporta"
+**Then** I can download the itinerary as a JSON file containing all trip data
+
+**Given** a downloaded JSON file
+**When** I use "Importa" on a new trip
+**Then** the trip is recreated with all places, itinerary assignments, and notes
+
+**Given** a trip detail page
+**When** I click "Condividi"
+**Then** a unique public URL is generated: `/travel/[uuid]/public`
+**And** the URL is copyable to clipboard
+
+**Given** a visitor opens `/travel/[uuid]/public`
+**When** the page loads (no auth required)
+**Then** they see the full read-only itinerary: days, slots, places, accommodations
+**And** no edit controls are visible
+**And** the page is accessible without a Supabase session (public RLS policy on `trips` where `is_public = true`)
+
+---
+
+## Epic 11: Gift & Wishlist
+
+L'utente gestisce una lista desideri personale condivisibile via link pubblico.
+
+### Story 11.1: Wishlist Item CRUD
+
+As a user,
+I want to add, edit, and delete items in my wishlist with name, link, price, and photo,
+So that I have a single place to track what I want to buy or receive as a gift.
+
+**Acceptance Criteria:**
+
+**Given** a new `/wishlist` route
+**When** I navigate to it
+**Then** I see my wishlist items (empty state if none)
+**And** a "+ Aggiungi" button is visible
+
+**Given** the item creation form
+**When** I enter name (required), and optionally link, price, and photo URL
+**Then** the item is saved to a new `wishlist_items` table (RLS: `user_id DEFAULT auth.uid()`)
+**And** appears in the list with photo thumbnail if provided
+
+**Given** an existing item
+**When** I click its status badge
+**Then** I can cycle through: "Desiderato" → "Ricevuto" → "Acquistato"
+**And** the status change is persisted immediately (optimistic update)
+
+**Given** an existing item
+**When** I delete it with inline confirm
+**Then** it is removed from UI and DB
+
+---
+
+### Story 11.2: Wishlist Organization & Public Sharing
+
+As a user,
+I want to organize my wishlist by category or occasion and share it publicly,
+So that friends and family can easily see what to gift me without needing an account.
+
+**Acceptance Criteria:**
+
+**Given** the wishlist page
+**When** I add or edit an item
+**Then** I can assign an optional category/occasion label (free text or predefined: Compleanno, Natale, Generale, ecc.)
+
+**Given** the wishlist page
+**When** I filter by category
+**Then** only items matching that category are shown
+
+**Given** the wishlist page
+**When** I click "Condividi lista"
+**Then** a unique public URL is generated: `/wishlist/[uuid]/public`
+**And** the URL is copyable to clipboard
+
+**Given** a visitor opens `/wishlist/[uuid]/public`
+**When** the page loads (no auth required)
+**Then** they see all items with name, photo, price (if set), and status
+**And** "Acquistato" and "Ricevuto" items are visually distinct (strikethrough o badge)
+**And** no edit or delete controls are visible
+**And** the page works without a Supabase session (public RLS policy where `is_public = true`)
+
+---
+
+## Epic 12: Recipe Collection
+
+L'utente salva link a ricette da qualsiasi fonte con tag e genera liste della spesa. (Priorità: bassa)
+
+### Story 12.1: Recipe Bookmark CRUD
+
+As a user,
+I want to save recipe links with title, photo, and personal tags,
+So that I have a curated collection of recipes I want to try, organized by my criteria.
+
+**Acceptance Criteria:**
+
+**Given** a new `/recipes` route
+**When** I navigate to it
+**Then** I see my saved recipes in a grid/list (empty state if none)
+**And** a "+ Salva Ricetta" button is visible
+
+**Given** the recipe creation form
+**When** I enter a URL (required) plus optional title, photo URL, and tags
+**Then** the recipe is saved to a new `recipes` table (RLS: `user_id DEFAULT auth.uid()`)
+**And** appears in the collection with photo thumbnail if provided
+
+**Given** the recipe collection
+**When** I filter by tag
+**Then** only recipes with that tag are shown
+
+**Given** an existing recipe
+**When** I click its link
+**Then** it opens in a new tab
+
+**Given** an existing recipe
+**When** I delete it with inline confirm
+**Then** it is removed from UI and DB
+
+---
+
+### Story 12.2: Shopping List from Recipe Ingredients
+
+As a user,
+I want to manually enter ingredients for a recipe and generate a shopping list,
+So that I can quickly know what to buy before cooking.
+
+**Acceptance Criteria:**
+
+**Given** a recipe detail page
+**When** I open the "Ingredienti" section
+**Then** I can add ingredients as free-text lines (name + optional quantity)
+
+**Given** one or more recipes with saved ingredients
+**When** I select multiple recipes and click "Genera lista della spesa"
+**Then** a shopping list is generated aggregating all ingredients from selected recipes
+
+**Given** the shopping list view
+**When** I check off an ingredient
+**Then** it is marked as "acquistato" (strikethrough) — state persisted in localStorage (no DB needed)
+
+**Given** the shopping list
+**When** I click "Copia lista"
+**Then** the plain-text list is copied to clipboard

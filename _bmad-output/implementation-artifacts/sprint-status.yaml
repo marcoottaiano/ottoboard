@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-23
+last_updated: 2026-03-25
 project: ottoboard
 project_key: NOKEY
 tracking_system: file-system
@@ -94,3 +94,43 @@ development_status:
   6-4-interactive-bodycanvas: done
   6-5-privacy-mode-blur-sensitive-data: done
   epic-6-retrospective: optional
+
+  # EPIC 7: App Simplification — Remove Projects & Push Notifications
+  epic-7: backlog
+  7-1-remove-projects-module: backlog
+  7-2-remove-push-notifications-system: backlog
+  epic-7-retrospective: optional
+
+  # EPIC 8: Enhanced Financial Planning
+  epic-8: backlog
+  8-1-savings-goals-data-model-and-crud: backlog
+  8-2-savings-goals-waterfall-allocation-and-progress: backlog
+  8-3-savings-goals-manual-reordering: backlog
+  8-4-finance-rule-based-spending-insights: backlog
+  epic-8-retrospective: optional
+
+  # EPIC 9: Weekly Life Review
+  epic-9: backlog
+  9-1-weekly-review-modal: backlog
+  epic-9-retrospective: optional
+
+  # EPIC 10: Travel Planning Module
+  epic-10: backlog
+  10-1-trip-creation-and-management: backlog
+  10-2-restaurants-attractions-and-accommodations: backlog
+  10-3-day-itinerary-with-drag-and-drop: backlog
+  10-4-trip-expense-summary: backlog
+  10-5-itinerary-export-and-public-sharing: backlog
+  epic-10-retrospective: optional
+
+  # EPIC 11: Gift & Wishlist
+  epic-11: backlog
+  11-1-wishlist-item-crud: backlog
+  11-2-wishlist-organization-and-public-sharing: backlog
+  epic-11-retrospective: optional
+
+  # EPIC 12: Recipe Collection (low priority)
+  epic-12: backlog
+  12-1-recipe-bookmark-crud: backlog
+  12-2-shopping-list-from-recipe-ingredients: backlog
+  epic-12-retrospective: optional
