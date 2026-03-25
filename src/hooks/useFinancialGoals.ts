@@ -78,3 +78,41 @@ export function useCompleteFinancialGoal() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   })
 }
+
+export function useReorderFinancialGoals() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (newOrder: { id: string; position: number }[]) => {
+      const supabase = createClient()
+      await Promise.all(
+        newOrder.map(({ id, position }) =>
+          supabase
+            .from('financial_goals')
+            .update({ position })
+            .eq('id', id)
+            .then(({ error }) => {
+              if (error) throw error
+            })
+        )
+      )
+    },
+    onMutate: async (newOrder) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY })
+      const previous = queryClient.getQueryData<FinancialGoal[]>(QUERY_KEY)
+      queryClient.setQueryData<FinancialGoal[]>(QUERY_KEY, (old = []) => {
+        const posMap = new Map(newOrder.map(({ id, position }) => [id, position]))
+        return [...old]
+          .map((g) => (posMap.has(g.id) ? { ...g, position: posMap.get(g.id)! } : g))
+          .sort((a, b) => a.position - b.position)
+      })
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(QUERY_KEY, context.previous)
+      }
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+  })
+}
