@@ -212,6 +212,7 @@ export function useUpsertBudget() {
     },
     onSuccess: (_, { month }) => {
       queryClient.invalidateQueries({ queryKey: ['budgets', month] })
+      queryClient.invalidateQueries({ queryKey: ['budgets'] })
     },
   })
 }

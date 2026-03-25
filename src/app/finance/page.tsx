@@ -10,6 +10,7 @@ import { MonthlyHeader } from '@/components/finance/MonthlyHeader'
 import { RecurringTransactionManager } from '@/components/finance/RecurringTransactionManager'
 import { RuleCard5030 } from '@/components/finance/RuleCard5030'
 import { SpendingPieChart } from '@/components/finance/SpendingPieChart'
+import { SpendingInsightsCard } from '@/components/finance/SpendingInsightsCard'
 import { TransactionForm } from '@/components/finance/TransactionForm'
 import { TransactionList } from '@/components/finance/TransactionList'
 import { TotalBalanceWidget } from '@/components/home/TotalBalanceWidget'
@@ -64,6 +65,8 @@ export default function FinancePage() {
         <SpendingPieChart month={selectedMonth} />
         <MonthlyBarChart />
       </div>
+
+      <SpendingInsightsCard />
 
       <GoalsSection />
 

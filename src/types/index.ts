@@ -163,6 +163,7 @@ export interface FinancialGoal {
   deadline: string | null   // YYYY-MM-DD
   color: string | null
   completed: boolean
+  position: number          // ordering for waterfall (story 8.2) and DnD (story 8.3)
   created_at: string
 }
 

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
-import { useCreateFinancialGoal } from '@/hooks/useFinancialGoals'
+import { useCreateFinancialGoal, useFinancialGoals } from '@/hooks/useFinancialGoals'
 
 const PRESET_COLORS = ['#22c55e', '#3b82f6', '#a855f7', '#f59e0b', '#ef4444', '#06b6d4', '#f97316', '#ec4899']
 
@@ -18,9 +18,10 @@ export function GoalCreateModal({ onClose }: Props) {
   const [deadline, setDeadline] = useState('')
   const [color, setColor] = useState(PRESET_COLORS[0])
 
+  const { data: goals = [], isLoading: goalsLoading } = useFinancialGoals()
   const create = useCreateFinancialGoal()
 
-  const canSubmit = name.trim().length > 0 && parseFloat(targetAmount) > 0
+  const canSubmit = name.trim().length > 0 && parseFloat(targetAmount) > 0 && !goalsLoading
 
   const handleSubmit = () => {
     if (!canSubmit) return
@@ -32,6 +33,7 @@ export function GoalCreateModal({ onClose }: Props) {
         current_amount: 0,
         deadline: deadline || null,
         color,
+        position: goals.length,
       },
       {
         onSuccess: () => {

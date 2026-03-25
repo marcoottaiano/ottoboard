@@ -2,29 +2,82 @@
 
 import { useState } from 'react'
 import { Plus, Target } from 'lucide-react'
-import { useFinancialGoals } from '@/hooks/useFinancialGoals'
+import { toast } from 'sonner'
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { useFinancialGoals, useReorderFinancialGoals } from '@/hooks/useFinancialGoals'
+import { useTransactions } from '@/hooks/useTransactions'
+import { computeWaterfall } from '@/lib/finance/waterfall'
 import { GoalCard } from './GoalCard'
+import { SortableGoalCard } from './SortableGoalCard'
 import { GoalCreateModal } from './GoalCreateModal'
 import { GoalEditModal } from './GoalEditModal'
-import { GoalUpdateModal } from './GoalUpdateModal'
 import { FinancialGoal } from '@/types'
 
 export function GoalsSection() {
   const { data: goals = [], isLoading } = useFinancialGoals()
+  const reorderMutation = useReorderFinancialGoals()
+  const {
+    data: allTransactions = [],
+    isLoading: transactionsLoading,
+    error: transactionsError,
+  } = useTransactions({})
   const [showCreate, setShowCreate] = useState(false)
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null)
-  const [updatingGoal, setUpdatingGoal] = useState<FinancialGoal | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  )
 
   const activeGoals = goals.filter((g) => !g.completed)
   const completedGoals = goals.filter((g) => g.completed)
+  const totalBalance = allTransactions.reduce((sum, transaction) => {
+    return sum + (transaction.type === 'income' ? transaction.amount : -transaction.amount)
+  }, 0)
+  const waterfallMap = computeWaterfall(activeGoals, totalBalance)
 
-  if (isLoading) {
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = activeGoals.findIndex((g) => g.id === active.id)
+    const newIndex = activeGoals.findIndex((g) => g.id === over.id)
+    const reordered = arrayMove(activeGoals, oldIndex, newIndex)
+    const newOrder = reordered.map((g, i) => ({ id: g.id, position: i }))
+    reorderMutation.mutate(newOrder, {
+      onError: () => toast.error('Errore durante il riordino. Riprova.'),
+    })
+  }
+
+  if (isLoading || transactionsLoading) {
     return (
       <div className="rounded-xl bg-white/5 border border-white/10 p-5 animate-pulse">
         <div className="h-4 bg-white/10 rounded w-32 mb-4" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[...Array(2)].map((_, i) => <div key={i} className="h-28 bg-white/5 rounded-xl" />)}
         </div>
+      </div>
+    )
+  }
+
+  if (transactionsError) {
+    return (
+      <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Target size={15} className="text-emerald-400" />
+          <h3 className="text-sm font-medium text-gray-400">Obiettivi di risparmio</h3>
+        </div>
+        <p className="text-sm text-gray-500">
+          Impossibile calcolare l&apos;allocazione in questo momento. Riprova tra poco.
+        </p>
       </div>
     )
   }
@@ -69,16 +122,21 @@ export function GoalsSection() {
 
       {/* Active goals */}
       {activeGoals.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {activeGoals.map((goal) => (
-            <GoalCard
-              key={goal.id}
-              goal={goal}
-              onEdit={() => setEditingGoal(goal)}
-              onUpdate={() => setUpdatingGoal(goal)}
-            />
-          ))}
-        </div>
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <SortableContext items={activeGoals.map((g) => g.id)} strategy={verticalListSortingStrategy}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {activeGoals.map((goal) => (
+                <SortableGoalCard
+                  key={goal.id}
+                  goal={goal}
+                  allocatedAmount={waterfallMap.get(goal.id) ?? 0}
+                  onEdit={() => setEditingGoal(goal)}
+                  isDraggable={activeGoals.length > 1}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Completed goals */}
@@ -91,7 +149,6 @@ export function GoalsSection() {
                 key={goal.id}
                 goal={goal}
                 onEdit={() => setEditingGoal(goal)}
-                onUpdate={() => setUpdatingGoal(goal)}
               />
             ))}
           </div>
@@ -101,7 +158,6 @@ export function GoalsSection() {
       {/* Modals */}
       {showCreate && <GoalCreateModal onClose={() => setShowCreate(false)} />}
       {editingGoal && <GoalEditModal goal={editingGoal} onClose={() => setEditingGoal(null)} />}
-      {updatingGoal && <GoalUpdateModal goal={updatingGoal} onClose={() => setUpdatingGoal(null)} />}
     </div>
   )
 }

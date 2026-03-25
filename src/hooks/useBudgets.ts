@@ -4,21 +4,26 @@ import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { BudgetWithCategory } from '@/types'
 
-export function useBudgets(month: string) {
-  // month: YYYY-MM → converto in YYYY-MM-01
-  const monthDate = `${month}-01`
+export function useBudgets(month?: string) {
+  const monthDate = month ? `${month}-01` : null
 
   return useQuery<BudgetWithCategory[]>({
-    queryKey: ['budgets', month],
+    queryKey: ['budgets', month ?? 'all'],
     queryFn: async () => {
       const supabase = createClient()
-      const { data, error } = await supabase
+      let query = supabase
         .from('budgets')
         .select('*, category:categories(*)')
-        .eq('month', monthDate)
+
+      if (monthDate) {
+        query = query.eq('month', monthDate)
+      } else {
+        query = query.order('month', { ascending: false })
+      }
+
+      const { data, error } = await query
       if (error) throw error
       return (data ?? []) as BudgetWithCategory[]
     },
-    enabled: !!month,
   })
 }

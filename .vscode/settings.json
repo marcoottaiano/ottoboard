@@ -1,0 +1,13 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "npm.cmd": true,
+    "/^cmd /c npm run build$/": {
+      "approve": true,
+      "matchCommandLine": true
+    },
+    "/^cmd /c npm run build; Write-Output \"BUILD_EXIT:\\$LASTEXITCODE\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
+}

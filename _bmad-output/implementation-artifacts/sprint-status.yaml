@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-25  # Epic 7 done
+last_updated: 2026-03-25  # Stories 8-2 and 8-4 moved to review
 project: ottoboard
 project_key: NOKEY
 tracking_system: file-system
@@ -102,11 +102,11 @@ development_status:
   epic-7-retrospective: optional
 
   # EPIC 8: Enhanced Financial Planning
-  epic-8: backlog
-  8-1-savings-goals-data-model-and-crud: backlog
-  8-2-savings-goals-waterfall-allocation-and-progress: backlog
-  8-3-savings-goals-manual-reordering: backlog
-  8-4-finance-rule-based-spending-insights: backlog
+  epic-8: done
+  8-1-savings-goals-data-model-and-crud: done
+  8-2-savings-goals-waterfall-allocation-and-progress: done
+  8-3-savings-goals-manual-reordering: done
+  8-4-finance-rule-based-spending-insights: done
   epic-8-retrospective: optional
 
   # EPIC 9: Weekly Life Review
