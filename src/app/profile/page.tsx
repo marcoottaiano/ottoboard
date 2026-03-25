@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 import { AccountInfoSection } from '@/components/profile/AccountInfoSection'
 import { ChangePasswordForm } from '@/components/profile/ChangePasswordForm'
 import { StravaIntegrationCard } from '@/components/profile/StravaIntegrationCard'
-import { NotificationsCard } from '@/components/profile/NotificationsCard'
 import { BodyProfileSection } from '@/components/profile/BodyProfileSection'
 import { IntegrationHealthSection } from '@/components/profile/IntegrationHealthSection'
 
@@ -38,7 +37,6 @@ export default async function ProfilePage() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             <StravaIntegrationCard />
-            <NotificationsCard />
           </div>
         </div>
 

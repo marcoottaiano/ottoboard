@@ -1,6 +1,6 @@
 # Story 7.2: Remove Push Notifications System
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -18,56 +18,56 @@ So that there is no dead service worker code, no unused DB table, and no broken 
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Database migration (AC: 2)
-  - [ ] Create new migration file `supabase/migrations/<timestamp>_remove_push_notifications.sql`
-  - [ ] `DROP TABLE IF EXISTS push_subscriptions CASCADE`
-  - [ ] `ALTER TABLE reminders DROP COLUMN IF EXISTS notified_at`
-  - [ ] Execute migration on Supabase BEFORE removing code (DB must be cleaned first)
+- [x] Task 1 — Database migration (AC: 2)
+  - [x] Create new migration file `supabase/migrations/<timestamp>_remove_push_notifications.sql`
+  - [x] `DROP TABLE IF EXISTS push_subscriptions CASCADE`
+  - [x] `ALTER TABLE reminders DROP COLUMN IF EXISTS notified_at`
+  - [x] Execute migration on Supabase BEFORE removing code (DB must be cleaned first)
 
-- [ ] Task 2 — Remove dependencies (AC: 1, 5)
-  - [ ] In `package.json`: remove `"web-push": "^3.6.7"` from dependencies
-  - [ ] In `package.json`: remove `"@types/web-push": "^3.6.4"` from devDependencies
-  - [ ] Run `npm install` to update lockfile
+- [x] Task 2 — Remove dependencies (AC: 1, 5)
+  - [x] In `package.json`: remove `"web-push": "^3.6.7"` from dependencies
+  - [x] In `package.json`: remove `"@types/web-push": "^3.6.4"` from devDependencies
+  - [x] Run `npm install` to update lockfile
 
-- [ ] Task 3 — Remove environment variables (AC: 5)
-  - [ ] In `.env.local`: delete lines for `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
-  - [ ] On Vercel dashboard: remove the same 3 env vars from project settings (manual step — note for Marco)
+- [x] Task 3 — Remove environment variables (AC: 5)
+  - [x] In `.env.local`: delete lines for `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+  - [x] On Vercel dashboard: remove the same 3 env vars from project settings (manual step — note for Marco)
 
-- [ ] Task 4 — Edit `vercel.json` (AC: 5)
-  - [ ] Remove the cron entry `{ "path": "/api/notifications/cron", "schedule": "0 7 * * *" }`
-  - [ ] Keep the Strava cron entry `{ "path": "/api/strava/cron-token-refresh", "schedule": "0 2 * * *" }`
+- [x] Task 4 — Edit `vercel.json` (AC: 5)
+  - [x] Remove the cron entry `{ "path": "/api/notifications/cron", "schedule": "0 7 * * *" }`
+  - [x] Keep the Strava cron entry `{ "path": "/api/strava/cron-token-refresh", "schedule": "0 2 * * *" }`
 
-- [ ] Task 5 — Edit `next.config.mjs` (AC: 1)
-  - [ ] Remove the line `swSrc: "src/sw.ts"` from the `withPWAInit({...})` config object
-  - [ ] Do NOT remove `@ducanh2912/next-pwa` — PWA install/offline still works without a custom SW
+- [x] Task 5 — Edit `next.config.mjs` (AC: 1)
+  - [x] Remove the line `swSrc: "src/sw.ts"` from the `withPWAInit({...})` config object
+  - [x] Do NOT remove `@ducanh2912/next-pwa` — PWA install/offline still works without a custom SW
 
-- [ ] Task 6 — Delete files (AC: 1, 3, 4)
-  - [ ] Delete `src/sw.ts` (push + notificationclick handlers)
-  - [ ] Delete entire folder `src/app/api/notifications/` (3 files: subscribe/route.ts, status/route.ts, cron/route.ts)
-  - [ ] Delete `src/hooks/useNotificationPermission.ts`
-  - [ ] Delete `src/components/home/NotificationPermissionBanner.tsx`
-  - [ ] Delete `src/components/profile/NotificationsCard.tsx`
+- [x] Task 6 — Delete files (AC: 1, 3, 4)
+  - [x] Delete `src/sw.ts` (push + notificationclick handlers)
+  - [x] Delete entire folder `src/app/api/notifications/` (3 files: subscribe/route.ts, status/route.ts, cron/route.ts)
+  - [x] Delete `src/hooks/useNotificationPermission.ts`
+  - [x] Delete `src/components/home/NotificationPermissionBanner.tsx`
+  - [x] Delete `src/components/profile/NotificationsCard.tsx`
 
-- [ ] Task 7 — Edit `src/app/page.tsx` (home) (AC: 3)
-  - [ ] Remove import of `NotificationPermissionBanner`
-  - [ ] Remove `<NotificationPermissionBanner />` from JSX (rendered after widget list)
+- [x] Task 7 — Edit `src/app/page.tsx` (home) (AC: 3)
+  - [x] Remove import of `NotificationPermissionBanner`
+  - [x] Remove `<NotificationPermissionBanner />` from JSX (rendered after widget list)
 
-- [ ] Task 8 — Edit `src/app/profile/page.tsx` (AC: 4)
-  - [ ] Remove import of `NotificationsCard`
-  - [ ] Remove `<NotificationsCard />` from JSX (and its section wrapper if any)
+- [x] Task 8 — Edit `src/app/profile/page.tsx` (AC: 4)
+  - [x] Remove import of `NotificationsCard`
+  - [x] Remove `<NotificationsCard />` from JSX (and its section wrapper if any)
 
-- [ ] Task 9 — Clean up old migration files (AC: 2)
-  - [ ] Delete `supabase/migrations/20260320170000_push_subscriptions_rls.sql` (8 lines, now obsolete)
-  - [ ] Delete or clear `supabase/migrations/20260321000000_push_subscriptions_and_reminders_notified_at.sql` (the new Task 1 migration supersedes it)
+- [x] Task 9 — Clean up old migration files (AC: 2)
+  - [x] Delete `supabase/migrations/20260320170000_push_subscriptions_rls.sql` (8 lines, now obsolete)
+  - [x] Delete or clear `supabase/migrations/20260321000000_push_subscriptions_and_reminders_notified_at.sql` (the new Task 1 migration supersedes it)
 
-- [ ] Task 10 — Update generated Supabase types (AC: 2)
-  - [ ] After running DB migration, regenerate types: `npx supabase gen types typescript --project-id <id> > src/lib/supabase/types.ts`
-  - [ ] Verify `push_subscriptions` table and `reminders.notified_at` are absent from generated types
-  - [ ] Fix any TypeScript errors caused by removed types
+- [x] Task 10 — Update generated Supabase types (AC: 2)
+  - [x] After running DB migration, regenerate types: `npx supabase gen types typescript --project-id <id> > src/lib/supabase/types.ts`
+  - [x] Verify `push_subscriptions` table and `reminders.notified_at` are absent from generated types
+  - [x] Fix any TypeScript errors caused by removed types
 
-- [ ] Task 11 — Build verification (AC: 1–5)
-  - [ ] Run `npm run build` and resolve all errors
-  - [ ] Verify no remaining references to `useNotificationPermission`, `NotificationPermissionBanner`, `push_subscriptions`, `notified_at`, `VAPID` in `src/`
+- [x] Task 11 — Build verification (AC: 1–5)
+  - [x] Run `npm run build` and resolve all errors
+  - [x] Verify no remaining references to `useNotificationPermission`, `NotificationPermissionBanner`, `push_subscriptions`, `notified_at`, `VAPID` in `src/`
 
 ## Dev Notes
 
@@ -151,6 +151,42 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+No issues encountered. All tasks completed in one pass.
+
 ### Completion Notes List
 
+- ✅ DB migration applied via Supabase MCP: `push_subscriptions` dropped, `reminders.notified_at` removed.
+- ✅ `web-push` and `@types/web-push` removed from `package.json`, lockfile updated.
+- ✅ VAPID env vars removed from `.env.local` (manual Vercel step noted for Marco).
+- ✅ `vercel.json` now has only the Strava cron entry.
+- ✅ `next.config.mjs` `swSrc` line removed; PWA remains functional.
+- ✅ Deleted: `src/sw.ts`, `src/app/api/notifications/` (3 routes), `src/hooks/useNotificationPermission.ts`, `src/components/home/NotificationPermissionBanner.tsx`, `src/components/profile/NotificationsCard.tsx`.
+- ✅ `src/app/page.tsx` cleaned: import + `<NotificationPermissionBanner />` removed.
+- ✅ `src/app/profile/page.tsx` cleaned: import + `<NotificationsCard />` removed.
+- ✅ Old migration files deleted: `20260320170000_push_subscriptions_rls.sql`, `20260321000000_push_subscriptions_and_reminders_notified_at.sql`.
+- ✅ Types regenerated via Supabase MCP: `push_subscriptions` and `notified_at` absent from types.
+- ✅ `npm run build` completed successfully with 0 errors.
+
 ### File List
+
+- `supabase/migrations/20260325100000_remove_push_notifications.sql` (new)
+- `supabase/migrations/20260320170000_push_subscriptions_rls.sql` (deleted)
+- `supabase/migrations/20260321000000_push_subscriptions_and_reminders_notified_at.sql` (deleted)
+- `package.json` (modified)
+- `package-lock.json` (modified)
+- `.env.local` (modified)
+- `vercel.json` (modified)
+- `next.config.mjs` (modified)
+- `src/sw.ts` (deleted)
+- `src/app/api/notifications/subscribe/route.ts` (deleted)
+- `src/app/api/notifications/status/route.ts` (deleted)
+- `src/app/api/notifications/cron/route.ts` (deleted)
+- `src/hooks/useNotificationPermission.ts` (deleted)
+- `src/components/home/NotificationPermissionBanner.tsx` (deleted)
+- `src/components/profile/NotificationsCard.tsx` (deleted)
+- `src/app/page.tsx` (modified)
+- `src/app/profile/page.tsx` (modified)
+
+### Change Log
+
+- Removed push notifications system (Story 7.2) — Date: 2026-03-25
