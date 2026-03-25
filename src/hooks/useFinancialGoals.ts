@@ -14,6 +14,7 @@ export function useFinancialGoals() {
       const { data, error } = await supabase
         .from('financial_goals')
         .select('*')
+        .order('position', { ascending: true })
         .order('created_at', { ascending: true })
       if (error) throw error
       return (data ?? []) as FinancialGoal[]
