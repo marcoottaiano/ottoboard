@@ -1,10 +1,11 @@
 ---
-stepsCompleted: ["step-01-validate-prerequisites", "step-02-design-epics", "step-03-create-stories", "step-04-final-validation"]
+stepsCompleted: ["step-01-validate-prerequisites", "step-02-design-epics", "step-03-create-stories", "step-04-final-validation", "epic-10-travel-planning-added-2026-03-26"]
 inputDocuments:
   - _bmad-output/planning_artifacts/prd.md
   - _bmad-output/planning_artifacts/architecture.md
   - _bmad-output/planning_artifacts/ux-design-specification.md
   - _bmad-output/brainstorming/brainstorming-session-2026-03-23.md
+  - _bmad-output/brainstorming/brainstorming-session-2026-03-26.md
 ---
 
 # ottoboard - Epic Breakdown
@@ -51,6 +52,22 @@ FR31: The system can persist user-defined filters and view states for each dashb
 FR32: The user can perform bulk operations (delete, categorize) on multiple transactions simultaneously.
 FR33: The user can manually override and "lock" the category of a transaction.
 FR34: The system can display an in-app "Notification Center" if system push notifications are disabled.
+FR35: The user can create, edit, and delete trips with name, cover photo (Supabase Storage), status (bozza/pianificato/in_corso/completato), start/end dates, and participant count.
+FR36: The user can activate or revoke a permanent public share link per trip; revocation immediately invalidates existing links.
+FR37: The system renders a read-only public view of a trip at /shared/[token], returning 404 when the token is absent or revoked.
+FR38: The user can add, edit, and delete places (ristorante/bar/attrazione) within a trip, providing name, type, optional description, optional price per person, and a Google Maps URL.
+FR39: On place save, the system parses the Google Maps URL to extract latitude/longitude coordinates; when parsing fails, the user can enter coordinates manually (both optional — Maps link remains functional regardless).
+FR40: The user can filter places by free-text search and category type, and sort the list by price per person.
+FR41: The user can add multiple accommodations per trip; the system prevents saving an accommodation whose check-in/check-out dates overlap with any existing accommodation.
+FR42: Each accommodation has an "Include in cost estimate" toggle (default ON); the system prevents enabling two accommodations with overlapping dates simultaneously, displaying an inline error identifying the conflicting entry.
+FR43: Accommodations automatically inject non-editable check-in and check-out events into the itinerary on the corresponding calendar days.
+FR44: The user can add transport entries categorized as outbound or local, with name, optional description, price amount, and a price-type toggle (per person / total).
+FR45: The user can build a day-by-day itinerary by dragging places into time slots (colazione/mattina/pranzo/pomeriggio/cena/sera); the itinerary tab is enabled only when both start and end dates are set on the trip.
+FR46: When trip dates are extended, the system adds empty days; when shortened, the system displays a confirmation modal listing items that will be deleted before proceeding.
+FR47: The user can optionally assign an exact time to each itinerary item; the field does not affect slot assignment.
+FR48: The system displays a read-only cost estimate aggregating: accommodations with "Include in cost estimate" ON (sum of total prices), attractions with a defined price (price per person × participants), and transports (per-person × participants, or total as-is); restaurants and bars are excluded.
+FR49: The user can export the itinerary as PDF in two formats: "Compact" (day-by-day agenda with time slots and place names only) or "Complete" (agenda + places list + accommodations + transports + cost estimate).
+FR50: The system generates a Google Maps Directions URL ordered chronologically from itinerary places that have coordinates; the "Generate Route" button is visible only when ≥ 2 places with coordinates exist in the itinerary.
 
 ### NonFunctional Requirements
 
@@ -140,14 +157,30 @@ FR-NEW-6: Epic 8 — Visualizzazione progresso goal
 FR-NEW-7: Epic 8 — Ricalcolo automatico al variare del saldo
 FR-NEW-8: Epic 9 — Weekly review modal lunedì
 FR-NEW-9: Epic 9 — Persistenza stato "già mostrato"
-FR-NEW-10: Epic 10 — Creazione viaggio (meta, date, note)
-FR-NEW-11: Epic 10 — Itinerario drag & drop con slot orari
-FR-NEW-12: Epic 10 — Ristoranti e attrazioni con link
-FR-NEW-13: Epic 10 — Alloggi con link
-FR-NEW-14: Epic 10 — Budget aggregato viaggio
-FR-NEW-15: Epic 10 — Export/import itinerario
-FR-NEW-16: Epic 10 — Generazione percorso Maps
-FR-NEW-17: Epic 10 — Condivisione pubblica read-only via link
+FR-NEW-10: Epic 10 — Story 10.1 (superseded by FR35)
+FR-NEW-11: Epic 10 — Story 10.3 (superseded by FR45)
+FR-NEW-12: Epic 10 — Story 10.2 (superseded by FR38)
+FR-NEW-13: Epic 10 — Story 10.2 (superseded by FR41)
+FR-NEW-14: Epic 10 — Story 10.4 (superseded by FR48)
+FR-NEW-15: Epic 10 — Story 10.5 (superseded by FR49)
+FR-NEW-16: Epic 10 — Story 10.5 (superseded by FR50)
+FR-NEW-17: Epic 10 — Story 10.5 (superseded by FR37)
+FR35: Epic 10 — Story 10.1 — Trip CRUD + cover photo + status
+FR36: Epic 10 — Story 10.1 — Share token activate/revoke
+FR37: Epic 10 — Story 10.5 — Public read-only view /shared/[token]
+FR38: Epic 10 — Story 10.2 — Places (luoghi) management
+FR39: Epic 10 — Story 10.2 — Google Maps URL parsing + manual fallback
+FR40: Epic 10 — Story 10.2 — Places filter/sort
+FR41: Epic 10 — Story 10.2 — Accommodations with non-overlapping date validation
+FR42: Epic 10 — Story 10.2 — Accommodation "include in estimate" toggle
+FR43: Epic 10 — Story 10.2 — Auto check-in/checkout events in itinerary
+FR44: Epic 10 — Story 10.2 — Transports (outbound/local)
+FR45: Epic 10 — Story 10.3 — Day itinerary DnD with time slots
+FR46: Epic 10 — Story 10.3 — Date change → days added empty / days removed with warning
+FR47: Epic 10 — Story 10.3 — Optional exact time per itinerary item
+FR48: Epic 10 — Story 10.4 — Cost estimate (accommodations + attractions + transports)
+FR49: Epic 10 — Story 10.5 — PDF export compact/complete
+FR50: Epic 10 — Story 10.5 — Google Maps route URL generation
 FR-NEW-18: Epic 11 — Item wishlist (nome, link, prezzo, foto)
 FR-NEW-19: Epic 11 — Status item (desired/received/purchased)
 FR-NEW-20: Epic 11 — Organizzazione per categoria/occasione
@@ -205,8 +238,8 @@ Ogni lunedì, l'utente riceve automaticamente un resoconto visivo della settiman
 
 ### Epic 10: Travel Planning Module
 
-L'utente può pianificare viaggi completi — itinerari giornalieri drag & drop, ristoranti, attrazioni, alloggi, budget — e condividere il piano con altri in sola lettura tramite link pubblico, senza richiedere registrazione ai destinatari.
-**FRs covered:** FR-NEW-10, FR-NEW-11, FR-NEW-12, FR-NEW-13, FR-NEW-14, FR-NEW-15, FR-NEW-16, FR-NEW-17
+L'utente pianifica viaggi completi in un unico posto: crea luoghi (ristoranti, bar, attrazioni) con mappa Leaflet da link Google Maps, gestisce più alloggi con validazione date non sovrapposte e stima costi automatica, trascina i luoghi in un itinerario giornaliero per fasce orarie, esporta il piano come PDF (compatto o completo), genera il percorso ottimale su Google Maps e condivide il viaggio via link pubblico read-only revocabile senza obbligo di registrazione per i destinatari.
+**FRs covered:** FR35, FR36, FR37, FR38, FR39, FR40, FR41, FR42, FR43, FR44, FR45, FR46, FR47, FR48, FR49, FR50
 
 ### Epic 11: Gift & Wishlist
 
@@ -1459,3 +1492,284 @@ So that I can quickly know what to buy before cooking.
 **Given** the shopping list
 **When** I click "Copia lista"
 **Then** the plain-text list is copied to clipboard
+
+---
+
+## Epic 10: Travel Planning Module
+
+L'utente pianifica viaggi completi in un unico posto con itinerari drag & drop, mappa Leaflet, stima costi, export PDF e condivisione pubblica via link revocabile.
+
+### Technical Notes (apply to all stories in this epic)
+
+- `react-leaflet` requires `dynamic(() => import(...), { ssr: false })` on EVERY map component — missing this causes build failure (Next.js SSR incompatibility).
+- `@react-pdf/renderer` is client-only — import with `dynamic(..., { ssr: false })`.
+- Google Maps URL parsing: short links (`maps.app.goo.gl/...`) do NOT contain coordinates directly — implement fallback to manual lat/lon input. Supported parsed formats: URLs containing `@lat,lon` or `?q=lat,lon`.
+- Google Maps Directions URL accepts `lat,lon` waypoints directly (`https://www.google.com/maps/dir/lat,lon/lat,lon/...`) — no API key required.
+- All new tables require RLS: `DEFAULT auth.uid()` on `user_id` + `USING (auth.uid() = user_id)` + `WITH CHECK (auth.uid() = user_id)`.
+- Use `toLocalDateStr()` for all date comparisons — never `toISOString().slice(0,10)`.
+- Optimistic update + rollback required on all instant actions (DnD, toggles).
+- Use individual `update()` calls (not `upsert()`) for partial updates on Supabase.
+- Supabase Storage free tier = 1GB — suitable for cover photo uploads at personal scale.
+- Module color: `blue-500/600`. Sidebar icon: `Plane` (Lucide). Route: `/travel`.
+
+### DB Schema
+
+```sql
+-- trips
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+user_id         UUID NOT NULL DEFAULT auth.uid()
+nome            TEXT NOT NULL
+cover_photo_url TEXT
+stato           TEXT NOT NULL DEFAULT 'bozza'  -- bozza | pianificato | in_corso | completato
+data_inizio     DATE
+data_fine       DATE
+partecipanti    INT NOT NULL DEFAULT 1
+share_token     TEXT UNIQUE  -- nullable; activated/revoked from trip list UI
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+-- trip_places
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+trip_id         UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE
+user_id         UUID NOT NULL DEFAULT auth.uid()
+tipo            TEXT NOT NULL  -- ristorante | bar | attrazione
+nome            TEXT NOT NULL
+maps_url        TEXT
+lat             FLOAT  -- nullable
+lon             FLOAT  -- nullable
+descrizione     TEXT
+prezzo_per_persona FLOAT  -- nullable
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+-- trip_accommodations
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+trip_id         UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE
+user_id         UUID NOT NULL DEFAULT auth.uid()
+nome            TEXT NOT NULL
+check_in        DATE NOT NULL
+check_out       DATE NOT NULL
+prezzo_totale   FLOAT
+link_booking    TEXT
+maps_url        TEXT
+lat             FLOAT
+lon             FLOAT
+includi_in_stima BOOLEAN NOT NULL DEFAULT TRUE
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+-- trip_transports
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+trip_id         UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE
+user_id         UUID NOT NULL DEFAULT auth.uid()
+categoria       TEXT NOT NULL  -- outbound | locale
+nome            TEXT NOT NULL
+prezzo          FLOAT
+prezzo_tipo     TEXT NOT NULL DEFAULT 'per_persona'  -- per_persona | totale
+descrizione     TEXT
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+
+-- trip_itinerary_items
+id              UUID PRIMARY KEY DEFAULT gen_random_uuid()
+trip_id         UUID NOT NULL REFERENCES trips(id) ON DELETE CASCADE
+user_id         UUID NOT NULL DEFAULT auth.uid()
+day_date        DATE NOT NULL
+time_slot       TEXT NOT NULL  -- colazione | mattina | pranzo | pomeriggio | cena | sera
+item_type       TEXT NOT NULL  -- place | accommodation_checkin | accommodation_checkout
+place_id        UUID REFERENCES trip_places(id) ON DELETE CASCADE
+accommodation_id UUID REFERENCES trip_accommodations(id) ON DELETE CASCADE
+orario_preciso  TIME
+position        INT NOT NULL DEFAULT 0
+created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```
+
+---
+
+### Story 10.1: Trip Creation and Management
+
+As a user,
+I want to create and manage trips with name, cover photo, status, dates, participant count, and a shareable link,
+So that I have a central hub for each trip I plan.
+
+**Acceptance Criteria:**
+
+**Given** I navigate to /travel
+**When** the page loads
+**Then** I see a card grid (2 columns desktop / 1 mobile) of my trips, each showing cover photo, name, dates, status badge, and participant count
+**And** a "Nuovo viaggio" button is visible
+
+**Given** I click "Nuovo viaggio"
+**When** I fill in name (required), optional dates, optional cover photo, status (default: bozza), and participants (default: 1) and save
+**Then** the trip is created and appears in the list
+**And** cover photo is uploaded to Supabase Storage and stored as URL in `cover_photo_url`
+
+**Given** an existing trip
+**When** I edit it and change any field
+**Then** the change is persisted and reflected immediately in the list
+
+**Given** an existing trip
+**When** I delete it with inline confirmation
+**Then** the trip and all its nested data (places, accommodations, transports, itinerary items) are deleted via CASCADE
+
+**Given** a trip in the list
+**When** I toggle the share link switch to ON
+**Then** a UUID `share_token` is generated and saved; a copyable URL `/shared/[token]` is displayed
+**And** when I toggle it OFF, `share_token` is set to NULL and any existing links return 404
+
+---
+
+### Story 10.2: Luoghi, Alloggi e Trasporti
+
+As a user,
+I want to add places (restaurants, bars, attractions), accommodations, and transports to a trip,
+So that I have all trip logistics organized in one place with map previews.
+
+**Acceptance Criteria:**
+
+**Given** I am on the trip detail page, Luoghi tab
+**When** I add a place with a Google Maps URL
+**Then** the system attempts to parse `lat` and `lon` from the URL (formats: `@lat,lon` or `?q=lat,lon`)
+**And** if parsing succeeds, a Leaflet map preview is shown in the place modal (loaded via `dynamic(..., { ssr: false })`)
+**And** if parsing fails, an inline message "Coordinate non trovate — inserisci manualmente" with lat/lon input fields is shown
+**And** the place is saved regardless of whether coordinates are present
+
+**Given** places exist in the list
+**When** I apply a text filter or category filter (ristorante / bar / attrazione)
+**Then** only matching places are shown
+**When** I click "Ordina per prezzo"
+**Then** places are sorted ascending by `prezzo_per_persona` (null prices sorted last)
+
+**Given** I click on a place
+**When** the modal opens
+**Then** I see the Leaflet map (if coordinates exist), name, type badge, description, price, and Maps link
+**And** I can edit or delete the place from the modal
+
+**Given** I am on the Alloggi tab
+**When** I add an accommodation with check-in and check-out dates
+**Then** if those dates overlap with any existing accommodation, an inline error shows "Date sovrapposte con [nome alloggio]" and the save is blocked
+
+**Given** an accommodation exists
+**When** I toggle "Includi in stima" to ON while another accommodation with overlapping dates is already ON
+**Then** an inline error shows "Date sovrapposte con [nome alloggio]" and the toggle reverts to OFF
+
+**Given** accommodations are saved
+**When** the itinerary tab is opened
+**Then** each accommodation automatically shows a non-draggable check-in event on `day_date = check_in` and check-out event on `day_date = check_out`
+
+**Given** I am on the Trasporti tab
+**When** I add a transport with categoria = outbound and prezzo_tipo = per_persona
+**Then** it appears in the "Trasporto per arrivare" section
+**When** I add one with categoria = locale
+**Then** it appears in the "Trasporti locali" section
+
+---
+
+### Story 10.3: Day Itinerary with Drag and Drop
+
+As a user,
+I want to build a day-by-day itinerary by dragging places into time slots,
+So that I can visually plan each day of the trip.
+
+**Acceptance Criteria:**
+
+**Given** a trip without `data_inizio` or `data_fine`
+**When** I navigate to the Itinerario tab
+**Then** the itinerary is disabled with the message "Imposta le date del viaggio per attivare l'itinerario"
+
+**Given** a trip with dates set
+**When** I open the Itinerario tab
+**Then** I see a horizontal scrollable tab row, one tab per day (e.g., "Lun 5 Mag"), defaulting to today's tab if within trip range
+**And** each day shows 6 time slots: colazione, mattina, pranzo, pomeriggio, cena, sera
+
+**Given** the itinerary is enabled
+**When** I drag a place from the Luoghi list into a time slot using dnd-kit
+**Then** the place appears in that slot with an optimistic update
+**And** the itinerary item is saved to `trip_itinerary_items` with `item_type = 'place'`
+
+**Given** a place appears in a time slot
+**When** I optionally set an exact time (e.g., "14:30")
+**Then** `orario_preciso` is saved and displayed alongside the place name
+
+**Given** a place can appear in multiple slots or days
+**When** the same place is added to two different slots
+**Then** both references are saved independently (references, not copies — place updates propagate to all slots)
+
+**Given** the trip `data_fine` is shortened by 2 days (e.g., from day 7 to day 5)
+**When** I confirm the date change
+**Then** a modal warns "Rimuovere gli item dei giorni 6 e 7?" with the list of affected items
+**And** if confirmed, `trip_itinerary_items` for those days are deleted
+**And** if cancelled, the date change is reverted
+
+**Given** the trip `data_fine` is extended
+**When** the change is saved
+**Then** the new days are added as empty slots — no items
+
+---
+
+### Story 10.4: Trip Cost Estimate
+
+As a user,
+I want to see a read-only cost breakdown for my trip,
+So that I can understand total expenses and per-person quota without manual calculations.
+
+**Acceptance Criteria:**
+
+**Given** I open the Stima Costi tab
+**When** the tab renders
+**Then** I see a read-only summary with three sections: Alloggi, Attrazioni, Trasporti
+
+**Given** accommodations with `includi_in_stima = true`
+**When** costs are calculated
+**Then** the Alloggi total = sum of `prezzo_totale` for all accommodations where `includi_in_stima = true`
+
+**Given** places of `tipo = 'attrazione'` with `prezzo_per_persona` set
+**When** costs are calculated
+**Then** the Attrazioni total = sum of (`prezzo_per_persona` × `partecipanti`) for each such attraction
+
+**Given** transports
+**When** costs are calculated
+**Then** for `prezzo_tipo = 'per_persona'`: transport cost = `prezzo` × `partecipanti`
+**And** for `prezzo_tipo = 'totale'`: transport cost = `prezzo` as-is
+
+**Given** all sections computed
+**When** the summary renders
+**Then** a "Totale stimato" row shows the sum of all sections
+**And** a "Quota per persona" row shows `totale / partecipanti`
+**And** ristoranti and bar are NOT included in any calculation
+
+**Given** a field is missing (e.g., accommodation has no `prezzo_totale`)
+**When** the estimate renders
+**Then** that item shows "—" and is excluded from the total with no error
+
+---
+
+### Story 10.5: PDF Export, Route Generation & Public Sharing
+
+As a user,
+I want to export the itinerary as PDF, generate a Google Maps route, and share the trip via a public link,
+So that I can distribute the plan to travel companions without requiring them to register.
+
+**Acceptance Criteria:**
+
+**Given** I click the "Esporta PDF" button
+**When** the options appear
+**Then** I can choose "Compatto" (day-by-day agenda: day tabs + slot names + place names) or "Completo" (agenda + places list + accommodations + transports + cost estimate)
+**And** the PDF is generated client-side via `@react-pdf/renderer` (loaded with `dynamic(..., { ssr: false })`) and downloads automatically
+
+**Given** the itinerary has ≥ 2 places with non-null coordinates
+**When** I view the Itinerario tab
+**Then** a "Genera percorso" button is visible
+**When** I click it
+**Then** a Google Maps Directions URL is constructed (`https://www.google.com/maps/dir/lat,lon/lat,lon/...`) using itinerary places with coordinates in chronological order
+**And** the URL opens in a new browser tab — no API key required
+
+**Given** a trip with `share_token` set to NULL
+**When** a user (logged in or not) navigates to `/shared/[any-token]`
+**Then** a 404 page is returned
+
+**Given** a trip with an active `share_token`
+**When** a non-authenticated user navigates to `/shared/[token]`
+**Then** they see a full read-only view of the trip: name, cover photo, dates, participants, places list with maps links, accommodations, transports, itinerary, and cost estimate
+**And** no edit, delete, or share controls are visible
+**And** the page is rendered via a Next.js public route that does NOT require authentication
+
+**Given** the trip owner revokes the share link (sets `share_token = NULL`)
+**When** someone with the old link navigates to `/shared/[old-token]`
+**Then** a 404 page is returned immediately
