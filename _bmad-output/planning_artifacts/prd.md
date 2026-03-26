@@ -1,7 +1,11 @@
 ---
-stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional']
+stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-e-01-discovery', 'step-e-02-review', 'step-e-03-edit']
 inputDocuments: ['CLAUDE.md', 'README.md', 'package.json', 'Doc/personal_dashboard_PRD.docx']
 workflowType: 'prd'
+lastEdited: '2026-03-26'
+editHistory:
+  - date: '2026-03-26'
+    changes: 'Added Travel Planning module (Phase 13) — FR35–FR50, Journey 4, Product Scope Vision update, Project Scoping Phase 3 expansion, Executive Summary update'
 documentCounts:
   briefCount: 1
   researchCount: 0
@@ -29,7 +33,7 @@ Ottoboard è un "Centro di Controllo" personale e modulare progettato per elimin
 
 ### What Makes This Special
 
-L'unicità di Ottoboard risiede nella sua natura di "Integration-First Hub": la capacità di far coesistere dati di performance atletica (Strava), gestione finanziaria custom e flussi di lavoro professionali (Linear) in un unico ambiente operativo. A differenza delle dashboard generiche, Ottoboard permette l'azione diretta (es. gestione task Linear) e il monitoraggio della salute in tempo reale, eliminando la necessità di navigare in ecosistemi chiusi e separati.
+L'unicità di Ottoboard risiede nella sua natura di "Integration-First Hub": la capacità di far coesistere dati di performance atletica (Strava), gestione finanziaria custom e flussi di lavoro professionali (Linear) in un unico ambiente operativo. A differenza delle dashboard generiche, Ottoboard permette l'azione diretta (es. gestione task Linear) e il monitoraggio della salute in tempo reale, eliminando la necessità di navigare in ecosistemi chiusi e separati. L'espansione verso moduli di lifestyle personale — come il Travel Planning con itinerari condivisibili — consolida Ottoboard come unico punto di controllo per la vita digitale dell'utente.
 
 ## 2. Project Classification
 
@@ -77,7 +81,8 @@ L'unicità di Ottoboard risiede nella sua natura di "Integration-First Hub": la 
 * **Multi-User Onboarding:** Streamlined flow for new users to connect their own Strava/Linear instances.
 
 ### Vision (Future)
-* **Expanded Ecosystem:** Integration of new modules such as Nutrition (MyFitnessPal-like), Habit Tracking, or Smart Home (Home Assistant).
+* **Travel Planning Module (Phase 13):** Full trip planning suite — places, accommodations, transports, day-by-day itinerary with drag-and-drop scheduling, cost estimate, PDF export, and shareable public read-only links.
+* **Expanded Ecosystem:** Integration of new modules such as Nutrition (MyFitnessPal-like) or Smart Home (Home Assistant).
 * **Intelligence Layer:** AI-driven insights summarizing spending patterns or fitness recovery states.
 * **Full Multi-Tenancy:** A robust multi-user platform with isolated environments for a broader audience.
 
@@ -100,6 +105,12 @@ L'unicità di Ottoboard risiede nella sua natura di "Integration-First Hub": la 
 *   **Rising Action:** Upon first login, they are greeted by a **Setup Wizard**. They connect Strava via OAuth and are prompted to enter their Linear API Key with a helpful "How to find this" tooltip.
 *   **Climax:** As soon as the keys are saved, the "Progetti" and "Fitness" tabs populate with their real data. There are no empty states or broken charts.
 *   **Resolution:** The user perceives Ottoboard as a professional-grade tool. The complexity of the backend (Supabase/Edge Functions) is completely hidden behind a seamless onboarding experience.
+
+### Journey 4: Marco — "The Trip Planner" (Travel Planning Module)
+*   **Opening Scene:** Marco is planning a 5-day trip to Barcelona with two friends. He opens Ottoboard's Travel module to organize everything in one place instead of juggling Notes, Google Sheets, and browser tabs.
+*   **Rising Action:** He creates a new trip ("Barcelona"), sets the dates and participant count (3), and uploads a cover photo. He adds restaurants and attractions by pasting Google Maps links — coordinates are parsed automatically and displayed on a Leaflet map preview. He adds one accommodation with check-in/check-out dates; its cost is immediately reflected in the cost estimate.
+*   **Climax:** Marco switches to the Itinerary tab. He drags "Sagrada Família" into the "Mattina" slot of Day 2, and "El Xampanyet" bar into the "Sera" slot. The accommodation check-in event appears automatically on Day 1. When he finishes, he clicks "Genera Percorso" — Ottoboard builds a Google Maps Directions URL with all itinerary waypoints, which he opens in one tap. He exports the itinerary as a compact PDF and shares the trip link with his two friends via a single URL, no account required.
+*   **Resolution:** Marco and his friends have a synchronized, centralized trip plan accessible from any device. The "switch cost" between planning tools is eliminated — Ottoboard becomes the single source of truth for the trip.
 
 ### Journey Requirements Summary
 *   **Synchronization Engine:** Must support "Force Reconciliation" to bypass webhook delays and ensure 100% data integrity.
@@ -174,8 +185,8 @@ Ottoboard è un'applicazione Single Page Application (SPA) costruita su Next.js 
 * **Beta Onboarding:** Wizard di setup per permettere ad altri utenti di collegare le proprie API key.
 
 **Phase 3 (Expansion & Zero-Cost Vision):**
+* **Travel Planning Module (Phase 13):** Full trip planning suite with places, accommodations, transports, drag-and-drop itinerary, cost estimate, PDF export, Google Maps route generation, and public shareable links.
 * **Local Finance Intelligence:** Motore di analisi statistica client-side (Zero-Cost) per previsioni di spesa e alert budget.
-* **"Smart" Nutrition Module:** Integrazione nutrizione semplificata che incrocia spesa alimentare e intensità allenamenti Strava.
 
 ### Risk Mitigation Strategy
 * **Technical Risks:** Complessità della bidirezionalità Linear. *Mitigazione:* Implementare un sistema di riconciliazione manuale ("Force Sync") per evitare conflitti atomici.
@@ -228,6 +239,25 @@ Ottoboard è un'applicazione Single Page Application (SPA) costruita su Next.js 
 *   **FR22:** The system can isolate user data using a secure multi-tenant architecture (RLS).
 *   **FR23:** The user can manage their personal profile and security settings.
 *   **FR24:** The system can provide an onboarding flow for new users to configure core modules.
+
+### Travel Planning
+
+*   **FR35:** The user can create, edit, and delete trips with name, cover photo (uploaded to Supabase Storage), status (bozza / pianificato / in_corso / completato), start/end dates, and participant count.
+*   **FR36:** The user can activate or revoke a permanent public share link per trip; revocation immediately invalidates all existing links for that trip.
+*   **FR37:** The system renders a read-only public view of a trip at `/shared/[token]`, returning 404 when the token is absent or revoked.
+*   **FR38:** The user can add, edit, and delete places (ristorante / bar / attrazione) within a trip, providing name, type, optional description, optional price per person, and a Google Maps URL.
+*   **FR39:** On place save, the system parses the Google Maps URL to extract latitude/longitude coordinates; when parsing fails, the user can enter coordinates manually (both fields optional — the Maps link remains functional regardless).
+*   **FR40:** The user can filter places by free-text search and category type, and sort the list by price per person.
+*   **FR41:** The user can add multiple accommodations per trip; the system prevents saving an accommodation whose check-in/check-out dates overlap with any existing accommodation.
+*   **FR42:** Each accommodation has an "Include in cost estimate" toggle (default ON); the system prevents enabling two accommodations with overlapping dates simultaneously, displaying an inline error identifying the conflicting entry.
+*   **FR43:** Accommodations automatically inject non-editable check-in and check-out events into the itinerary on the corresponding calendar days.
+*   **FR44:** The user can add transport entries categorized as outbound or local, with name, optional description, price amount, and a price-type toggle (per person / total).
+*   **FR45:** The user can build a day-by-day itinerary by dragging places into time slots (colazione / mattina / pranzo / pomeriggio / cena / sera); the itinerary tab is enabled only when both start and end dates are set on the trip.
+*   **FR46:** When trip dates are extended, the system adds empty days; when trip dates are shortened, the system displays a confirmation modal listing items that will be deleted before proceeding.
+*   **FR47:** The user can optionally assign an exact time to each itinerary item; the field is not required and does not affect slot assignment.
+*   **FR48:** The system displays a read-only cost estimate aggregating: accommodations with "Include in cost estimate" ON (sum of total prices), attractions with a defined price (price per person × participants), and transports (per-person price × participants, or total price as-is); restaurants and bars are excluded from the estimate.
+*   **FR49:** The user can export the itinerary as a PDF in two formats: "Compact" (day-by-day agenda with time slots and place names only) or "Complete" (agenda + places list + accommodations + transports + cost estimate).
+*   **FR50:** The system generates a Google Maps Directions URL ordered chronologically from itinerary places that have coordinates; the "Generate Route" button is visible only when ≥ 2 places with coordinates are present in the itinerary.
 
 ## 11. Non-Functional Requirements
 
