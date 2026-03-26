@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, LayoutDashboard } from 'lucide-react'
 import {
   DndContext,
@@ -29,6 +29,10 @@ import { TotalBalanceWidget } from '@/components/home/TotalBalanceWidget'
 import { RemindersWidget } from '@/components/home/RemindersWidget'
 import { HabitsWidget } from '@/components/home/HabitsWidget'
 import { FinancialGoalWidget } from '@/components/home/FinancialGoalWidget'
+import { WeeklyReviewModal } from '@/components/home/WeeklyReviewModal'
+import { getIsoWeekday, toLocalDateStr } from '@/lib/dateUtils'
+
+const WEEKLY_REVIEW_LS_KEY = 'last_weekly_review_shown'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,6 +71,21 @@ export default function HomePage() {
   const reorderWidgets = useReorderWidgets()
   const [showAdd, setShowAdd] = useState(false)
   const [configuringWidget, setConfiguringWidget] = useState<DashboardWidget | null>(null)
+  const [showWeeklyReview, setShowWeeklyReview] = useState(false)
+
+  useEffect(() => {
+    const today = new Date()
+    if (getIsoWeekday(today) !== 1) return
+    const mondayStr = toLocalDateStr(today)
+    if (localStorage.getItem(WEEKLY_REVIEW_LS_KEY) !== mondayStr) {
+      setShowWeeklyReview(true)
+    }
+  }, [])
+
+  const handleWeeklyReviewClose = () => {
+    localStorage.setItem(WEEKLY_REVIEW_LS_KEY, toLocalDateStr(new Date()))
+    setShowWeeklyReview(false)
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -161,6 +180,9 @@ export default function HomePage() {
           widget={configuringWidget}
           onClose={() => setConfiguringWidget(null)}
         />
+      )}
+      {showWeeklyReview && (
+        <WeeklyReviewModal onClose={handleWeeklyReviewClose} />
       )}
     </div>
   )

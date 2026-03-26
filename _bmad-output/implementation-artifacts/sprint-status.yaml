@@ -111,7 +111,7 @@ development_status:
 
   # EPIC 9: Weekly Life Review
   epic-9: in-progress
-  9-1-weekly-review-modal: ready-for-dev
+  9-1-weekly-review-modal: review
   epic-9-retrospective: optional
 
   # EPIC 10: Travel Planning Module
