@@ -1,6 +1,6 @@
 # Story 10.4: Trip Cost Estimate
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -28,34 +28,34 @@ So that I can understand total expenses and per-person quota without manual calc
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 - Create `useTripCostEstimate` hook (AC: 1–8)
-  - [ ] Create `src/hooks/useTripCostEstimate.ts`
-  - [ ] Inputs: `tripId` — internally uses `useTripAccommodations(tripId)`, `useTripPlaces(tripId)`, `useTripTransports(tripId)`, and trip `partecipanti` from `useTrip(tripId)`
-  - [ ] Compute client-side (no new DB query needed):
+- [x] Task 1 - Create `useTripCostEstimate` hook (AC: 1–8)
+  - [x] Create `src/hooks/useTripCostEstimate.ts`
+  - [x] Inputs: `tripId` — internally uses `useTripAccommodations(tripId)`, `useTripPlaces(tripId)`, `useTripTransports(tripId)`, and trip `partecipanti` from `useTrip(tripId)`
+  - [x] Compute client-side (no new DB query needed):
     - `alloggiTotal`: sum `prezzo_totale` where `includi_in_stima = true` and `prezzo_totale != null`
     - `attrazioniTotal`: sum `prezzo_per_persona * partecipanti` where `tipo = 'attrazione'` and `prezzo_per_persona != null`
     - `trasportiTotal`: sum each transport: `prezzo_tipo = 'per_persona'` → `prezzo * partecipanti`; `'totale'` → `prezzo`; skip if `prezzo == null`
     - `totaleStimato`: alloggiTotal + attrazioniTotal + trasportiTotal
     - `quotaPerPersona`: `totaleStimato / partecipanti` (only if `partecipanti > 0`)
-  - [ ] Return per-section item arrays (for rendering individual rows) + totals
-  - [ ] Handle null/missing values: exclude from sum, mark as `null` in item row for "—" display
+  - [x] Return per-section item arrays (for rendering individual rows) + totals
+  - [x] Handle null/missing values: exclude from sum, mark as `null` in item row for "—" display
 
-- [ ] Task 2 - Build StimaCostiTab component (AC: 1–8)
-  - [ ] Create `src/components/travel/StimaCostiTab.tsx`
-  - [ ] Three sections: Alloggi, Attrazioni, Trasporti — each with a table/list of items
-  - [ ] Each item row: name | computed cost or "—"
-  - [ ] Section subtotal row (bold): sum of non-null items or "—" if all null
-  - [ ] Summary footer: "Totale stimato" + "Quota per persona" in a highlighted card
-  - [ ] Empty section: show "Nessun dato disponibile" placeholder
-  - [ ] Read-only — no edit controls in this tab
+- [x] Task 2 - Build StimaCostiTab component (AC: 1–8)
+  - [x] Create `src/components/travel/StimaCostiTab.tsx`
+  - [x] Three sections: Alloggi, Attrazioni, Trasporti — each with a table/list of items
+  - [x] Each item row: name | computed cost or "—"
+  - [x] Section subtotal row (bold): sum of non-null items or "—" if all null
+  - [x] Summary footer: "Totale stimato" + "Quota per persona" in a highlighted card
+  - [x] Empty section: show "Nessun dato disponibile" placeholder
+  - [x] Read-only — no edit controls in this tab
 
-- [ ] Task 3 - Add Stima Costi tab to trip detail page (AC: 1)
-  - [ ] Update `src/app/travel/[id]/page.tsx` tab list to include "Stima Costi" tab (after Trasporti, before or after Itinerario)
-  - [ ] Update `src/components/travel/TripDetailTabs.tsx` to include the new tab
-  - [ ] Render `StimaCostiTab` when tab is active
+- [x] Task 3 - Add Stima Costi tab to trip detail page (AC: 1)
+  - [x] Update `src/app/travel/[id]/page.tsx` tab list to include "Stima Costi" tab (after Trasporti, before or after Itinerario)
+  - [x] Update `src/components/travel/TripDetailTabs.tsx` to include the new tab
+  - [x] Render `StimaCostiTab` when tab is active
 
-- [ ] Task 4 - Verification (AC: 1–8)
-  - [ ] Run `npm.cmd run build` — zero TypeScript errors
+- [x] Task 4 - Verification (AC: 1–8)
+  - [x] Run `npm.cmd run build` — zero TypeScript errors
   - [ ] Manual QA: add 2 accommodations (one with includi_in_stima=false) → only one counted
   - [ ] Manual QA: add attraction with prezzo_per_persona=20, partecipanti=3 → shows 60
   - [ ] Manual QA: add transport per_persona=50, partecipanti=3 → shows 150; totale=200 → shows 200
@@ -134,16 +134,23 @@ This is the simplest story in Epic 10 — computation logic + display only.
 
 ### Agent Model Used
 
-_to be filled by dev agent_
+claude-sonnet-4-6
 
 ### Completion Notes List
 
-_to be filled by dev agent_
+- Task 1: Created `useTripCostEstimate.ts` — pure computation hook composing `useTrip`, `useTripAccommodations`, `useTripPlaces`, `useTripTransports`. Uses `useMemo` for derived values. `sumNullable` helper returns `null` when all inputs are null (no data), otherwise sums non-null values. Guards `partecipanti <= 0` to avoid division by zero.
+- Task 2: Created `StimaCostiTab.tsx` — three sections (Alloggi, Attrazioni, Trasporti) plus a summary footer card. Each section shows "Nessun dato disponibile" when empty. Items with null cost display "—". Skeleton loading state via animated pulse placeholders.
+- Task 3: Added `'stima-costi'` to `TripTab` union type in `TripDetailTabs.tsx` and rendered `StimaCostiTab` in `travel/[id]/page.tsx`.
+- Task 4: `npm.cmd run build` — 0 TypeScript errors, 26 pages generated. Manual QA items require browser testing by the user.
 
 ### File List
 
-_to be filled by dev agent_
+- src/hooks/useTripCostEstimate.ts (new)
+- src/components/travel/StimaCostiTab.tsx (new)
+- src/app/travel/[id]/page.tsx (modified)
+- src/components/travel/TripDetailTabs.tsx (modified)
 
 ## Change Log
 
 - 2026-03-26: Story created — Trip Cost Estimate for Epic 10 Travel Planning Module.
+- 2026-03-27: Story implemented — useTripCostEstimate hook, StimaCostiTab component, tab wiring. Build green.

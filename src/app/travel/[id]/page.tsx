@@ -9,6 +9,7 @@ import { LuoghiTab } from '@/components/travel/LuoghiTab'
 import { AlloggiTab } from '@/components/travel/AlloggiTab'
 import { TrasportiTab } from '@/components/travel/TrasportiTab'
 import { ItinerarioTab } from '@/components/travel/ItinerarioTab'
+import { StimaCostiTab } from '@/components/travel/StimaCostiTab'
 
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -41,6 +42,7 @@ export default function TripDetailPage() {
       {activeTab === 'alloggi' && <AlloggiTab tripId={id} />}
       {activeTab === 'trasporti' && <TrasportiTab tripId={id} />}
       {activeTab === 'itinerario' && <ItinerarioTab trip={trip} />}
+      {activeTab === 'stima-costi' && <StimaCostiTab tripId={id} />}
     </div>
   )
 }

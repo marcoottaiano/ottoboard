@@ -1,12 +1,13 @@
 'use client'
 
-export type TripTab = 'luoghi' | 'alloggi' | 'trasporti' | 'itinerario'
+export type TripTab = 'luoghi' | 'alloggi' | 'trasporti' | 'itinerario' | 'stima-costi'
 
 const TABS: { id: TripTab; label: string }[] = [
   { id: 'luoghi', label: 'Luoghi' },
   { id: 'alloggi', label: 'Alloggi' },
   { id: 'trasporti', label: 'Trasporti' },
   { id: 'itinerario', label: 'Itinerario' },
+  { id: 'stima-costi', label: 'Stima Costi' },
 ]
 
 interface Props {
