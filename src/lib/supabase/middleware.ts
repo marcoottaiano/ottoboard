@@ -31,7 +31,8 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/auth')
   const isApiRoute = pathname.startsWith('/api')
   const isOnboardingRoute = pathname === '/onboarding' || pathname.startsWith('/onboarding/')
-  const isProtectedRoute = !isAuthRoute && !pathname.startsWith('/_next')
+  const isPublicRoute = pathname.startsWith('/shared/')
+  const isProtectedRoute = !isAuthRoute && !pathname.startsWith('/_next') && !isPublicRoute
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone()
@@ -46,7 +47,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Onboarding gate: utente autenticato senza onboarding completato → /onboarding
-  if (user && !isOnboardingRoute && !isAuthRoute && !isApiRoute) {
+  if (user && !isOnboardingRoute && !isAuthRoute && !isApiRoute && !isPublicRoute) {
     if (!user.app_metadata?.onboarding_completed_at) {
       const url = request.nextUrl.clone()
       url.pathname = '/onboarding'

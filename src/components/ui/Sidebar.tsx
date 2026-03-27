@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Activity, Wallet, Target, PanelLeftClose, PanelLeftOpen, LogOut, User, Eye, EyeOff } from "lucide-react";
+import { LayoutDashboard, Activity, Wallet, Target, Plane, PanelLeftClose, PanelLeftOpen, LogOut, User, Eye, EyeOff } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { usePrivacyMode } from "@/hooks/usePrivacyMode";
 
@@ -50,6 +50,16 @@ const NAV_ITEMS = [
     border: "border-teal-400/40",
   },
   {
+    href: "/travel",
+    label: "Viaggi",
+    icon: Plane,
+    module: "travel",
+    color: "text-blue-400",
+    glow: "shadow-blue-500/40",
+    activeBg: "bg-blue-500/10",
+    border: "border-blue-400/40",
+  },
+  {
     href: "/profile",
     label: "Profilo",
     icon: User,
@@ -66,6 +76,7 @@ function getActiveModule(pathname: string) {
   if (pathname.startsWith("/fitness")) return "fitness";
   if (pathname.startsWith("/finance")) return "finance";
   if (pathname.startsWith("/habits")) return "habits";
+  if (pathname.startsWith("/travel")) return "travel";
   if (pathname.startsWith("/profile")) return "profile";
   return "home";
 }
