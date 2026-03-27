@@ -8,16 +8,7 @@ import { TripDetailTabs, type TripTab } from '@/components/travel/TripDetailTabs
 import { LuoghiTab } from '@/components/travel/LuoghiTab'
 import { AlloggiTab } from '@/components/travel/AlloggiTab'
 import { TrasportiTab } from '@/components/travel/TrasportiTab'
-
-function ItinerarioPlaceholder() {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <p className="text-sm text-white/30">
-        Itinerario disponibile nella story 10.3
-      </p>
-    </div>
-  )
-}
+import { ItinerarioTab } from '@/components/travel/ItinerarioTab'
 
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -49,7 +40,7 @@ export default function TripDetailPage() {
       {activeTab === 'luoghi' && <LuoghiTab tripId={id} />}
       {activeTab === 'alloggi' && <AlloggiTab tripId={id} />}
       {activeTab === 'trasporti' && <TrasportiTab tripId={id} />}
-      {activeTab === 'itinerario' && <ItinerarioPlaceholder />}
+      {activeTab === 'itinerario' && <ItinerarioTab trip={trip} />}
     </div>
   )
 }

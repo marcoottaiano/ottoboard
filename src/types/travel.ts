@@ -119,3 +119,40 @@ export interface CreateTransportInput {
 }
 
 export type UpdateTransportInput = Partial<Omit<CreateTransportInput, 'trip_id'>>
+
+// ─── Itinerary ────────────────────────────────────────────────────────────────
+
+export type TimeSlot = 'colazione' | 'mattina' | 'pranzo' | 'pomeriggio' | 'cena' | 'sera'
+export type ItineraryItemType = 'place' | 'accommodation_checkin' | 'accommodation_checkout'
+
+export interface TripItineraryItem {
+  id: string
+  trip_id: string
+  user_id: string
+  day_date: string          // DATE YYYY-MM-DD
+  time_slot: TimeSlot
+  item_type: ItineraryItemType
+  place_id: string | null
+  accommodation_id: string | null
+  orario_preciso: string | null  // TIME HH:MM
+  position: number
+  created_at: string
+}
+
+export interface CreateItineraryItemInput {
+  trip_id: string
+  day_date: string
+  time_slot: TimeSlot
+  item_type: ItineraryItemType
+  place_id?: string | null
+  accommodation_id?: string | null
+  orario_preciso?: string | null
+  position?: number
+}
+
+export interface UpdateItineraryItemInput {
+  day_date?: string
+  time_slot?: TimeSlot
+  orario_preciso?: string | null
+  position?: number
+}

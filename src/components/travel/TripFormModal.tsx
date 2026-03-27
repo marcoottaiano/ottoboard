@@ -2,7 +2,13 @@
 
 import { useState, useRef } from 'react'
 import { X, Upload, ImageIcon } from 'lucide-react'
+import { toast } from 'sonner'
 import { useCreateTrip, useUpdateTrip } from '@/hooks/useTrips'
+import {
+  fetchItineraryItemsAfterDate,
+  deleteItineraryItemsAfterDate,
+} from '@/hooks/useTripItinerary'
+import { DateChangeWarningModal } from './DateChangeWarningModal'
 import type { Trip, TripStatus } from '@/types/travel'
 
 const STATUS_OPTIONS: { value: TripStatus; label: string }[] = [
@@ -32,6 +38,14 @@ export function TripFormModal({ trip, onClose }: Props) {
   const [dateError, setDateError] = useState<string | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Date-change conflict state
+  const [capturedDataFine, setCapturedDataFine] = useState('')
+  const [warningItems, setWarningItems] = useState<
+    Array<{ id: string; day_date: string; place_nome: string | null }>
+  >([])
+  const [showWarning, setShowWarning] = useState(false)
+  const [warningLoading, setWarningLoading] = useState(false)
 
   const isPending = createTrip.isPending || updateTrip.isPending
 
@@ -64,10 +78,7 @@ export function TripFormModal({ trip, onClose }: Props) {
     return true
   }
 
-  const handleSubmit = () => {
-    if (!nome.trim()) return
-    if (!validate()) return
-
+  const doSave = () => {
     const input = {
       nome: nome.trim(),
       stato,
@@ -77,21 +88,75 @@ export function TripFormModal({ trip, onClose }: Props) {
     }
 
     if (isEditing) {
-      updateTrip.mutate(
-        { id: trip.id, updates: input, coverFile },
-        { onSuccess: onClose }
-      )
+      updateTrip.mutate({ id: trip.id, updates: input, coverFile }, { onSuccess: onClose })
     } else {
-      createTrip.mutate(
-        { input, coverFile },
-        { onSuccess: onClose }
-      )
+      createTrip.mutate({ input, coverFile }, { onSuccess: onClose })
     }
   }
 
-  const canSubmit = nome.trim().length > 0 && !isPending
+  const handleSubmit = async () => {
+    if (!nome.trim()) return
+    if (!validate()) return
+
+    // Check for date-shrink conflict only when editing an existing trip with a shorter data_fine
+    if (
+      isEditing &&
+      trip.data_fine &&
+      dataFine &&
+      dataFine < trip.data_fine
+    ) {
+      setWarningLoading(true)
+      try {
+        const affected = await fetchItineraryItemsAfterDate(trip.id, dataFine)
+        setWarningLoading(false)
+        if (affected.length > 0) {
+          setCapturedDataFine(dataFine)
+          setWarningItems(affected)
+          setShowWarning(true)
+          return
+        }
+      } catch {
+        setWarningLoading(false)
+        toast.error('Errore nel verificare gli elementi dell\'itinerario')
+        return
+      }
+    }
+
+    doSave()
+  }
+
+  const handleWarningConfirm = async () => {
+    setWarningLoading(true)
+    try {
+      await deleteItineraryItemsAfterDate(trip!.id, capturedDataFine)
+      setWarningLoading(false)
+      setShowWarning(false)
+      doSave()
+    } catch {
+      setWarningLoading(false)
+      toast.error('Errore durante l\'eliminazione degli elementi. Riprova.')
+    }
+  }
+
+  const handleWarningCancel = () => {
+    // Revert data_fine to original value
+    setDataFine(trip?.data_fine ?? '')
+    setShowWarning(false)
+  }
+
+  const canSubmit = nome.trim().length > 0 && !isPending && !warningLoading
 
   return (
+    <>
+    {showWarning && (
+      <DateChangeWarningModal
+        affectedItems={warningItems}
+        newDataFine={capturedDataFine}
+        onConfirm={handleWarningConfirm}
+        onCancel={handleWarningCancel}
+        isLoading={warningLoading}
+      />
+    )}
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="w-full max-w-md bg-[#0f0f1a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
@@ -240,10 +305,11 @@ export function TripFormModal({ trip, onClose }: Props) {
             disabled={!canSubmit}
             className="px-4 py-2 text-sm font-medium rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
           >
-            {isPending ? 'Salvataggio…' : isEditing ? 'Salva modifiche' : 'Crea viaggio'}
+            {isPending || warningLoading ? 'Salvataggio…' : isEditing ? 'Salva modifiche' : 'Crea viaggio'}
           </button>
         </div>
       </div>
     </div>
+    </>
   )
 }

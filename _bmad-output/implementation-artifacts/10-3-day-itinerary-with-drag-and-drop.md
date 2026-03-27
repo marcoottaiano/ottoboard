@@ -1,6 +1,6 @@
 # Story 10.3: Day Itinerary with Drag and Drop
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -32,8 +32,8 @@ So that I can visually plan each day of the trip.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 - DB migration for `trip_itinerary_items` table (AC: 3, 4, 5, 6, 7, 8)
-  - [ ] Create migration in `supabase/migrations/`:
+- [x] Task 1 - DB migration for `trip_itinerary_items` table (AC: 3, 4, 5, 6, 7, 8)
+  - [x] Create migration in `supabase/migrations/`:
     ```sql
     CREATE TABLE trip_itinerary_items (
       id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -51,57 +51,57 @@ So that I can visually plan each day of the trip.
     CREATE POLICY "trip_itinerary_items_rls" ON trip_itinerary_items FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
     ALTER TABLE trip_itinerary_items ENABLE ROW LEVEL SECURITY;
     ```
-  - [ ] Run `supabase gen types typescript --local > src/lib/supabase/types.ts`
+  - [x] Run `supabase gen types typescript --local > src/lib/supabase/types.ts` (types added manually to `src/types/travel.ts` — no generated types file in this project)
 
-- [ ] Task 2 - Create `useTripItinerary` hook (AC: 3–10)
-  - [ ] Create `src/hooks/useTripItinerary.ts`:
+- [x] Task 2 - Create `useTripItinerary` hook (AC: 3–10)
+  - [x] Create `src/hooks/useTripItinerary.ts`:
     - `useTripItineraryItems(tripId)` — fetch all items for trip, keyed by `{ day_date, time_slot }`
     - `useAddItineraryItem()` — insert item with `item_type = 'place'`, optimistic + rollback
     - `useMoveItineraryItem()` — update `day_date` + `time_slot` + `position`, optimistic + rollback
     - `useRemoveItineraryItem()` — delete item, optimistic + rollback
     - `useSetExactTime()` — update `orario_preciso` on item, optimistic + rollback
-  - [ ] Accommodation check-in/out events: derived client-side from `useTripAccommodations` data — NOT stored in `trip_itinerary_items`; rendered as read-only non-draggable items
+  - [x] Accommodation check-in/out events: derived client-side from `useTripAccommodations` data — NOT stored in `trip_itinerary_items`; rendered as read-only non-draggable items
 
-- [ ] Task 3 - Build ItinerarioTab (AC: 1, 2)
-  - [ ] Create `src/components/travel/ItinerarioTab.tsx` — main tab container
-  - [ ] If trip has no dates: show disabled state message
-  - [ ] If trip has dates: generate day list from `data_inizio` to `data_fine` (inclusive) using `toLocalDateStr()` — use `getFullYear/getMonth/getDate` NOT `toISOString()`
-  - [ ] Day tab row: horizontal scrollable (`overflow-x-auto overflow-y-hidden`), one tab per day, format "Lun 5 Mag" using locale-aware day name
-  - [ ] Default selected tab: today's date if within range, else first day
+- [x] Task 3 - Build ItinerarioTab (AC: 1, 2)
+  - [x] Create `src/components/travel/ItinerarioTab.tsx` — main tab container
+  - [x] If trip has no dates: show disabled state message
+  - [x] If trip has dates: generate day list from `data_inizio` to `data_fine` (inclusive) using `toLocalDateStr()` — use `getFullYear/getMonth/getDate` NOT `toISOString()`
+  - [x] Day tab row: horizontal scrollable (`overflow-x-auto overflow-y-hidden`), one tab per day, format "Lun 5 Mag" using locale-aware day name
+  - [x] Default selected tab: today's date if within range, else first day
 
-- [ ] Task 4 - Day column layout with 6 time slots (AC: 2, 3, 4, 5, 6, 7, 8)
-  - [ ] Create `src/components/travel/ItineraryDayColumn.tsx` — shows 6 slot sections for selected day
-  - [ ] TIME_SLOTS constant: `['colazione', 'mattina', 'pranzo', 'pomeriggio', 'cena', 'sera']`
-  - [ ] Each slot: header label + droppable zone (dnd-kit `useDroppable`) + list of items
-  - [ ] Accommodation events: rendered in slot as non-draggable pills (check-in in 'colazione' slot, check-out in 'mattina' slot) — visually distinct (e.g., `opacity-60`, no drag handle)
+- [x] Task 4 - Day column layout with 6 time slots (AC: 2, 3, 4, 5, 6, 7, 8)
+  - [x] Create `src/components/travel/ItineraryDayColumn.tsx` — shows 6 slot sections for selected day
+  - [x] TIME_SLOTS constant: `['colazione', 'mattina', 'pranzo', 'pomeriggio', 'cena', 'sera']`
+  - [x] Each slot: header label + droppable zone (dnd-kit `useDroppable`) + list of items
+  - [x] Accommodation events: rendered in slot as non-draggable pills (check-in in 'colazione' slot, check-out in 'mattina' slot) — visually distinct (e.g., `opacity-60`, no drag handle)
 
-- [ ] Task 5 - DnD: unassigned places pool (AC: 3, 6)
-  - [ ] Create `src/components/travel/UnassignedPlacesPool.tsx` — shows all trip places not yet in any slot (or shown even if also in some slots, since same place can be in multiple slots)
-  - [ ] Each place card in pool: `useDraggable` from dnd-kit with `data = { placeId, sourceType: 'pool' }`
-  - [ ] Place already in a slot does NOT disappear from pool (references, not copies)
+- [x] Task 5 - DnD: unassigned places pool (AC: 3, 6)
+  - [x] Create `src/components/travel/UnassignedPlacesPool.tsx` — shows all trip places not yet in any slot (or shown even if also in some slots, since same place can be in multiple slots)
+  - [x] Each place card in pool: `useDraggable` from dnd-kit with `data = { placeId, sourceType: 'pool' }`
+  - [x] Place already in a slot does NOT disappear from pool (references, not copies)
 
-- [ ] Task 6 - DnD: dragging items between slots (AC: 3, 5)
-  - [ ] `DndContext` wrapping `ItinerarioTab` with sensors: `PointerSensor` (desktop) + `TouchSensor({ delay: 200, tolerance: 8 })` (mobile — same config as Kanban)
-  - [ ] `onDragEnd` handler:
+- [x] Task 6 - DnD: dragging items between slots (AC: 3, 5)
+  - [x] `DndContext` wrapping `ItinerarioTab` with sensors: `PointerSensor` (desktop) + `TouchSensor({ delay: 200, tolerance: 8 })` (mobile — same config as Kanban)
+  - [x] `onDragEnd` handler:
     - If from pool → slot: call `useAddItineraryItem` with `place_id`, `day_date`, `time_slot`
     - If from slot → slot: call `useMoveItineraryItem` with updated `day_date` + `time_slot`
     - If dropped back on pool or invalid target: call `useRemoveItineraryItem`
-  - [ ] Each placed card in slot: `useDraggable` with `data = { itemId, sourceSlot, sourceDay, sourceType: 'slot' }`
-  - [ ] Each slot zone: `useDroppable` with `id = \`${day_date}:${time_slot}\``
+  - [x] Each placed card in slot: `useDraggable` with `data = { itemId, sourceSlot, sourceDay, sourceType: 'slot' }`
+  - [x] Each slot zone: `useDroppable` with `id = \`${day_date}:${time_slot}\``
 
-- [ ] Task 7 - Exact time input on placed items (AC: 4)
-  - [ ] In slot item card: small time input (`<input type="time">`) shown on hover/tap
-  - [ ] On change: call `useSetExactTime()` with debounce (500ms)
-  - [ ] Display `orario_preciso` (e.g., "14:30") next to place name when set
+- [x] Task 7 - Exact time input on placed items (AC: 4)
+  - [x] In slot item card: small time input (`<input type="time">`) shown on hover/tap
+  - [x] On change: call `useSetExactTime()` with debounce (500ms)
+  - [x] Display `orario_preciso` (e.g., "14:30") next to place name when set
 
-- [ ] Task 8 - Date change conflict modal (AC: 9, 10)
-  - [ ] In `TripFormModal` (from story 10.1): when `data_fine` is reduced, check existing `trip_itinerary_items` for days outside new range
-  - [ ] If items exist on removed days: show `DateChangeWarningModal` listing affected place names
-  - [ ] On confirm: delete items in removed days, then save new dates
-  - [ ] On cancel: revert `data_fine` input to original value
+- [x] Task 8 - Date change conflict modal (AC: 9, 10)
+  - [x] In `TripFormModal` (from story 10.1): when `data_fine` is reduced, check existing `trip_itinerary_items` for days outside new range
+  - [x] If items exist on removed days: show `DateChangeWarningModal` listing affected place names
+  - [x] On confirm: delete items in removed days, then save new dates
+  - [x] On cancel: revert `data_fine` input to original value
 
-- [ ] Task 9 - Verification (AC: 1–10)
-  - [ ] Run `npm.cmd run build` — zero TypeScript errors
+- [x] Task 9 - Verification (AC: 1–10)
+  - [x] Run `npm.cmd run build` — zero TypeScript errors
   - [ ] Manual QA: trip with no dates → disabled state shown
   - [ ] Manual QA: drag from pool to slot → item appears, persisted to DB
   - [ ] Manual QA: drag between slots → updates in DB
@@ -187,16 +187,32 @@ Story 10.5 will add a "Genera percorso" button to this tab using coordinates fro
 
 ### Agent Model Used
 
-_to be filled by dev agent_
+claude-sonnet-4-6
 
 ### Completion Notes List
 
-_to be filled by dev agent_
+- Migration `trip_itinerary_items` created and applied via Supabase MCP `execute_sql`. Types added manually to `src/types/travel.ts` (no generated types file used in this project).
+- `useTripItinerary.ts`: 5 mutations (add, move, remove, setExactTime) all with optimistic update + rollback. Two utility functions for date-conflict check: `fetchItineraryItemsAfterDate` + `deleteItineraryItemsAfterDate`.
+- `ItinerarioTab.tsx`: DndContext with PointerSensor + TouchSensor (delay=200, tolerance=8). Day generation uses local Date constructor (no `toISOString()`). Tab row uses `overflow-x-auto overflow-y-hidden`. Defaults to today if in range, else first day.
+- `ItineraryDayColumn.tsx`: 6 droppable `SlotZone` components keyed `${dayDate}:${slot}`. Draggable slot items with hover-reveal time input (debounced 500ms) and remove button. Accommodation pills are non-draggable.
+- `UnassignedPlacesPool.tsx`: All trip places shown (references, not copies — same place can be in multiple slots). Pool is also droppable with id `'pool'` for slot→pool removal.
+- `DateChangeWarningModal.tsx`: Warns listing affected place names before confirming date shrink. Cancel reverts `dataFine` input to original value.
+- `TripFormModal.tsx`: Intercepts submit when editing with reduced `data_fine`, queries DB for affected items, shows warning modal, deletes items on confirm, reverts on cancel.
+- Build: `npm.cmd run build` — zero TypeScript errors, all 26 pages generated.
 
 ### File List
 
-_to be filled by dev agent_
+- `supabase/migrations/20260327000000_create_trip_itinerary_items.sql` (new)
+- `src/types/travel.ts` (modified — added TimeSlot, ItineraryItemType, TripItineraryItem, CreateItineraryItemInput, UpdateItineraryItemInput)
+- `src/hooks/useTripItinerary.ts` (new)
+- `src/components/travel/ItinerarioTab.tsx` (new)
+- `src/components/travel/ItineraryDayColumn.tsx` (new)
+- `src/components/travel/UnassignedPlacesPool.tsx` (new)
+- `src/components/travel/DateChangeWarningModal.tsx` (new)
+- `src/components/travel/TripFormModal.tsx` (modified — date-conflict check + warning modal)
+- `src/app/travel/[id]/page.tsx` (modified — replaced ItinerarioPlaceholder with ItinerarioTab)
 
 ## Change Log
 
 - 2026-03-26: Story created — Day Itinerary with Drag and Drop for Epic 10 Travel Planning Module.
+- 2026-03-27: Implementation complete — DB migration, hook, ItinerarioTab, ItineraryDayColumn, UnassignedPlacesPool, DateChangeWarningModal, TripFormModal update, page wired. Build passes zero TS errors.

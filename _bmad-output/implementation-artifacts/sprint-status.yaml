@@ -118,7 +118,7 @@ development_status:
   epic-10: in-progress
   10-1-trip-creation-and-management: review
   10-2-restaurants-attractions-and-accommodations: review
-  10-3-day-itinerary-with-drag-and-drop: ready-for-dev
+  10-3-day-itinerary-with-drag-and-drop: review
   10-4-trip-expense-summary: ready-for-dev
   10-5-itinerary-export-and-public-sharing: ready-for-dev
   epic-10-retrospective: optional
