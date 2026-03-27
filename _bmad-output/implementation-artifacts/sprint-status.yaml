@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-27  # Story 10-5 in-progress
+last_updated: 2026-03-27  # Epic 9 + Epic 10 completati
 project: ottoboard
 project_key: NOKEY
 tracking_system: file-system
@@ -110,17 +110,17 @@ development_status:
   epic-8-retrospective: optional
 
   # EPIC 9: Weekly Life Review
-  epic-9: in-progress
-  9-1-weekly-review-modal: review
+  epic-9: done
+  9-1-weekly-review-modal: done
   epic-9-retrospective: optional
 
   # EPIC 10: Travel Planning Module
-  epic-10: in-progress
-  10-1-trip-creation-and-management: review
-  10-2-restaurants-attractions-and-accommodations: review
-  10-3-day-itinerary-with-drag-and-drop: review
-  10-4-trip-expense-summary: review
-  10-5-itinerary-export-and-public-sharing: review
+  epic-10: done
+  10-1-trip-creation-and-management: done
+  10-2-restaurants-attractions-and-accommodations: done
+  10-3-day-itinerary-with-drag-and-drop: done
+  10-4-trip-expense-summary: done
+  10-5-itinerary-export-and-public-sharing: done
   epic-10-retrospective: optional
 
   # EPIC 11: Gift & Wishlist
