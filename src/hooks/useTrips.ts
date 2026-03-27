@@ -75,6 +75,23 @@ export function useTrips() {
   })
 }
 
+export function useTrip(id: string) {
+  return useQuery<Trip | null>({
+    queryKey: [...TRIPS_KEY, id] as const,
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('trips')
+        .select('*')
+        .eq('id', id)
+        .single()
+      if (error) throw error
+      return data as Trip
+    },
+    enabled: !!id,
+  })
+}
+
 export function useCreateTrip() {
   const queryClient = useQueryClient()
   return useMutation({

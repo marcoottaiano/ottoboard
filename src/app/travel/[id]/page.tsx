@@ -1,29 +1,55 @@
 'use client'
 
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft, Plane } from 'lucide-react'
+import { useTrip } from '@/hooks/useTrips'
+import { TripDetailHeader } from '@/components/travel/TripDetailHeader'
+import { TripDetailTabs, type TripTab } from '@/components/travel/TripDetailTabs'
+import { LuoghiTab } from '@/components/travel/LuoghiTab'
+import { AlloggiTab } from '@/components/travel/AlloggiTab'
+import { TrasportiTab } from '@/components/travel/TrasportiTab'
+
+function ItinerarioPlaceholder() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <p className="text-sm text-white/30">
+        Itinerario disponibile nella story 10.3
+      </p>
+    </div>
+  )
+}
 
 export default function TripDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { data: trip, isLoading, error } = useTrip(id)
+  const [activeTab, setActiveTab] = useState<TripTab>('luoghi')
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen px-4 py-6 md:px-8 md:py-8 max-w-5xl mx-auto">
+        <div className="h-8 w-48 bg-white/[0.04] rounded-xl animate-pulse mb-4" />
+        <div className="h-4 w-64 bg-white/[0.03] rounded-xl animate-pulse" />
+      </div>
+    )
+  }
+
+  if (error || !trip) {
+    return (
+      <div className="min-h-screen px-4 py-6 md:px-8 md:py-8 max-w-5xl mx-auto">
+        <p className="text-sm text-red-400">Viaggio non trovato.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen px-4 py-6 md:px-8 md:py-8 max-w-5xl mx-auto">
-      <div className="flex items-center gap-3 mb-8">
-        <Link
-          href="/travel"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-200"
-        >
-          <ArrowLeft size={16} />
-        </Link>
-        <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-          <Plane size={15} className="text-blue-400" />
-        </div>
-        <h1 className="text-lg font-semibold text-white">Dettaglio viaggio</h1>
-      </div>
-      <p className="text-sm text-white/40">
-        Trip ID: {id} — Sezioni disponibili nelle storie 10.2–10.5
-      </p>
+      <TripDetailHeader trip={trip} />
+      <TripDetailTabs active={activeTab} onChange={setActiveTab} />
+
+      {activeTab === 'luoghi' && <LuoghiTab tripId={id} />}
+      {activeTab === 'alloggi' && <AlloggiTab tripId={id} />}
+      {activeTab === 'trasporti' && <TrasportiTab tripId={id} />}
+      {activeTab === 'itinerario' && <ItinerarioPlaceholder />}
     </div>
   )
 }
