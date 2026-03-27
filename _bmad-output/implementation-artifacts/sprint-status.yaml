@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-19
-last_updated: 2026-03-26  # Epic 10 Travel Planning stories created (ready-for-dev)
+last_updated: 2026-03-27  # Story 10-5 in-progress
 project: ottoboard
 project_key: NOKEY
 tracking_system: file-system
@@ -120,7 +120,7 @@ development_status:
   10-2-restaurants-attractions-and-accommodations: review
   10-3-day-itinerary-with-drag-and-drop: review
   10-4-trip-expense-summary: review
-  10-5-itinerary-export-and-public-sharing: ready-for-dev
+  10-5-itinerary-export-and-public-sharing: review
   epic-10-retrospective: optional
 
   # EPIC 11: Gift & Wishlist

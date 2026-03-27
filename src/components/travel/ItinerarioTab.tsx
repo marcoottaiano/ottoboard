@@ -9,7 +9,8 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import { CalendarOff } from 'lucide-react'
+import { CalendarOff, Map } from 'lucide-react'
+import { openGoogleMapsRoute, getItineraryWaypoints } from '@/lib/travel/routeGenerator'
 import type { Trip, TripPlace, TimeSlot } from '@/types/travel'
 import { useTripPlaces } from '@/hooks/useTripPlaces'
 import { useTripAccommodations } from '@/hooks/useTripAccommodations'
@@ -178,6 +179,13 @@ export function ItinerarioTab({ trip }: Props) {
     }
   }
 
+  // ── Route waypoints — must be before any early return (hooks rule) ───────────
+  const routeWaypoints = useMemo(
+    () => getItineraryWaypoints(itineraryItems, places),
+    [itineraryItems, places]
+  )
+  const hasEnoughWaypoints = routeWaypoints.length >= 2
+
   // ── Disabled state ─────────────────────────────────────────────────────────
   if (!trip.data_inizio || !trip.data_fine) {
     return (
@@ -193,6 +201,22 @@ export function ItinerarioTab({ trip }: Props) {
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="flex flex-col gap-5">
+        {/* Route button — shown only when ≥2 places with coordinates */}
+        {hasEnoughWaypoints && (
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                const opened = openGoogleMapsRoute(itineraryItems, places)
+                if (!opened) alert('Il browser ha bloccato l\'apertura del link. Consenti i popup per questo sito.')
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
+            >
+              <Map size={13} />
+              Genera percorso
+            </button>
+          </div>
+        )}
+
         {/* Day tab row — overflow-x-auto overflow-y-hidden (CSS spec guard) */}
         <div className="overflow-x-auto overflow-y-hidden">
           <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06] w-fit min-w-full md:min-w-0">

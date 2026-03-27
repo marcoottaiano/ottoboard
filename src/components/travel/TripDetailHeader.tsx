@@ -1,8 +1,15 @@
 'use client'
 
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { ArrowLeft, Calendar, Users, Plane } from 'lucide-react'
 import type { Trip, TripStatus } from '@/types/travel'
+
+// Loaded dynamically because PdfExportButton depends on @react-pdf/renderer (browser-only)
+const PdfExportButton = dynamic(
+  () => import('./PdfExportButton').then((mod) => mod.PdfExportButton),
+  { ssr: false }
+)
 
 const STATUS_LABELS: Record<TripStatus, string> = {
   bozza: 'Bozza',
@@ -48,10 +55,11 @@ export function TripDetailHeader({ trip }: Props) {
         </div>
         <h1 className="text-lg font-semibold text-white truncate">{trip.nome}</h1>
         <span
-          className={`ml-auto text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${STATUS_COLORS[trip.stato]}`}
+          className={`text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${STATUS_COLORS[trip.stato]}`}
         >
           {STATUS_LABELS[trip.stato]}
         </span>
+        <PdfExportButton tripId={trip.id} />
       </div>
 
       <div className="flex items-center gap-4 text-xs text-white/40 pl-1">

@@ -13,7 +13,7 @@ const withPWA = withPWAInit({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ['react-muscle-highlighter'],
+  transpilePackages: ['react-muscle-highlighter', '@react-pdf/renderer'],
   images: {
     remotePatterns: [
       {
