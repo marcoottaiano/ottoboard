@@ -50,6 +50,7 @@ export function useCreatePlace() {
       queryClient.setQueryData<TripPlace[]>(key(input.trip_id), (old) => [...(old ?? []), temp])
       return { previous }
     },
+    onSuccess: () => toast.success('Luogo aggiunto'),
     onError: (_err, input, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(input.trip_id), ctx.previous)
       toast.error('Errore durante il salvataggio del luogo')
@@ -74,6 +75,7 @@ export function useUpdatePlace() {
       )
       return { previous }
     },
+    onSuccess: () => toast.success('Luogo aggiornato'),
     onError: (_err, { tripId }, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(tripId), ctx.previous)
       toast.error('Errore durante la modifica del luogo')
@@ -96,6 +98,7 @@ export function useDeletePlace() {
       queryClient.setQueryData<TripPlace[]>(key(tripId), (old) => (old ?? []).filter((p) => p.id !== id))
       return { previous }
     },
+    onSuccess: () => toast.success('Luogo eliminato'),
     onError: (_err, { tripId }, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(tripId), ctx.previous)
       toast.error('Errore durante l\'eliminazione del luogo')

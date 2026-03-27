@@ -160,6 +160,7 @@ export function useSetExactTime() {
       )
       return { previous }
     },
+    onSuccess: () => toast.success('Orario salvato'),
     onError: (_err, { tripId }, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(tripId), ctx.previous)
       toast.error('Errore durante il salvataggio dell\'orario')

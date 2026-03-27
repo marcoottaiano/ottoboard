@@ -50,6 +50,7 @@ export function useCreateTransport() {
       queryClient.setQueryData<TripTransport[]>(key(input.trip_id), (old) => [...(old ?? []), temp])
       return { previous }
     },
+    onSuccess: () => toast.success('Trasporto aggiunto'),
     onError: (_err, input, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(input.trip_id), ctx.previous)
       toast.error('Errore durante il salvataggio del trasporto')
@@ -81,6 +82,7 @@ export function useUpdateTransport() {
       )
       return { previous }
     },
+    onSuccess: () => toast.success('Trasporto aggiornato'),
     onError: (_err, { tripId }, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(tripId), ctx.previous)
       toast.error('Errore durante la modifica del trasporto')
@@ -105,6 +107,7 @@ export function useDeleteTransport() {
       )
       return { previous }
     },
+    onSuccess: () => toast.success('Trasporto eliminato'),
     onError: (_err, { tripId }, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(tripId), ctx.previous)
       toast.error('Errore durante l\'eliminazione del trasporto')

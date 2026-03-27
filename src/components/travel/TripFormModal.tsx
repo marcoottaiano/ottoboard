@@ -37,6 +37,7 @@ export function TripFormModal({ trip, onClose }: Props) {
   const [coverPreview, setCoverPreview] = useState<string | null>(trip?.cover_photo_url ?? null)
   const [dateError, setDateError] = useState<string | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Date-change conflict state
@@ -49,9 +50,7 @@ export function TripFormModal({ trip, onClose }: Props) {
 
   const isPending = createTrip.isPending || updateTrip.isPending
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const applyFile = (file: File) => {
     setFileError(null)
     const ext = file.name.split('.').pop()?.toLowerCase()
     const allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif']
@@ -67,6 +66,18 @@ export function TripFormModal({ trip, onClose }: Props) {
     const reader = new FileReader()
     reader.onload = (ev) => setCoverPreview(ev.target?.result as string)
     reader.readAsDataURL(file)
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) applyFile(file)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (file) applyFile(file)
   }
 
   const validate = (): boolean => {
@@ -180,8 +191,17 @@ export function TripFormModal({ trip, onClose }: Props) {
               Foto di copertina
             </label>
             <div
-              className="relative h-28 rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden cursor-pointer hover:border-white/[0.14] transition-colors"
+              className={[
+                'relative h-28 rounded-xl border overflow-hidden cursor-pointer transition-colors',
+                isDragOver
+                  ? 'border-blue-500/60 bg-blue-500/[0.06]'
+                  : 'border-white/[0.08] bg-white/[0.02] hover:border-white/[0.14]',
+              ].join(' ')}
               onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
+              onDragEnter={(e) => { e.preventDefault(); setIsDragOver(true) }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleDrop}
             >
               {coverPreview ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -193,15 +213,19 @@ export function TripFormModal({ trip, onClose }: Props) {
               ) : (
                 <div className="flex flex-col items-center justify-center h-full gap-1.5 text-white/20">
                   <ImageIcon size={20} />
-                  <span className="text-[11px]">Carica immagine</span>
+                  <span className="text-[11px]">
+                    {isDragOver ? 'Rilascia qui' : 'Trascina o clicca per caricare'}
+                  </span>
                 </div>
               )}
-              <div className="absolute bottom-2 right-2">
-                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 text-white/60 text-[10px]">
-                  <Upload size={10} />
-                  Scegli
+              {!isDragOver && (
+                <div className="absolute bottom-2 right-2">
+                  <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-black/50 text-white/60 text-[10px]">
+                    <Upload size={10} />
+                    Scegli
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             {fileError && (
               <p className="text-[11px] text-red-400 mt-1.5">{fileError}</p>

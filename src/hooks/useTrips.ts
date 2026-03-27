@@ -145,6 +145,7 @@ export function useCreateTrip() {
       queryClient.setQueryData<Trip[]>(TRIPS_KEY, (old) => [tempTrip, ...(old ?? [])])
       return { previous }
     },
+    onSuccess: () => toast.success('Viaggio creato'),
     onError: (_err, _vars, context) => {
       if (context?.previous) queryClient.setQueryData(TRIPS_KEY, context.previous)
       toast.error('Errore durante la creazione del viaggio')
@@ -210,6 +211,7 @@ export function useUpdateTrip() {
           await removeStorageFile(supabase, path)
         }
       }
+      toast.success('Viaggio aggiornato')
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) queryClient.setQueryData(TRIPS_KEY, context.previous)
@@ -244,6 +246,7 @@ export function useDeleteTrip() {
           await removeStorageFile(supabase, path)
         }
       }
+      toast.success('Viaggio eliminato')
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) queryClient.setQueryData(TRIPS_KEY, context.previous)
@@ -276,6 +279,9 @@ export function useToggleShareToken() {
         (old ?? []).map((t) => (t.id === id ? { ...t, share_token: shareToken } : t))
       )
       return { previous }
+    },
+    onSuccess: (_shareToken, vars) => {
+      toast.success(vars.shareToken ? 'Link di condivisione attivato' : 'Link di condivisione disattivato')
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) queryClient.setQueryData(TRIPS_KEY, context.previous)

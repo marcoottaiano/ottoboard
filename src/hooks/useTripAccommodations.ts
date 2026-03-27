@@ -68,6 +68,7 @@ export function useCreateAccommodation() {
       queryClient.setQueryData<TripAccommodation[]>(key(input.trip_id), (old) => [...(old ?? []), temp])
       return { previous }
     },
+    onSuccess: () => toast.success('Alloggio aggiunto'),
     onError: (_err, input, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(input.trip_id), ctx.previous)
       toast.error('Errore durante il salvataggio dell\'alloggio')
@@ -99,6 +100,7 @@ export function useUpdateAccommodation() {
       )
       return { previous }
     },
+    onSuccess: () => toast.success('Alloggio aggiornato'),
     onError: (_err, { tripId }, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(tripId), ctx.previous)
       toast.error('Errore durante la modifica dell\'alloggio')
@@ -123,6 +125,7 @@ export function useDeleteAccommodation() {
       )
       return { previous }
     },
+    onSuccess: () => toast.success('Alloggio eliminato'),
     onError: (_err, { tripId }, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key(tripId), ctx.previous)
       toast.error('Errore durante l\'eliminazione dell\'alloggio')
