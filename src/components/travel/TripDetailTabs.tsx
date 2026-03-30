@@ -17,7 +17,7 @@ interface Props {
 
 export function TripDetailTabs({ active, onChange }: Props) {
   return (
-    <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-6 overflow-x-auto" style={{ overflowY: 'hidden' }}>
+    <div className="flex gap-1 p-1 rounded-xl bg-white/[0.04] border border-white/[0.06] mb-6 overflow-x-auto md:w-fit" style={{ overflowY: 'hidden' }}>
       {TABS.map(({ id, label }) => (
         <button
           key={id}
