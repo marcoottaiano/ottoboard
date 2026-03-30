@@ -82,6 +82,36 @@ export function useDeleteWishlistItem() {
   })
 }
 
+// Bulk toggle is_public for all user's items — used by public sharing feature
+// Optimistic update: immediately reflects new is_public state in cache, rolls back on error
+export function useToggleWishlistPublic() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (isPublic: boolean) => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Utente non autenticato')
+      const { error } = await supabase
+        .from('wishlist_items')
+        .update({ is_public: isPublic })
+        .eq('user_id', user.id)
+      if (error) throw error
+    },
+    onMutate: async (isPublic) => {
+      await queryClient.cancelQueries({ queryKey: WISHLIST_KEY })
+      const previous = queryClient.getQueryData<WishlistItem[]>(WISHLIST_KEY)
+      queryClient.setQueryData<WishlistItem[]>(WISHLIST_KEY, (old) =>
+        (old ?? []).map((item) => ({ ...item, is_public: isPublic }))
+      )
+      return { previous }
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(WISHLIST_KEY, context.previous)
+    },
+    onSettled: () => invalidateWishlist(queryClient),
+  })
+}
+
 // F6: newStatus typed as WishlistItemStatus (not string) — prevents invalid status writes
 // Optimistic status toggle — cycles desiderato → ricevuto → acquistato → desiderato
 export function useCycleWishlistStatus() {

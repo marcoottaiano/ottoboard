@@ -1,6 +1,6 @@
 # Story 11.2: Wishlist Organization & Public Sharing
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -20,53 +20,40 @@ so that friends and family can easily see what to gift me without requiring an a
 
 ## Tasks / Subtasks
 
-- [ ] Task 1 — Add `category` field to `WishlistItemModal` (AC: 1)
-  - [ ] Update `src/components/wishlist/WishlistItemModal.tsx` — add optional `category` text field
-  - [ ] Predefined suggestions (shown as quick-select chips, not strict select): Compleanno, Natale, Generale, Casa, Tech, Abbigliamento — user can type freely or pick one
-  - [ ] The `category` column already exists in DB from Story 11.1 migration — NO new migration needed for this field
-  - [ ] Update `useCreateWishlistItem` and `useUpdateWishlistItem` mutations to pass `category`
+- [x] Task 1 — Add `category` field to `WishlistItemModal` (AC: 1)
+  - [x] Update `src/components/wishlist/WishlistItemModal.tsx` — add optional `category` text field
+  - [x] Predefined suggestions (shown as quick-select chips, not strict select): Compleanno, Natale, Generale, Casa, Tech, Abbigliamento — user can type freely or pick one
+  - [x] The `category` column already exists in DB from Story 11.1 migration — NO new migration needed for this field
+  - [x] Update `useCreateWishlistItem` and `useUpdateWishlistItem` mutations to pass `category`
 
-- [ ] Task 2 — Category filter on wishlist page (AC: 2)
-  - [ ] In `src/components/wishlist/WishlistPage.tsx`, add a horizontal chip/tab filter above the item list
-  - [ ] "Tutti" chip selected by default → shows all items
-  - [ ] Additional chips: one per distinct category present in the user's items (derived client-side from fetched data)
-  - [ ] Filter is purely client-side (no refetch) — filter the array from `useWishlistItems()` result
-  - [ ] When a category chip is selected → show only items with `category = selectedCategory`
-  - [ ] Items with `category = null` appear under "Tutti" but NOT under any specific category chip
+- [x] Task 2 — Category filter on wishlist page (AC: 2)
+  - [x] In `src/components/wishlist/WishlistPage.tsx`, add a horizontal chip/tab filter above the item list
+  - [x] "Tutti" chip selected by default → shows all items
+  - [x] Additional chips: one per distinct category present in the user's items (derived client-side from fetched data)
+  - [x] Filter is purely client-side (no refetch) — filter the array from `useWishlistItems()` result
+  - [x] When a category chip is selected → show only items with `category = selectedCategory`
+  - [x] Items with `category = null` appear under "Tutti" but NOT under any specific category chip
 
-- [ ] Task 3 — Public sharing toggle (AC: 3)
-  - [ ] In `src/components/wishlist/WishlistPage.tsx`, add a "Condividi lista" button in the header
-  - [ ] Clicking "Condividi lista":
-    - If `is_public = false` for ALL user's items: **set `is_public = true` on ALL items** (bulk update via `UPDATE wishlist_items SET is_public = TRUE WHERE user_id = auth.uid()`)
-    - Show the public URL: `${window.location.origin}/wishlist/${items[0].share_id}/public` — but NOTE: public URL is per-user, not per-item. Use a **user-level share_id** approach (see note below)
-    - Copy-to-clipboard button next to the URL
-    - If already public: show "Rendi privata" button to revoke (`UPDATE wishlist_items SET is_public = FALSE WHERE user_id = auth.uid()`)
-  - [ ] **ARCHITECTURAL NOTE — Public URL strategy**: The epics spec says `/wishlist/[uuid]/public`. The `share_id` on `wishlist_items` is per-item. For a user-level public wishlist, the simplest approach consistent with the RLS policy (`is_public = TRUE`) is:
-    - Route parameter `uuid` = the authenticated user's own UUID (`user_id`)
-    - URL: `/wishlist/[userId]/public`
-    - Public page queries: `SELECT * FROM wishlist_items WHERE user_id = uuid AND is_public = TRUE`
-    - This avoids a separate `user_share_tokens` table and is consistent with `is_public` RLS policy
-    - Do NOT expose `share_id` per-item in the URL — use `user_id` as the stable public identifier
-  - [ ] Add `useToggleWishlistPublic()` mutation in `src/hooks/useWishlistItems.ts`
+- [x] Task 3 — Public sharing toggle (AC: 3)
+  - [x] In `src/components/wishlist/WishlistPage.tsx`, add a "Condividi lista" button in the header
+  - [x] Clicking "Condividi lista":
+    - [x] Bulk update `is_public = true` on all user's items via `useToggleWishlistPublic`
+    - [x] Show the public URL + copy-to-clipboard button
+    - [x] If already public: show "Rendi privata" button to revoke
+  - [x] Public URL uses `userId` as route param: `/wishlist/${userId}/public`
+  - [x] Add `useToggleWishlistPublic()` mutation in `src/hooks/useWishlistItems.ts`
 
-- [ ] Task 4 — Public page `/wishlist/[userId]/public` (AC: 4)
-  - [ ] Create `src/app/wishlist/[userId]/public/page.tsx` — **server component** (no auth required)
-  - [ ] Fetch: `SELECT * FROM wishlist_items WHERE user_id = userId AND is_public = TRUE ORDER BY created_at DESC`
-  - [ ] Use **server-side Supabase client** (anon key, no session) — same pattern as `src/app/shared/[token]/page.tsx` from Story 10.5
-  - [ ] If no items found (user doesn't exist, or `is_public = FALSE`): return `notFound()` from `next/navigation`
-  - [ ] Render read-only view:
-    - Page title: "Lista Desideri" (no user name — privacy)
-    - Items grouped by category (if any have category), or flat list
-    - Per item: photo thumbnail, name, price (if set), status badge
-    - "Acquistato" and "Ricevuto" items: `line-through` on name + muted badge (visually distinct)
-    - "Desiderato" items: full opacity
-    - NO edit, delete, or "Condividi" buttons
-  - [ ] No Sidebar, no BottomNav — standalone public layout
-  - [ ] Reuse `src/app/shared/layout.tsx` if it provides a simple layout wrapper, or create `src/app/wishlist/[userId]/layout.tsx`
-  - [ ] **RLS note**: The `is_public = TRUE` policy created in Story 11.1 migration already allows anon SELECT. No additional migration needed.
+- [x] Task 4 — Public page `/wishlist/[userId]/public` (AC: 4)
+  - [x] Create `src/app/wishlist/[userId]/public/page.tsx` — **server component** (no auth required)
+  - [x] Fetch via anon Supabase client: `wishlist_items WHERE user_id = userId AND is_public = TRUE`
+  - [x] `notFound()` if no public items found
+  - [x] Render read-only view with photo, name, price, status badge — grouped by category if categories exist
+  - [x] "Acquistato"/"Ricevuto" items: `line-through` + `opacity-60` visually distinct
+  - [x] NO edit, delete, or "Condividi" buttons
+  - [x] Standalone public layout: `src/app/wishlist/[userId]/layout.tsx`
 
-- [ ] Task 5 — Verification (AC: 1–4)
-  - [ ] Run `npm.cmd run build` — zero TypeScript errors
+- [x] Task 5 — Verification (AC: 1–4)
+  - [x] Run `npm.cmd run build` — zero TypeScript errors ✅
   - [ ] Manual QA: add item with category → category chip appears in filter
   - [ ] Manual QA: filter by category → only matching items shown; "Tutti" → all items
   - [ ] Manual QA: click "Condividi lista" → URL appears in UI, copyable to clipboard
@@ -188,6 +175,35 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
+- Build error 1: `MapIterator` spread not allowed with current TS target → fixed with `Array.from(categoryMap.keys())`
+- Build error 2: `Set` spread not allowed → fixed with `Array.from(new Set(...))`
+
 ### Completion Notes List
 
+- `CreateWishlistItemInput` in `src/types/wishlist.ts` updated to include `category` field.
+- `WishlistItemModal` extended with: `category` text input + 6 quick-select chip buttons (Compleanno, Natale, Generale, Casa, Tech, Abbigliamento). Clicking a chip toggles it — if already selected it deselects; user can also type freely.
+- `useToggleWishlistPublic()` mutation added to `useWishlistItems.ts` — bulk `UPDATE wishlist_items SET is_public = ? WHERE user_id = userId`. Includes optimistic update (onMutate sets cache immediately) + rollback on error + cancelQueries (F3 code-review fix).
+- `WishlistPage` updated with:
+  - Category filter bar (horizontal chips, `overflow-x: auto` + `overflow-y: hidden` per CLAUDE.md gotcha)
+  - "Condividi lista"/"Rendi privata" toggle — state uses `items.some(i => i.is_public)` so button persists when new item with default is_public=false is added (F1 fix)
+  - `selectedCategory` auto-resets via useEffect when active category no longer exists in items (F2 fix)
+  - `userId` resolved via `getSession()` (cached, no network round-trip) instead of `getUser()` — minimizes null-flash on first render (F4 fix)
+  - `setCopied` timer stored in `useRef`, cleared in useEffect cleanup to prevent memory leak (F6 fix)
+  - Public URL bar with copy-to-clipboard + sonner toast feedback
+  - Empty filtered state message when filter yields no results
+- `src/app/wishlist/[userId]/layout.tsx` (new) — standalone public layout, no sidebar/nav.
+- `src/app/wishlist/[userId]/public/page.tsx` (new):
+  - UUID validation on `params.userId` before Supabase query (F5 fix)
+  - `categoryMap` grouping uses `.push()` instead of spread — O(n) instead of O(n²) (F7 fix)
+  - Server component using anon `@supabase/supabase-js` client. Items grouped by category. Non-"desiderato" items rendered with `line-through` + `opacity-60`. Links safe-URL checked.
+- `WishlistItemModal.tsx`: chip toggle uses `category.trim() === suggestion` — trim-safe comparison (F8 fix)
+- Build: ✅ zero TypeScript errors. `/wishlist/[userId]/public` rendered as dynamic server route (153 B).
+
 ### File List
+
+- `src/types/wishlist.ts` (modified — added `category` to `CreateWishlistItemInput`)
+- `src/hooks/useWishlistItems.ts` (modified — added `useToggleWishlistPublic`)
+- `src/components/wishlist/WishlistItemModal.tsx` (modified — added category field + chips)
+- `src/components/wishlist/WishlistPage.tsx` (modified — category filter + share toggle + URL bar)
+- `src/app/wishlist/[userId]/layout.tsx` (new)
+- `src/app/wishlist/[userId]/public/page.tsx` (new)

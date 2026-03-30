@@ -16,7 +16,7 @@ export interface WishlistItem {
 
 export type CreateWishlistItemInput = Pick<
   WishlistItem,
-  'name' | 'link' | 'price' | 'photo_url'
+  'name' | 'link' | 'price' | 'photo_url' | 'category'
 >
 
 export type UpdateWishlistItemInput = Partial<

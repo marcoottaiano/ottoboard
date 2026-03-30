@@ -10,6 +10,8 @@ interface Props {
   onClose: () => void
 }
 
+const CATEGORY_SUGGESTIONS = ['Compleanno', 'Natale', 'Generale', 'Casa', 'Tech', 'Abbigliamento']
+
 export function WishlistItemModal({ item, onClose }: Props) {
   const createItem = useCreateWishlistItem()
   const updateItem = useUpdateWishlistItem()
@@ -18,6 +20,7 @@ export function WishlistItemModal({ item, onClose }: Props) {
   const [link, setLink] = useState(item?.link ?? '')
   const [price, setPrice] = useState<string>(item?.price != null ? String(item.price) : '')
   const [photoUrl, setPhotoUrl] = useState(item?.photo_url ?? '')
+  const [category, setCategory] = useState(item?.category ?? '')
   const [error, setError] = useState<string | null>(null)
 
   const isPending = createItem.isPending || updateItem.isPending
@@ -44,6 +47,7 @@ export function WishlistItemModal({ item, onClose }: Props) {
       link: link.trim() || null,
       price: parsedPrice,
       photo_url: photoUrl.trim() || null,
+      category: category.trim() || null,
     }
 
     // F5: show server error in the modal instead of silently swallowing it
@@ -86,6 +90,35 @@ export function WishlistItemModal({ item, onClose }: Props) {
               placeholder="Es. AirPods Pro"
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-rose-500/40 transition-colors"
             />
+          </div>
+
+          {/* Categoria */}
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5">Categoria (opzionale)</label>
+            <input
+              type="text"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="Es. Compleanno"
+              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-rose-500/40 transition-colors mb-2"
+            />
+            {/* Quick-select chips */}
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORY_SUGGESTIONS.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setCategory(category.trim() === suggestion ? '' : suggestion)}
+                  className={`px-2.5 py-1 rounded-full text-xs border transition-all duration-200 ${
+                    category === suggestion
+                      ? 'bg-rose-500/30 text-rose-300 border-rose-500/40'
+                      : 'bg-white/[0.04] text-white/40 border-white/[0.08] hover:text-white/60 hover:border-white/[0.14]'
+                  }`}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Link — F8: type="text" to allow URLs without protocol (amazon.it/...) */}
