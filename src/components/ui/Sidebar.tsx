@@ -200,12 +200,12 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
             {isPrivate ? <EyeOff size={15} /> : <Eye size={15} />}
             {isPrivate && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-orange-400" />}
           </button>
-          <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06]">
+          <Link href="/profile" className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] transition-colors">
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
               <User size={11} className="text-white/60" />
             </div>
             <span className="text-xs text-white/40 max-w-[80px] truncate">{userName ?? "…"}</span>
-          </div>
+          </Link>
           <button onClick={handleLogout} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200" title="Logout">
             <LogOut size={15} />
           </button>
@@ -214,7 +214,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
 
       {/* ── Bottom nav (mobile) ───────────────────────────────── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around h-16 border-t border-white/[0.06] bg-[#0a0a0f]/80 backdrop-blur-2xl px-2">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((item) => item.module !== "profile").map((item) => {
           const isActive = activeModule === item.module;
           const Icon = item.icon;
           return (
