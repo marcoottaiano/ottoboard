@@ -6,6 +6,7 @@ import { useWishlistItems, useToggleWishlistPublic } from '@/hooks/useWishlistIt
 import { WishlistItemCard } from './WishlistItemCard'
 import { WishlistItemModal } from './WishlistItemModal'
 import type { WishlistItem } from '@/types/wishlist'
+import { prioritySortValue } from '@/types/wishlist'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
@@ -61,11 +62,11 @@ export function WishlistPage() {
     }
   }, [categories, selectedCategory])
 
-  // Client-side filter: "Tutti" = null = show all
-  const filteredItems = useMemo(
-    () => (selectedCategory === null ? items : items.filter((i) => i.category === selectedCategory)),
-    [items, selectedCategory],
-  )
+  // Client-side filter + sort by priority (alta first, null last)
+  const filteredItems = useMemo(() => {
+    const filtered = selectedCategory === null ? items : items.filter((i) => i.category === selectedCategory)
+    return [...filtered].sort((a, b) => prioritySortValue(a.priority) - prioritySortValue(b.priority))
+  }, [items, selectedCategory])
 
   // F1: isPublic = true when at least one item is public (not requiring ALL to be public)
   // This prevents the URL bar from disappearing when a new item with is_public=false is added

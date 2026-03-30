@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { ExternalLink, Trash2 } from 'lucide-react'
 import { useCycleWishlistStatus, useDeleteWishlistItem } from '@/hooks/useWishlistItems'
-import { nextStatus, STATUS_LABELS } from '@/types/wishlist'
-import type { WishlistItem, WishlistItemStatus } from '@/types/wishlist'
+import { nextStatus, STATUS_LABELS, PRIORITY_LABELS } from '@/types/wishlist'
+import type { WishlistItem, WishlistItemStatus, WishlistItemPriority } from '@/types/wishlist'
 
 interface Props {
   item: WishlistItem
@@ -16,6 +16,12 @@ const STATUS_COLORS: Record<WishlistItemStatus, string> = {
   desiderato: 'bg-rose-500/20 text-rose-300 border-rose-500/30 hover:bg-rose-500/30',
   ricevuto:   'bg-blue-500/20 text-blue-300 border-blue-500/30 hover:bg-blue-500/30',
   acquistato: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30',
+}
+
+const PRIORITY_COLORS: Record<WishlistItemPriority, string> = {
+  alta:  'text-rose-300 bg-rose-500/10 border-rose-500/20',
+  media: 'text-amber-300 bg-amber-500/10 border-amber-500/20',
+  bassa: 'text-sky-300 bg-sky-500/10 border-sky-500/20',
 }
 
 // F1: only allow http/https links to prevent javascript: URI XSS
@@ -30,7 +36,6 @@ function isSafeUrl(url: string): boolean {
 
 export function WishlistItemCard({ item, onEdit }: Props) {
   const cycleStatus = useCycleWishlistStatus()
-  // F3: pass setConfirmDelete to reset it on delete error
   const [confirmDelete, setConfirmDelete] = useState(false)
   const deleteItem = useDeleteWishlistItem()
 
@@ -43,7 +48,6 @@ export function WishlistItemCard({ item, onEdit }: Props) {
       setConfirmDelete(true)
       return
     }
-    // F3: reset confirmDelete on error so user can try again or cancel
     deleteItem.mutate(item.id, {
       onError: () => setConfirmDelete(false),
     })
@@ -78,7 +82,7 @@ export function WishlistItemCard({ item, onEdit }: Props) {
         </button>
 
         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-          {/* Status badge — F10: aria-label describes current state and next action */}
+          {/* Status badge */}
           <button
             type="button"
             onClick={handleStatusClick}
@@ -89,6 +93,16 @@ export function WishlistItemCard({ item, onEdit }: Props) {
             {STATUS_LABELS[item.status]}
           </button>
 
+          {/* Priority badge */}
+          {item.priority && (
+            <span
+              aria-label={`Priorità ${PRIORITY_LABELS[item.priority]}`}
+              className={`px-2 py-0.5 rounded-full text-xs font-medium border ${PRIORITY_COLORS[item.priority]}`}
+            >
+              ↑ {PRIORITY_LABELS[item.priority]}
+            </span>
+          )}
+
           {/* Price */}
           {item.price != null && (
             <span className="text-xs text-white/40">
@@ -96,7 +110,7 @@ export function WishlistItemCard({ item, onEdit }: Props) {
             </span>
           )}
 
-          {/* F1: only render link if URL is safe (http/https) */}
+          {/* Link — only render if URL is safe (http/https) */}
           {safeLink && (
             <a
               href={safeLink}
@@ -113,7 +127,7 @@ export function WishlistItemCard({ item, onEdit }: Props) {
         </div>
       </div>
 
-      {/* F2: delete always visible on mobile, hover-only on desktop */}
+      {/* Delete — always visible on mobile, hover-only on desktop */}
       <div className="flex-shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
         {confirmDelete ? (
           <div className="flex items-center gap-1">

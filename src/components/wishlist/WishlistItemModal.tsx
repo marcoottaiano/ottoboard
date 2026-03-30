@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useCreateWishlistItem, useUpdateWishlistItem } from '@/hooks/useWishlistItems'
-import type { WishlistItem } from '@/types/wishlist'
+import type { WishlistItem, WishlistItemPriority } from '@/types/wishlist'
 
 interface Props {
   item?: WishlistItem | null
@@ -11,6 +11,12 @@ interface Props {
 }
 
 const CATEGORY_SUGGESTIONS = ['Compleanno', 'Natale', 'Generale', 'Casa', 'Tech', 'Abbigliamento']
+
+const PRIORITY_OPTIONS: { value: WishlistItemPriority; label: string; colors: string; activeColors: string }[] = [
+  { value: 'alta',  label: 'Alta',  colors: 'bg-white/[0.04] text-white/40 border-white/[0.08] hover:text-rose-300 hover:border-rose-500/30',   activeColors: 'bg-rose-500/20 text-rose-300 border-rose-500/40' },
+  { value: 'media', label: 'Media', colors: 'bg-white/[0.04] text-white/40 border-white/[0.08] hover:text-amber-300 hover:border-amber-500/30', activeColors: 'bg-amber-500/20 text-amber-300 border-amber-500/40' },
+  { value: 'bassa', label: 'Bassa', colors: 'bg-white/[0.04] text-white/40 border-white/[0.08] hover:text-sky-300 hover:border-sky-500/30',     activeColors: 'bg-sky-500/20 text-sky-300 border-sky-500/40' },
+]
 
 export function WishlistItemModal({ item, onClose }: Props) {
   const createItem = useCreateWishlistItem()
@@ -21,6 +27,7 @@ export function WishlistItemModal({ item, onClose }: Props) {
   const [price, setPrice] = useState<string>(item?.price != null ? String(item.price) : '')
   const [photoUrl, setPhotoUrl] = useState(item?.photo_url ?? '')
   const [category, setCategory] = useState(item?.category ?? '')
+  const [priority, setPriority] = useState<WishlistItemPriority | null>(item?.priority ?? null)
   const [error, setError] = useState<string | null>(null)
 
   const isPending = createItem.isPending || updateItem.isPending
@@ -40,17 +47,15 @@ export function WishlistItemModal({ item, onClose }: Props) {
       return
     }
 
-    // F8: accept any non-empty string as link (no type="url" restriction)
-    // The card's isSafeUrl() will prevent unsafe URLs from being rendered as hrefs
     const payload = {
       name: name.trim(),
       link: link.trim() || null,
       price: parsedPrice,
       photo_url: photoUrl.trim() || null,
       category: category.trim() || null,
+      priority,
     }
 
-    // F5: show server error in the modal instead of silently swallowing it
     const onError = (err: Error) => {
       setError(`Errore durante il salvataggio: ${err.message}`)
     }
@@ -92,6 +97,26 @@ export function WishlistItemModal({ item, onClose }: Props) {
             />
           </div>
 
+          {/* Priorità */}
+          <div>
+            <label className="block text-xs text-white/50 mb-1.5">Priorità (opzionale)</label>
+            <div className="flex gap-2">
+              {PRIORITY_OPTIONS.map(({ value, label, colors, activeColors }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setPriority(priority === value ? null : value)}
+                  aria-label={`Priorità ${label}`}
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-medium border transition-all duration-200 ${
+                    priority === value ? activeColors : colors
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Categoria */}
           <div>
             <label className="block text-xs text-white/50 mb-1.5">Categoria (opzionale)</label>
@@ -102,7 +127,6 @@ export function WishlistItemModal({ item, onClose }: Props) {
               placeholder="Es. Compleanno"
               className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder-white/20 focus:outline-none focus:border-rose-500/40 transition-colors mb-2"
             />
-            {/* Quick-select chips */}
             <div className="flex flex-wrap gap-1.5">
               {CATEGORY_SUGGESTIONS.map((suggestion) => (
                 <button
@@ -110,7 +134,7 @@ export function WishlistItemModal({ item, onClose }: Props) {
                   type="button"
                   onClick={() => setCategory(category.trim() === suggestion ? '' : suggestion)}
                   className={`px-2.5 py-1 rounded-full text-xs border transition-all duration-200 ${
-                    category === suggestion
+                    category.trim() === suggestion
                       ? 'bg-rose-500/30 text-rose-300 border-rose-500/40'
                       : 'bg-white/[0.04] text-white/40 border-white/[0.08] hover:text-white/60 hover:border-white/[0.14]'
                   }`}
@@ -121,7 +145,7 @@ export function WishlistItemModal({ item, onClose }: Props) {
             </div>
           </div>
 
-          {/* Link — F8: type="text" to allow URLs without protocol (amazon.it/...) */}
+          {/* Link */}
           <div>
             <label className="block text-xs text-white/50 mb-1.5">Link (opzionale)</label>
             <input
@@ -159,7 +183,7 @@ export function WishlistItemModal({ item, onClose }: Props) {
             />
           </div>
 
-          {/* Error — shows both client validation and server errors (F5) */}
+          {/* Error */}
           {error && (
             <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
               {error}

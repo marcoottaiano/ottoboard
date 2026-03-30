@@ -4,7 +4,8 @@
 import { notFound } from 'next/navigation'
 import { createClient as createAnonClient } from '@supabase/supabase-js'
 import { Gift } from 'lucide-react'
-import type { WishlistItem, WishlistItemStatus } from '@/types/wishlist'
+import type { WishlistItem, WishlistItemStatus, WishlistItemPriority } from '@/types/wishlist'
+import { prioritySortValue, PRIORITY_LABELS } from '@/types/wishlist'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -18,6 +19,12 @@ const STATUS_COLORS: Record<WishlistItemStatus, string> = {
   desiderato: 'text-rose-300 bg-rose-500/20 border-rose-500/30',
   ricevuto:   'text-blue-300 bg-blue-500/20 border-blue-500/30',
   acquistato: 'text-emerald-300 bg-emerald-500/20 border-emerald-500/30',
+}
+
+const PRIORITY_COLORS: Record<WishlistItemPriority, string> = {
+  alta:  'text-rose-300 bg-rose-500/10 border-rose-500/20',
+  media: 'text-amber-300 bg-amber-500/10 border-amber-500/20',
+  bassa: 'text-sky-300 bg-sky-500/10 border-sky-500/20',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -67,6 +74,11 @@ function PublicItemCard({ item }: { item: WishlistItem }) {
           <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_COLORS[item.status]}`}>
             {STATUS_LABELS[item.status]}
           </span>
+          {item.priority && (
+            <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${PRIORITY_COLORS[item.priority]}`}>
+              ↑ {PRIORITY_LABELS[item.priority]}
+            </span>
+          )}
           {item.price != null && (
             <span className={`text-xs ${isDone ? 'text-white/25' : 'text-white/40'}`}>
               €{item.price.toFixed(2)}
@@ -107,7 +119,10 @@ export default async function PublicWishlistPage({ params }: PageProps) {
     notFound()
   }
 
-  const items = data as WishlistItem[]
+  // Sort by priority (alta first, null last), preserving created_at order within same priority
+  const items = (data as WishlistItem[]).sort(
+    (a, b) => prioritySortValue(a.priority) - prioritySortValue(b.priority)
+  )
 
   // Group by category — items without category go into a null group
   // F7: use push (O(n)) instead of spread (O(n²))
