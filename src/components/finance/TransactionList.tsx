@@ -172,41 +172,44 @@ export function TransactionList({ month }: Props) {
   return (
     <div className="rounded-xl bg-white/5 border border-white/10 p-5">
       {/* Header row */}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <h3 className="text-sm font-medium text-gray-400 flex-1">Transazioni</h3>
-
-        {!isMultiSelect ? (
-          <>
+      <div className="flex flex-col gap-2 mb-4">
+        {/* Title + action button */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium text-white/50">Transazioni</h3>
+          {!isMultiSelect ? (
+            <button
+              onClick={enterMultiSelect}
+              className="text-xs text-white/30 hover:text-white/60 bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 transition-colors"
+            >
+              Seleziona
+            </button>
+          ) : (
+            <button
+              onClick={exitMultiSelect}
+              className="text-xs text-white/30 hover:text-white/60 bg-white/[0.04] border border-white/[0.08] rounded-lg px-2.5 py-1.5 transition-colors"
+            >
+              Annulla
+            </button>
+          )}
+        </div>
+        {/* Search + filter */}
+        {!isMultiSelect && (
+          <div className="flex gap-2">
             <input
               type="text"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(0) }}
               placeholder="Cerca..."
-              className="text-xs bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-gray-300 placeholder:text-gray-600 focus:outline-none w-32"
+              className="flex-1 min-w-0 text-xs bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2 text-white/70 placeholder-white/20 focus:outline-none focus:border-white/20 transition-colors"
             />
-
             <Select
               value={typeFilter}
               onChange={(v) => { setTypeFilter(v as TransactionType | 'all'); setPage(0) }}
               options={TYPE_OPTIONS}
               showPlaceholder={false}
-              className="w-28"
+              className="w-28 flex-shrink-0"
             />
-
-            <button
-              onClick={enterMultiSelect}
-              className="text-xs text-gray-400 hover:text-gray-200 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 transition-colors"
-            >
-              Seleziona
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={exitMultiSelect}
-            className="text-xs text-gray-400 hover:text-gray-200 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 transition-colors"
-          >
-            Annulla
-          </button>
+          </div>
         )}
       </div>
 
@@ -300,77 +303,70 @@ export function TransactionList({ month }: Props) {
       ) : paginated.length === 0 ? (
         <div className="py-10 text-center text-gray-600 text-sm">Nessuna transazione trovata</div>
       ) : (
-        <div className="overflow-x-auto overflow-y-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-gray-600 border-b border-white/5">
-                {isMultiSelect && (
-                  <th className="pb-2 pr-2 w-8">
-                    <input
-                      type="checkbox"
-                      checked={allPageSelected}
-                      ref={(el) => {
-                        if (el) el.indeterminate = somePageSelected && !allPageSelected
-                      }}
-                      onChange={toggleSelectAllPage}
-                      className="w-3.5 h-3.5 rounded accent-emerald-500 cursor-pointer"
-                    />
-                  </th>
+        <div className="space-y-0.5">
+          {/* Header — desktop only */}
+          <div className="hidden md:grid md:grid-cols-[auto_1fr_1fr_auto] items-center gap-3 px-2 pb-2 border-b border-white/[0.06] text-xs text-white/25 font-normal">
+            {isMultiSelect && (
+              <input
+                type="checkbox"
+                checked={allPageSelected}
+                ref={(el) => { if (el) el.indeterminate = somePageSelected && !allPageSelected }}
+                onChange={toggleSelectAllPage}
+                className="w-3.5 h-3.5 rounded accent-emerald-500 cursor-pointer"
+              />
+            )}
+            <span>Data · Categoria</span>
+            <span>Descrizione</span>
+            <span className="text-right">Importo</span>
+          </div>
+
+          {paginated.map((t) => (
+            <div
+              key={t.id}
+              onClick={() => isMultiSelect ? toggleId(t.id) : setSelected(t)}
+              className={`flex items-center gap-3 px-2 py-3 rounded-xl cursor-pointer transition-colors border border-transparent hover:bg-white/[0.04] hover:border-white/[0.06] ${
+                isMultiSelect && selectedIds.has(t.id) ? 'bg-emerald-500/[0.06] border-emerald-500/20' : ''
+              }`}
+            >
+              {/* Checkbox (multi-select) */}
+              {isMultiSelect && (
+                <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(t.id)}
+                    onChange={() => toggleId(t.id)}
+                    className="w-3.5 h-3.5 rounded accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+              )}
+
+              {/* Date */}
+              <span className="flex-shrink-0 text-xs text-white/30 w-10 tabular-nums">
+                {new Date(t.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
+              </span>
+
+              {/* Category + description */}
+              <div className="flex-1 min-w-0 flex flex-col gap-0.5 md:flex-row md:items-center md:gap-2">
+                {t.category ? (
+                  <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md w-fit flex-shrink-0" style={{ background: `${t.category.color}20`, color: t.category.color ?? undefined }}>
+                    <span className="flex-shrink-0">{t.category.icon}</span>
+                    <span className="whitespace-nowrap">{t.category.name}</span>
+                    {t.category_locked && <Lock size={10} className="shrink-0 text-amber-400" />}
+                  </span>
+                ) : (
+                  <span className="text-xs text-white/20 flex-shrink-0">—</span>
                 )}
-                <th className="pb-2 font-normal">Data</th>
-                <th className="pb-2 font-normal">Categoria</th>
-                <th className="pb-2 font-normal">Descrizione</th>
-                <th className="pb-2 font-normal text-right">Importo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((t) => (
-                <tr
-                  key={t.id}
-                  onClick={() => {
-                    if (isMultiSelect) {
-                      toggleId(t.id)
-                    } else {
-                      setSelected(t)
-                    }
-                  }}
-                  className={`border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors ${
-                    isMultiSelect && selectedIds.has(t.id) ? 'bg-emerald-500/5' : ''
-                  }`}
-                >
-                  {isMultiSelect && (
-                    <td className="py-2.5 pr-2 w-8" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(t.id)}
-                        onChange={() => toggleId(t.id)}
-                        className="w-3.5 h-3.5 rounded accent-emerald-500 cursor-pointer"
-                      />
-                    </td>
-                  )}
-                  <td className="py-2.5 text-gray-500 whitespace-nowrap">
-                    {new Date(t.date).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}
-                  </td>
-                  <td className="py-2.5">
-                    {t.category ? (
-                      <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md" style={{ background: `${t.category.color}20`, color: t.category.color ?? undefined }}>
-                        {t.category.icon} {t.category.name}
-                        {t.category_locked && <Lock size={10} className="shrink-0 text-amber-400" />}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-gray-600">
-                        —{t.category_locked && <Lock size={10} className="text-amber-400" />}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-2.5 text-gray-400 max-w-[200px] truncate">{t.description ?? '—'}</td>
-                  <td className={`py-2.5 font-medium text-right whitespace-nowrap ${t.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    <PrivacyValue>{t.type === 'income' ? '+' : '-'}{formatEur(t.amount)}</PrivacyValue>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                {t.description && (
+                  <span className="text-xs text-white/40 truncate">{t.description}</span>
+                )}
+              </div>
+
+              {/* Amount */}
+              <span className={`flex-shrink-0 text-sm font-semibold tabular-nums ${t.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
+                <PrivacyValue>{t.type === 'income' ? '+' : ''}{formatEur(t.amount)}</PrivacyValue>
+              </span>
+            </div>
+          ))}
         </div>
       )}
 

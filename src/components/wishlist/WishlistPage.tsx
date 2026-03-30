@@ -123,23 +123,23 @@ export function WishlistPage() {
             <button
               onClick={handleShareToggle}
               disabled={togglePublic.isPending}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-all duration-200 disabled:opacity-50 ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all duration-200 disabled:opacity-50 whitespace-nowrap ${
                 isPublic
                   ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border-emerald-500/30'
-                  : 'bg-white/[0.04] text-white/50 hover:text-white/70 hover:bg-white/[0.06] border-white/[0.08]'
+                  : 'bg-white/[0.04] text-white/40 hover:text-white/60 hover:bg-white/[0.06] border-white/[0.08]'
               }`}
               aria-label={isPublic ? 'Rendi wishlist privata' : 'Condividi wishlist pubblicamente'}
             >
-              {isPublic ? <Lock size={13} /> : <Share2 size={13} />}
-              {isPublic ? 'Rendi privata' : 'Condividi lista'}
+              {isPublic ? <Lock size={11} /> : <Share2 size={11} />}
+              {isPublic ? 'Rendi privata' : 'Condividi'}
             </button>
           )}
 
           <button
             onClick={handleAdd}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30 transition-all duration-200"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30 transition-all duration-200"
           >
-            <Plus size={14} />
+            <Plus size={13} />
             Aggiungi
           </button>
         </div>

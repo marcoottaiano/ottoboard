@@ -15,7 +15,7 @@ function InputField({ label, type, value, onChange, placeholder, showToggle }: {
 
   return (
     <div>
-      <label className="text-xs text-white/40 mb-1.5 block">{label}</label>
+      {label && <label className="text-xs text-white/40 mb-1.5 block">{label}</label>}
       <div className="relative">
         <input type={inputType} value={value} onChange={(e) => onChange(e.target.value)} required placeholder={placeholder} className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white/20 focus:bg-white/[0.07] transition-all pr-10" />
         {showToggle && (
@@ -142,9 +142,7 @@ function LoginContent() {
                       Hai dimenticato la password?
                     </Link>
                   </div>
-                  <div className="relative">
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white/20 focus:bg-white/[0.07] transition-all" />
-                  </div>
+                  <InputField label="" type="password" value={password} onChange={setPassword} placeholder="••••••••" showToggle />
                 </div>
 
                 {error && (

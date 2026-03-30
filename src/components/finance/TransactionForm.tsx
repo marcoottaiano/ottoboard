@@ -53,32 +53,37 @@ export function TransactionForm() {
     }
   }
 
+  const accentColor = type === 'income' ? 'emerald' : 'red'
+
   return (
-    <div className="rounded-xl bg-white/5 border border-white/10 p-5">
-      <h3 className="text-sm font-medium text-gray-400 mb-3">Aggiungi transazione</h3>
-      <form onSubmit={handleSubmit}>
-        <div className="flex flex-wrap gap-2 items-end">
-          {/* Tipo */}
-          <div className="flex rounded-lg overflow-hidden border border-white/10 flex-shrink-0">
+    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.07] p-4">
+      <h3 className="text-xs font-medium text-white/40 uppercase tracking-wider mb-4">Aggiungi transazione</h3>
+      <form onSubmit={handleSubmit} className="space-y-3">
+
+        {/* Row 1: Tipo + Importo */}
+        <div className="flex gap-2">
+          {/* Tipo toggle */}
+          <div className="flex rounded-xl overflow-hidden border border-white/[0.08] flex-shrink-0">
             <button
               type="button"
               onClick={() => { setType('expense'); setCategoryId(''); setErrors((prev) => ({ ...prev, category: undefined, submit: undefined })) }}
-              className={`px-3 py-2 text-xs font-medium transition-colors ${type === 'expense' ? 'bg-red-500/20 text-red-400' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`px-4 py-2.5 text-xs font-semibold transition-all duration-200 ${type === 'expense' ? 'bg-red-500/20 text-red-400' : 'text-white/30 hover:text-white/60 hover:bg-white/[0.04]'}`}
             >
               Uscita
             </button>
+            <div className="w-px bg-white/[0.08]" />
             <button
               type="button"
               onClick={() => { setType('income'); setCategoryId(''); setErrors((prev) => ({ ...prev, category: undefined, submit: undefined })) }}
-              className={`px-3 py-2 text-xs font-medium transition-colors ${type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-500 hover:text-gray-300'}`}
+              className={`px-4 py-2.5 text-xs font-semibold transition-all duration-200 ${type === 'income' ? 'bg-emerald-500/20 text-emerald-400' : 'text-white/30 hover:text-white/60 hover:bg-white/[0.04]'}`}
             >
               Entrata
             </button>
           </div>
 
           {/* Importo */}
-          <div className="flex-shrink-0">
-            <div className="flex items-center gap-1">
+          <div className="flex-1 min-w-0">
+            <div className={`flex items-center bg-white/[0.05] border rounded-xl px-3 py-2.5 gap-2 transition-colors ${errors.amount ? 'border-red-500/40' : 'border-white/[0.08] focus-within:border-white/20'}`}>
               <input
                 type="number"
                 min="0.01"
@@ -86,56 +91,58 @@ export function TransactionForm() {
                 value={amount}
                 onChange={(e) => { setAmount(e.target.value); setErrors((prev) => ({ ...prev, amount: undefined })) }}
                 placeholder="0.00"
-                className="w-24 bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-white/30"
+                className="flex-1 min-w-0 bg-transparent text-sm text-white placeholder-white/20 focus:outline-none"
               />
-              <span className={`text-sm font-medium ${type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>€</span>
+              <span className={`text-sm font-semibold flex-shrink-0 ${accentColor === 'emerald' ? 'text-emerald-400' : 'text-red-400'}`}>€</span>
             </div>
-            {errors.amount && <p className="text-xs text-red-400 mt-1">{errors.amount}</p>}
+            {errors.amount && <p className="text-xs text-red-400 mt-1 pl-1">{errors.amount}</p>}
           </div>
+        </div>
 
-          {/* Categoria */}
-          <div className="flex-shrink-0">
-            <Select
-              value={categoryId}
-              onChange={(v) => { setCategoryId(v); setErrors((prev) => ({ ...prev, category: undefined })) }}
-              options={categoryOptions}
-              placeholder="Categoria..."
-              className="min-w-[160px]"
-            />
-            {errors.category && <p className="text-xs text-red-400 mt-1">{errors.category}</p>}
-          </div>
+        {/* Row 2: Categoria */}
+        <div>
+          <Select
+            value={categoryId}
+            onChange={(v) => { setCategoryId(v); setErrors((prev) => ({ ...prev, category: undefined })) }}
+            options={categoryOptions}
+            placeholder="Categoria..."
+            className={`w-full ${errors.category ? 'border-red-500/40' : ''}`}
+          />
+          {errors.category && <p className="text-xs text-red-400 mt-1 pl-1">{errors.category}</p>}
+        </div>
 
-          {/* Data */}
-          <div className="flex-shrink-0">
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => { setDate(e.target.value); setErrors((prev) => ({ ...prev, date: undefined, submit: undefined })) }}
-              className="bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/30"
-            />
-            {errors.date && <p className="text-xs text-red-400 mt-1">{errors.date}</p>}
-          </div>
-
-          {/* Descrizione */}
+        {/* Row 3: Data + Descrizione */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => { setDate(e.target.value); setErrors((prev) => ({ ...prev, date: undefined, submit: undefined })) }}
+            className={`w-full sm:w-auto bg-white/[0.05] border rounded-xl px-3 py-2.5 text-sm text-white/70 focus:outline-none focus:border-white/20 transition-colors ${errors.date ? 'border-red-500/40' : 'border-white/[0.08]'}`}
+          />
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Descrizione (opzionale)"
-            className="flex-1 min-w-[160px] bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-white/30"
+            className="flex-1 min-w-0 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white/20 transition-colors"
           />
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={createTx.isPending}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm hover:bg-emerald-500/30 transition-colors disabled:opacity-50 flex-shrink-0"
-          >
-            <PlusCircle size={14} />
-            {createTx.isPending ? 'Salvo...' : 'Aggiungi'}
-          </button>
         </div>
-        {errors.submit && <p className="text-xs text-red-400 mt-2">{errors.submit}</p>}
+
+        {/* Row 4: Submit */}
+        <button
+          type="submit"
+          disabled={createTx.isPending}
+          className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-50 ${
+            accentColor === 'emerald'
+              ? 'bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30'
+              : 'bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30'
+          }`}
+        >
+          <PlusCircle size={15} />
+          {createTx.isPending ? 'Salvataggio…' : 'Aggiungi transazione'}
+        </button>
+
+        {errors.submit && <p className="text-xs text-red-400 text-center">{errors.submit}</p>}
       </form>
     </div>
   )
