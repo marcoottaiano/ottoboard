@@ -186,8 +186,6 @@ FR-NEW-19: Epic 11 — Status item (desired/received/purchased)
 FR-NEW-20: Epic 11 — Organizzazione per categoria/occasione
 FR-NEW-21: Epic 11 — Condivisione pubblica read-only via link
 FR-NEW-22: Epic 8 — Insight spese rule-based
-FR-NEW-23: Epic 12 — Bookmark ricette con tag
-FR-NEW-24: Epic 12 — Lista della spesa da ingredienti
 
 ## Epic List
 
@@ -245,11 +243,6 @@ L'utente pianifica viaggi completi in un unico posto: crea luoghi (ristoranti, b
 
 L'utente può gestire una lista desideri personale con prodotti, link, prezzi e foto, organizzata per categoria o occasione, condivisibile via link pubblico per facilitare i regali.
 **FRs covered:** FR-NEW-18, FR-NEW-19, FR-NEW-20, FR-NEW-21
-
-### Epic 12: Recipe Collection (low priority)
-
-L'utente può salvare link a ricette da qualsiasi fonte, organizzarle con tag personali e generare una lista della spesa dagli ingredienti. Nessun scraping — solo bookmarking.
-**FRs covered:** FR-NEW-23, FR-NEW-24
 
 ---
 
@@ -1181,6 +1174,7 @@ So that I can identify anomalies without manually analyzing my transactions.
 **Given** at least 3 months of transaction history
 **When** I open the Finance module
 **Then** an "Insights" card displays rule-based alerts, e.g.:
+
 - "La categoria X è aumentata del Y% rispetto alla media degli ultimi 3 mesi"
 - "Hai superato il budget della categoria X di €Y"
 - "Il tuo giorno più costoso è tipicamente il venerdì"
@@ -1210,6 +1204,7 @@ So that I can start the week with a clear picture of what happened the previous 
 **Given** it is Monday and the user opens Ottoboard for the first time that day
 **When** the home page mounts
 **Then** a modal opens automatically showing the previous week's summary:
+
 - **Fitness:** n° sessioni, km totali, calorie totali, minuti totali
 - **Abitudini:** % completamento per ogni abitudine schedolata nella settimana
 - **Finanze:** entrate totali, uscite totali, categoria con più spesa, delta uscite vs settimana precedente
@@ -1430,68 +1425,6 @@ So that friends and family can easily see what to gift me without needing an acc
 **And** "Acquistato" and "Ricevuto" items are visually distinct (strikethrough o badge)
 **And** no edit or delete controls are visible
 **And** the page works without a Supabase session (public RLS policy where `is_public = true`)
-
----
-
-## Epic 12: Recipe Collection
-
-L'utente salva link a ricette da qualsiasi fonte con tag e genera liste della spesa. (Priorità: bassa)
-
-### Story 12.1: Recipe Bookmark CRUD
-
-As a user,
-I want to save recipe links with title, photo, and personal tags,
-So that I have a curated collection of recipes I want to try, organized by my criteria.
-
-**Acceptance Criteria:**
-
-**Given** a new `/recipes` route
-**When** I navigate to it
-**Then** I see my saved recipes in a grid/list (empty state if none)
-**And** a "+ Salva Ricetta" button is visible
-
-**Given** the recipe creation form
-**When** I enter a URL (required) plus optional title, photo URL, and tags
-**Then** the recipe is saved to a new `recipes` table (RLS: `user_id DEFAULT auth.uid()`)
-**And** appears in the collection with photo thumbnail if provided
-
-**Given** the recipe collection
-**When** I filter by tag
-**Then** only recipes with that tag are shown
-
-**Given** an existing recipe
-**When** I click its link
-**Then** it opens in a new tab
-
-**Given** an existing recipe
-**When** I delete it with inline confirm
-**Then** it is removed from UI and DB
-
----
-
-### Story 12.2: Shopping List from Recipe Ingredients
-
-As a user,
-I want to manually enter ingredients for a recipe and generate a shopping list,
-So that I can quickly know what to buy before cooking.
-
-**Acceptance Criteria:**
-
-**Given** a recipe detail page
-**When** I open the "Ingredienti" section
-**Then** I can add ingredients as free-text lines (name + optional quantity)
-
-**Given** one or more recipes with saved ingredients
-**When** I select multiple recipes and click "Genera lista della spesa"
-**Then** a shopping list is generated aggregating all ingredients from selected recipes
-
-**Given** the shopping list view
-**When** I check off an ingredient
-**Then** it is marked as "acquistato" (strikethrough) — state persisted in localStorage (no DB needed)
-
-**Given** the shopping list
-**When** I click "Copia lista"
-**Then** the plain-text list is copied to clipboard
 
 ---
 
