@@ -1,49 +1,47 @@
-'use client'
+"use client";
 
-import { useActivities } from '@/hooks/useActivities'
-import { useStravaConnection } from '@/hooks/useStravaConnection'
-import { ExternalLink, Heart, Timer, TrendingUp, Flame, Activity } from 'lucide-react'
-import { ActivityBadge } from './ActivityBadge'
-import { SyncStatusBadge } from '@/components/ui/SyncStatusBadge'
-import Link from 'next/link'
+import { useActivities } from "@/hooks/useActivities";
+import { useStravaConnection } from "@/hooks/useStravaConnection";
+import { ExternalLink, Heart, Timer, TrendingUp, Flame, Activity } from "lucide-react";
+import { ActivityBadge } from "./ActivityBadge";
+import { SyncStatusBadge } from "@/components/ui/SyncStatusBadge";
+import Link from "next/link";
 
 function formatDuration(seconds: number) {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  if (h > 0) return `${h}h ${m}m`
-  return `${m}m`
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
 }
 
 function formatPace(secPerKm: number | null) {
-  if (!secPerKm) return '—'
-  const m = Math.floor(secPerKm / 60)
-  const s = Math.round(secPerKm % 60)
-  return `${m}:${s.toString().padStart(2, '0')} /km`
+  if (!secPerKm) return "—";
+  const m = Math.floor(secPerKm / 60);
+  const s = Math.round(secPerKm % 60);
+  return `${m}:${s.toString().padStart(2, "0")} /km`;
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('it-IT', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
+  return new Date(iso).toLocaleDateString("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
 }
 
 function Stat({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-gray-500 flex items-center gap-1">
+    <div className="min-w-0 border-l pl-3" style={{ borderColor: "var(--border)" }}>
+      <span className="ob-metric-label flex items-center gap-1">
         {icon} {label}
       </span>
-      <span className="text-sm font-medium text-white">{value}</span>
+      <span className="mt-1 block truncate font-mono text-sm font-medium tabular-nums text-white">{value}</span>
     </div>
-  )
+  );
 }
 
 function SkeletonCard({ bare = false }: { bare?: boolean }) {
-  const cls = bare
-    ? 'p-5 animate-pulse h-full'
-    : 'rounded-xl bg-white/5 border border-white/10 p-5 animate-pulse h-full'
+  const cls = bare ? "p-5 animate-pulse h-full" : "ob-panel-flat p-5 animate-pulse h-full";
   return (
     <div className={cls}>
       <div className="space-y-3">
@@ -59,40 +57,33 @@ function SkeletonCard({ bare = false }: { bare?: boolean }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function LastActivityCard({ bare = false }: { bare?: boolean }) {
-  const { data: activities, isLoading } = useActivities({ limit: 1 })
-  const { lastSyncedAt, isConnectionError } = useStravaConnection()
+  const { data: activities, isLoading } = useActivities({ limit: 1 });
+  const { lastSyncedAt, isConnectionError } = useStravaConnection();
 
-  if (isLoading) return <SkeletonCard bare={bare} />
+  if (isLoading) return <SkeletonCard bare={bare} />;
 
-  const activity = activities?.[0]
+  const activity = activities?.[0];
 
   if (!activity) {
-    const emptyClass = bare
-      ? 'p-5 flex flex-col items-center justify-center gap-2 text-center h-full min-h-[160px]'
-      : 'rounded-xl bg-white/5 border border-white/10 p-5 flex flex-col items-center justify-center gap-2 text-center h-full min-h-[160px]'
+    const emptyClass = bare ? "p-5 flex flex-col items-center justify-center gap-2 text-center h-full min-h-[160px]" : "ob-panel-flat p-5 flex flex-col items-center justify-center gap-2 text-center h-full min-h-[260px]";
     return (
       <div className={emptyClass}>
         <Activity size={24} className="text-gray-700" />
         <p className="text-xs text-gray-500">Nessun allenamento sincronizzato</p>
-        <Link
-          href="/profile"
-          className="text-xs text-orange-500/70 hover:text-orange-400 transition-colors"
-        >
+        <Link href="/profile" className="text-xs text-orange-500/70 hover:text-orange-400 transition-colors">
           Connetti Strava →
         </Link>
       </div>
-    )
+    );
   }
 
-  const distanceKm = activity.distance ? (activity.distance / 1000).toFixed(2) : null
+  const distanceKm = activity.distance ? (activity.distance / 1000).toFixed(2) : null;
 
-  const outerClass = bare
-    ? 'p-5 flex flex-col gap-4 overflow-hidden'
-    : 'rounded-xl bg-white/5 border border-white/10 p-5 flex flex-col gap-4 overflow-hidden'
+  const outerClass = bare ? "p-5 flex flex-col gap-4 overflow-hidden" : "ob-panel-flat h-full min-h-[260px] p-5 flex flex-col gap-5 overflow-hidden";
 
   return (
     <div className={outerClass}>
@@ -106,50 +97,24 @@ export function LastActivityCard({ bare = false }: { bare?: boolean }) {
       </div>
 
       {/* Nome attività */}
-      <h3 className="text-lg font-semibold text-white truncate -mt-2">{activity.name}</h3>
+      <div>
+        <p className="ob-eyebrow mb-2">Ultima attività</p>
+        <h3 className="truncate text-lg font-semibold text-white">{activity.name}</h3>
+      </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-        <Stat
-          label="Durata"
-          value={formatDuration(activity.moving_time)}
-          icon={<Timer size={11} />}
-        />
-        {distanceKm && (
-          <Stat label="Distanza" value={`${distanceKm} km`} />
-        )}
-        {(activity.average_heartrate || activity.max_heartrate) && (
-          <Stat
-            label="FC media / max"
-            value={`${activity.average_heartrate ? Math.round(activity.average_heartrate) : '—'} / ${activity.max_heartrate ? Math.round(activity.max_heartrate) : '—'} bpm`}
-            icon={<Heart size={11} />}
-          />
-        )}
-        {activity.average_pace && distanceKm && (
-          <Stat
-            label="Pace medio"
-            value={formatPace(activity.average_pace)}
-            icon={<TrendingUp size={11} />}
-          />
-        )}
-        {activity.calories && (
-          <Stat
-            label="Calorie"
-            value={`${activity.calories} kcal`}
-            icon={<Flame size={11} />}
-          />
-        )}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-5">
+        <Stat label="Durata" value={formatDuration(activity.moving_time)} icon={<Timer size={11} />} />
+        {distanceKm && <Stat label="Distanza" value={`${distanceKm} km`} />}
+        {(activity.average_heartrate || activity.max_heartrate) && <Stat label="FC media / max" value={`${activity.average_heartrate ? Math.round(activity.average_heartrate) : "—"} / ${activity.max_heartrate ? Math.round(activity.max_heartrate) : "—"} bpm`} icon={<Heart size={11} />} />}
+        {activity.average_pace && distanceKm && <Stat label="Pace medio" value={formatPace(activity.average_pace)} icon={<TrendingUp size={11} />} />}
+        {activity.calories && <Stat label="Calorie" value={`${activity.calories} kcal`} icon={<Flame size={11} />} />}
       </div>
 
       {/* Link Strava */}
-      <a
-        href={`https://www.strava.com/activities/${activity.id}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-xs text-orange-400 hover:text-orange-300 transition-colors w-fit"
-      >
+      <a href={`https://www.strava.com/activities/${activity.id}`} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex w-fit items-center gap-1 text-xs text-fitness transition-colors hover:text-white">
         Vedi su Strava <ExternalLink size={11} />
       </a>
     </div>
-  )
+  );
 }

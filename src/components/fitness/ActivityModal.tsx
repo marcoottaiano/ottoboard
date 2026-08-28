@@ -2,6 +2,7 @@
 
 import { Activity } from "@/types";
 import { ExternalLink, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { ActivityBadge } from "./ActivityBadge";
 import { PolylineMap } from "./PolylineMap";
 
@@ -35,17 +36,38 @@ interface ActivityModalProps {
 }
 
 export function ActivityModal({ activity, onClose }: ActivityModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
   const distanceKm = activity.distance ? (activity.distance / 1000).toFixed(2) : null;
 
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialogRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-[#0f0f1a] border border-white/10 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="flex items-start justify-between p-5 border-b border-white/10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="activity-detail-title">
+      <div ref={dialogRef} tabIndex={-1} className="ob-panel max-h-[90vh] w-full max-w-lg overflow-y-auto outline-none">
+        <div className="flex items-start justify-between border-b p-5" style={{ borderColor: "var(--border)" }}>
           <div>
             <div className="flex items-center gap-2 mb-1">
               <ActivityBadge type={activity.type} />
             </div>
-            <h2 className="text-lg font-semibold text-white">{activity.name}</h2>
+            <h2 id="activity-detail-title" className="text-lg font-semibold text-white">
+              {activity.name}
+            </h2>
             <p className="text-sm text-gray-500 mt-0.5">
               {new Date(activity.start_date).toLocaleDateString("it-IT", {
                 weekday: "long",
@@ -55,7 +77,7 @@ export function ActivityModal({ activity, onClose }: ActivityModalProps) {
               })}
             </p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="ob-icon-button" aria-label="Chiudi dettaglio attività">
             <X size={20} />
           </button>
         </div>
@@ -73,7 +95,7 @@ export function ActivityModal({ activity, onClose }: ActivityModalProps) {
             {activity.kudos_count !== null && activity.kudos_count !== undefined && <Row label="Kudos" value={String(activity.kudos_count)} />}
           </div>
 
-          <a href={`https://www.strava.com/activities/${activity.id}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 text-sm font-medium transition-colors">
+          <a href={`https://www.strava.com/activities/${activity.id}`} target="_blank" rel="noopener noreferrer" className="flex min-h-10 w-full items-center justify-center gap-2 rounded-lg border border-fitness/30 bg-fitness/15 text-sm font-medium text-fitness transition-colors hover:bg-fitness/25">
             Apri su Strava <ExternalLink size={14} />
           </a>
         </div>
