@@ -5,6 +5,7 @@ import { ChangePasswordForm } from '@/components/profile/ChangePasswordForm'
 import { StravaIntegrationCard } from '@/components/profile/StravaIntegrationCard'
 import { BodyProfileSection } from '@/components/profile/BodyProfileSection'
 import { IntegrationHealthSection } from '@/components/profile/IntegrationHealthSection'
+import { PageHeader } from '@/components/ui/PageHeader'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,28 +18,33 @@ export default async function ProfilePage() {
   if (!user) redirect('/auth/login')
 
   return (
-    <main className="flex-1 p-4 md:p-6">
-      <h1 className="text-xl font-bold text-white mb-6">Profilo</h1>
+    <main className="ob-page">
+      <PageHeader
+        eyebrow="Account e sistema"
+        title="Profilo"
+        description="Identità, sicurezza e connessioni di Ottoboard."
+      />
 
-      <div className="space-y-6 max-w-5xl">
+      <div className="space-y-8 max-w-6xl">
         {/* Account + password */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+        <section>
+          <div className="ob-section-heading"><p className="ob-section-title">Account</p></div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.9fr_1.1fr] items-start">
           <div className="space-y-4">
             <AccountInfoSection user={user} />
             <BodyProfileSection />
           </div>
           <ChangePasswordForm />
         </div>
+        </section>
 
         {/* Integrazioni — 2 colonne su desktop */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest px-1">
-            Integrazioni
-          </h3>
+        <section>
+          <div className="ob-section-heading"><p className="ob-section-title">Integrazioni</p></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
             <StravaIntegrationCard />
           </div>
-        </div>
+        </section>
 
         {/* Salute Integrazioni */}
         <IntegrationHealthSection />

@@ -1,109 +1,101 @@
-'use client'
+"use client";
 
-import { useBudgets } from '@/hooks/useBudgets'
-import { useTransactions } from '@/hooks/useTransactions'
-import { useCategories } from '@/hooks/useCategories'
-import { useUpsertBudget, useDeleteBudget } from '@/hooks/useFinanceMutations'
-import { Select } from '@/components/ui/Select'
-import { useState } from 'react'
-import { HelpCircle, Trash2 } from 'lucide-react'
+import { useBudgets } from "@/hooks/useBudgets";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useCategories } from "@/hooks/useCategories";
+import { useUpsertBudget, useDeleteBudget } from "@/hooks/useFinanceMutations";
+import { Select } from "@/components/ui/Select";
+import { useState } from "react";
+import { Check, HelpCircle, Plus, Trash2, X } from "lucide-react";
 
 function formatEur(n: number) {
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n)
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
 }
 
 interface Props {
-  month: string
+  month: string;
 }
 
 export function BudgetTracker({ month }: Props) {
-  const { data: budgets, isLoading: loadingBudgets } = useBudgets(month)
-  const { data: transactions, isLoading: loadingTx } = useTransactions({ month, type: 'expense' })
-  const { data: categories } = useCategories()
-  const upsertBudget = useUpsertBudget()
-  const deleteBudget = useDeleteBudget()
+  const { data: budgets, isLoading: loadingBudgets } = useBudgets(month);
+  const { data: transactions, isLoading: loadingTx } = useTransactions({ month, type: "expense" });
+  const { data: categories } = useCategories();
+  const upsertBudget = useUpsertBudget();
+  const deleteBudget = useDeleteBudget();
 
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editAmount, setEditAmount] = useState('')
-  const [showHelp, setShowHelp] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [showHelp, setShowHelp] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // New budget form
-  const [addingBudget, setAddingBudget] = useState(false)
-  const [newBudgetCategoryId, setNewBudgetCategoryId] = useState('')
-  const [newBudgetAmount, setNewBudgetAmount] = useState('')
+  const [addingBudget, setAddingBudget] = useState(false);
+  const [newBudgetCategoryId, setNewBudgetCategoryId] = useState("");
+  const [newBudgetAmount, setNewBudgetAmount] = useState("");
 
-  const isLoading = loadingBudgets || loadingTx
+  const isLoading = loadingBudgets || loadingTx;
 
   if (isLoading) {
     return (
-      <div className="rounded-xl bg-white/5 border border-white/10 p-5 animate-pulse">
+      <div className="finance-card p-5 animate-pulse">
         <div className="h-4 bg-white/10 rounded w-32 mb-4" />
         <div className="space-y-3">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-10 bg-white/5 rounded" />)}
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-10 bg-white/5 rounded" />
+          ))}
         </div>
       </div>
-    )
+    );
   }
 
-  const spentByCategory = new Map<string, number>()
+  const spentByCategory = new Map<string, number>();
   for (const t of transactions ?? []) {
     if (t.category_id) {
-      spentByCategory.set(t.category_id, (spentByCategory.get(t.category_id) ?? 0) + t.amount)
+      spentByCategory.set(t.category_id, (spentByCategory.get(t.category_id) ?? 0) + t.amount);
     }
   }
 
   const handleSaveEdit = (categoryId: string) => {
-    const amount = parseFloat(editAmount)
-    if (!amount || amount <= 0) return
-    upsertBudget.mutate({ category_id: categoryId, amount, month })
-    setEditingId(null)
-  }
+    const amount = parseFloat(editAmount);
+    if (!amount || amount <= 0) return;
+    upsertBudget.mutate({ category_id: categoryId, amount, month });
+    setEditingId(null);
+  };
 
   const handleAddBudget = () => {
-    const amount = parseFloat(newBudgetAmount)
-    if (!newBudgetCategoryId || !amount || amount <= 0) return
-    upsertBudget.mutate({ category_id: newBudgetCategoryId, amount, month })
-    setAddingBudget(false)
-    setNewBudgetCategoryId('')
-    setNewBudgetAmount('')
-  }
+    const amount = parseFloat(newBudgetAmount);
+    if (!newBudgetCategoryId || !amount || amount <= 0) return;
+    upsertBudget.mutate({ category_id: newBudgetCategoryId, amount, month });
+    setAddingBudget(false);
+    setNewBudgetCategoryId("");
+    setNewBudgetAmount("");
+  };
 
   const handleDeleteBudget = (id: string) => {
-    deleteBudget.mutate(id)
-    setDeletingId(null)
-  }
+    deleteBudget.mutate(id);
+    setDeletingId(null);
+  };
 
-  const budgetedCategoryIds = new Set((budgets ?? []).map((b) => b.category_id))
-  const unbudgetedCategories = (categories ?? []).filter(
-    (c) => (c.type === 'expense' || c.type === 'both') && !budgetedCategoryIds.has(c.id)
-  )
+  const budgetedCategoryIds = new Set((budgets ?? []).map((b) => b.category_id));
+  const unbudgetedCategories = (categories ?? []).filter((c) => (c.type === "expense" || c.type === "both") && !budgetedCategoryIds.has(c.id));
 
   const categoryOptions = unbudgetedCategories.map((c) => ({
     value: c.id,
-    label: `${c.icon ?? ''} ${c.name}`,
-  }))
+    label: `${c.icon ?? ""} ${c.name}`,
+  }));
 
   return (
-    <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+    <div className="finance-card p-5">
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium text-gray-400">Budget mensile</h3>
-          <button
-            type="button"
-            onClick={() => setShowHelp((v) => !v)}
-            className="text-gray-600 hover:text-gray-400 transition-colors"
-          >
+          <h3 className="ob-card-title">Budget mensile</h3>
+          <button type="button" onClick={() => setShowHelp((v) => !v)} className="ob-icon-button size-7 border-0 bg-transparent" aria-label="Informazioni sui budget">
             <HelpCircle size={13} />
           </button>
         </div>
         {unbudgetedCategories.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setAddingBudget((v) => !v)}
-            className={`text-xs px-2 py-1 rounded-lg border transition-colors ${addingBudget ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-white/5 border-white/10 text-gray-500 hover:text-gray-300'}`}
-          >
-            + Aggiungi
+          <button type="button" onClick={() => setAddingBudget((v) => !v)} className={addingBudget ? "ob-action" : "ob-secondary-action"}>
+            <Plus size={12} /> Aggiungi
           </button>
         )}
       </div>
@@ -111,46 +103,22 @@ export function BudgetTracker({ month }: Props) {
       {showHelp && (
         <div className="mb-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
           <p className="text-xs text-blue-300 leading-relaxed">
-            I <strong>budget</strong> ti permettono di impostare un limite mensile per ogni categoria di spesa.
-            La barra mostra quanto hai già speso: <span className="text-emerald-400">verde</span> = ok,{' '}
-            <span className="text-amber-400">ambra</span> = quasi al limite,{' '}
-            <span className="text-red-400">rosso</span> = sforato. Clicca l&apos;importo per modificarlo.
+            I <strong>budget</strong> ti permettono di impostare un limite mensile per ogni categoria di spesa. La barra mostra quanto hai già speso: <span className="text-emerald-400">verde</span> = ok, <span className="text-amber-400">ambra</span> = quasi al limite, <span className="text-red-400">rosso</span> = sforato. Clicca l&apos;importo per modificarlo.
           </p>
         </div>
       )}
 
       {addingBudget && (
         <div className="mb-3 p-3 bg-black/20 border border-white/10 rounded-lg flex flex-wrap items-center gap-2">
-          <Select
-            value={newBudgetCategoryId}
-            onChange={setNewBudgetCategoryId}
-            options={categoryOptions}
-            placeholder="Seleziona categoria..."
-            className="flex-1 min-w-[140px]"
-          />
+          <Select value={newBudgetCategoryId} onChange={setNewBudgetCategoryId} options={categoryOptions} placeholder="Seleziona categoria..." className="flex-1 min-w-[140px]" />
           <div className="flex items-center gap-1">
-            <input
-              type="number"
-              placeholder="0.00"
-              value={newBudgetAmount}
-              onChange={(e) => setNewBudgetAmount(e.target.value)}
-              className="w-24 bg-white/5 border border-white/10 rounded-lg px-2 py-2 text-sm text-white focus:outline-none focus:border-white/30"
-            />
+            <input type="number" placeholder="0.00" value={newBudgetAmount} onChange={(e) => setNewBudgetAmount(e.target.value)} className="ob-field w-24" />
             <span className="text-xs text-gray-500">€/mese</span>
           </div>
-          <button
-            type="button"
-            onClick={handleAddBudget}
-            disabled={!newBudgetCategoryId || !newBudgetAmount}
-            className="px-3 py-2 text-xs rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 transition-colors disabled:opacity-50"
-          >
+          <button type="button" onClick={handleAddBudget} disabled={!newBudgetCategoryId || !newBudgetAmount} className="ob-action">
             Salva
           </button>
-          <button
-            type="button"
-            onClick={() => setAddingBudget(false)}
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-          >
+          <button type="button" onClick={() => setAddingBudget(false)} className="ob-secondary-action border-0 bg-transparent">
             Annulla
           </button>
         </div>
@@ -159,18 +127,16 @@ export function BudgetTracker({ month }: Props) {
       {!budgets || budgets.length === 0 ? (
         <div className="py-6 text-center space-y-2">
           <p className="text-gray-600 text-sm">Nessun budget impostato</p>
-          <p className="text-gray-700 text-xs">
-            Clicca &quot;+ Aggiungi&quot; per impostare un limite mensile per le tue categorie di spesa
-          </p>
+          <p className="text-gray-700 text-xs">Clicca &quot;+ Aggiungi&quot; per impostare un limite mensile per le tue categorie di spesa</p>
         </div>
       ) : (
         <div className="space-y-3">
           {budgets.map((budget) => {
-            const spent = spentByCategory.get(budget.category_id) ?? 0
-            const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0
-            const barColor = pct < 80 ? 'bg-emerald-500' : pct < 100 ? 'bg-amber-500' : 'bg-red-500'
-            const isEditing = editingId === budget.category_id
-            const isConfirmingDelete = deletingId === budget.id
+            const spent = spentByCategory.get(budget.category_id) ?? 0;
+            const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
+            const barColor = pct < 80 ? "bg-emerald-500" : pct < 100 ? "bg-amber-500" : "bg-red-500";
+            const isEditing = editingId === budget.category_id;
+            const isConfirmingDelete = deletingId === budget.id;
 
             return (
               <div key={budget.id} className="group">
@@ -188,72 +154,60 @@ export function BudgetTracker({ month }: Props) {
                           value={editAmount}
                           onChange={(e) => setEditAmount(e.target.value)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveEdit(budget.category_id)
-                            if (e.key === 'Escape') setEditingId(null)
+                            if (e.key === "Enter") handleSaveEdit(budget.category_id);
+                            if (e.key === "Escape") setEditingId(null);
                           }}
-                          className="w-20 bg-white/10 border border-white/20 rounded px-1.5 py-0.5 text-white text-xs focus:outline-none"
+                          className="ob-field min-h-7 w-20 px-1.5 py-0.5 text-xs"
                           autoFocus
                         />
-                        <button onClick={() => handleSaveEdit(budget.category_id)} className="text-emerald-400 hover:text-emerald-300">✓</button>
-                        <button onClick={() => setEditingId(null)} className="text-gray-500 hover:text-gray-400">✕</button>
+                        <button onClick={() => handleSaveEdit(budget.category_id)} className="text-emerald-400 hover:text-emerald-300" aria-label="Salva budget">
+                          <Check size={13} />
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="text-gray-500 hover:text-gray-400" aria-label="Annulla modifica">
+                          <X size={13} />
+                        </button>
                       </div>
                     ) : (
                       <button
-                        onClick={() => { setEditingId(budget.category_id); setEditAmount(String(budget.amount)) }}
+                        onClick={() => {
+                          setEditingId(budget.category_id);
+                          setEditAmount(String(budget.amount));
+                        }}
                         className="text-gray-300 hover:text-white transition-colors"
                         title="Clicca per modificare"
                       >
                         {formatEur(budget.amount)}
                       </button>
                     )}
-                    {pct > 100 && (
-                      <span className="text-red-400 font-medium">+{formatEur(spent - budget.amount)}</span>
-                    )}
+                    {pct > 100 && <span className="text-red-400 font-medium">+{formatEur(spent - budget.amount)}</span>}
 
                     {/* Delete confirm */}
                     {isConfirmingDelete ? (
                       <div className="flex items-center gap-1 ml-1">
                         <span className="text-gray-500">Elimina?</span>
-                        <button
-                          onClick={() => handleDeleteBudget(budget.id)}
-                          className="text-red-400 hover:text-red-300 font-medium"
-                        >
+                        <button onClick={() => handleDeleteBudget(budget.id)} className="text-red-400 hover:text-red-300 font-medium">
                           Sì
                         </button>
-                        <button
-                          onClick={() => setDeletingId(null)}
-                          className="text-gray-500 hover:text-gray-400"
-                        >
+                        <button onClick={() => setDeletingId(null)} className="text-gray-500 hover:text-gray-400">
                           No
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => setDeletingId(budget.id)}
-                        className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all ml-1"
-                        title="Elimina budget"
-                      >
+                      <button onClick={() => setDeletingId(budget.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all ml-1" title="Elimina budget">
                         <Trash2 size={12} />
                       </button>
                     )}
                   </div>
                 </div>
                 <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${barColor}`}
-                    style={{ width: `${Math.min(pct, 100)}%` }}
-                  />
+                  <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                 </div>
-                {pct >= 100 && (
-                  <p className="text-red-400 text-xs mt-0.5">
-                    Sforato di €{(spent - budget.amount).toFixed(2)}
-                  </p>
-                )}
+                {pct >= 100 && <p className="text-red-400 text-xs mt-0.5">Sforato di €{(spent - budget.amount).toFixed(2)}</p>}
               </div>
-            )
+            );
           })}
         </div>
       )}
     </div>
-  )
+  );
 }

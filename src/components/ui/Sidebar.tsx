@@ -1,62 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Activity, Wallet, PanelLeftClose, PanelLeftOpen, LogOut, User, Eye, EyeOff } from "lucide-react";
+import { Activity, ChevronLeft, ChevronRight, Eye, EyeOff, LayoutDashboard, LogOut, User, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { usePrivacyMode } from "@/hooks/usePrivacyMode";
 
 const NAV_ITEMS = [
-  {
-    href: "/",
-    label: "Overview",
-    icon: LayoutDashboard,
-    module: "home",
-    color: "text-slate-300",
-    glow: "shadow-slate-400/40",
-    activeBg: "bg-slate-400/10",
-    border: "border-slate-400/40",
-  },
-  {
-    href: "/fitness",
-    label: "Fitness",
-    icon: Activity,
-    module: "fitness",
-    color: "text-orange-400",
-    glow: "shadow-orange-500/40",
-    activeBg: "bg-orange-500/10",
-    border: "border-orange-400/40",
-  },
-  {
-    href: "/finance",
-    label: "Finanze",
-    icon: Wallet,
-    module: "finance",
-    color: "text-emerald-400",
-    glow: "shadow-emerald-500/40",
-    activeBg: "bg-emerald-500/10",
-    border: "border-emerald-400/40",
-  },
-  {
-    href: "/profile",
-    label: "Profilo",
-    icon: User,
-    module: "profile",
-    color: "text-sky-400",
-    glow: "shadow-sky-500/40",
-    activeBg: "bg-sky-500/10",
-    border: "border-sky-400/40",
-  },
-];
+  { href: "/", label: "Overview", icon: LayoutDashboard, module: "home", accent: "var(--brand)", activeBg: "rgba(101, 214, 166, 0.08)" },
+  { href: "/finance", label: "Finanze", icon: Wallet, module: "finance", accent: "var(--brand)", activeBg: "rgba(101, 214, 166, 0.08)" },
+  { href: "/fitness", label: "Fitness", icon: Activity, module: "fitness", accent: "var(--fitness)", activeBg: "rgba(255, 107, 74, 0.08)" },
+  { href: "/profile", label: "Profilo", icon: User, module: "profile", accent: "var(--foreground)", activeBg: "rgba(243, 240, 232, 0.06)" },
+] as const;
 
-function getActiveModule(pathname: string) {
-  if (pathname === "/") return "home";
-  if (pathname.startsWith("/fitness")) return "fitness";
+type Module = (typeof NAV_ITEMS)[number]["module"];
+
+function getActiveModule(pathname: string): Module {
   if (pathname.startsWith("/finance")) return "finance";
+  if (pathname.startsWith("/fitness")) return "fitness";
   if (pathname.startsWith("/profile")) return "profile";
   return "home";
+}
+
+function formatToday() {
+  return new Intl.DateTimeFormat("it-IT", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date());
 }
 
 export default function Sidebar({ children }: { children: React.ReactNode }) {
@@ -66,6 +39,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const activeModule = getActiveModule(pathname);
   const { isPrivate, toggle: togglePrivacy, hydrate: hydratePrivacy } = usePrivacyMode();
+  const activeItem = NAV_ITEMS.find((item) => item.module === activeModule) ?? NAV_ITEMS[0];
 
   useEffect(() => {
     hydratePrivacy();
@@ -73,7 +47,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
     client.auth.getUser().then(({ data }) => {
       setUserName(data.user?.email?.split("@")[0] ?? null);
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [hydratePrivacy]);
 
   const handleLogout = async () => {
     const client = createClient();
@@ -82,119 +56,105 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden bg-[#0a0a0f] text-white flex">
-      {/* Ambient background blobs */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-orange-600/5 blur-3xl" />
-        <div className="absolute top-1/3 -right-32 w-80 h-80 rounded-full bg-purple-600/5 blur-3xl" />
-        <div className="absolute -bottom-32 left-1/3 w-72 h-72 rounded-full bg-emerald-600/5 blur-3xl" />
-      </div>
-
-      {/* ── Sidebar (desktop) ─────────────────────────────────── */}
-      <aside className={["hidden md:flex flex-col fixed left-0 top-0 h-full z-40", "border-r border-white/[0.06]", "bg-white/[0.03] backdrop-blur-2xl", "transition-all duration-300 ease-in-out", collapsed ? "w-[72px]" : "w-[220px]"].join(" ")}>
-        {/* Logo + collapse toggle */}
-        <div className={["flex items-center h-16 px-3 border-b border-white/[0.06] gap-2", collapsed ? "justify-center" : ""].join(" ")}>
-          {!collapsed && (
+    <div className="min-h-screen w-full overflow-x-hidden text-foreground">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r bg-[#061114] md:flex ${collapsed ? "w-[72px]" : "w-[240px]"} transition-[width] duration-300`}
+        style={{ borderColor: "var(--border)" }}
+      >
+        <div className={`flex h-16 shrink-0 items-center border-b px-3 ${collapsed ? "justify-center" : "gap-3"}`} style={{ borderColor: "var(--border)" }}>
+          <Link href="/" className="shrink-0 rounded-xl border p-1" style={{ borderColor: "var(--border-strong)" }}>
+            <Image src="/icons/icon-192x192.png" alt="Ottoboard" width={34} height={34} className="rounded-lg" priority />
+          </Link>
+          {!collapsed ? (
             <>
-              <Image src="/icons/icon-192x192.png" alt="Ottoboard" width={32} height={32} className="rounded-lg flex-shrink-0" />
-              <span className="text-sm font-semibold tracking-wide text-white/90 flex-1" suppressHydrationWarning>Ottoboard</span>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-white/90">Ottoboard</span>
+              <button onClick={() => setCollapsed(true)} className="ob-icon-button size-8" title="Riduci navigazione">
+                <ChevronLeft size={15} />
+              </button>
             </>
-          )}
-          <button onClick={() => setCollapsed(!collapsed)} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.06] transition-all duration-200 flex-shrink-0" title={collapsed ? "Espandi sidebar" : "Chiudi sidebar"}>
-            {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-          </button>
+          ) : null}
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 px-3 py-4 space-y-1">
+        <nav className={`flex-1 space-y-1 py-4 ${collapsed ? "px-3" : "px-3"}`} aria-label="Navigazione principale">
           {NAV_ITEMS.map((item) => {
-            const isActive = activeModule === item.module;
             const Icon = item.icon;
+            const isActive = item.module === activeModule;
             return (
-              <Link key={item.href} href={item.href} title={collapsed ? item.label : undefined} className={["flex items-center rounded-xl transition-all duration-200", "border", collapsed ? "justify-center p-2.5" : "gap-3 px-3 py-2.5", isActive ? `${item.activeBg} ${item.border} ${item.glow} shadow-lg` : "border-transparent hover:bg-white/[0.04] hover:border-white/[0.06]"].join(" ")}>
-                <Icon size={18} className={["flex-shrink-0 transition-colors duration-200", isActive ? item.color : "text-white/40"].join(" ")} />
-                {!collapsed && <span className={["text-sm font-medium transition-colors duration-200", isActive ? "text-white/95" : "text-white/50"].join(" ")}>{item.label}</span>}
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-label={item.label}
+                title={collapsed ? item.label : undefined}
+                className={`relative flex min-h-11 items-center rounded-xl border transition-colors ${collapsed ? "justify-center" : "gap-3 px-3"}`}
+                style={{
+                  color: isActive ? item.accent : "var(--muted)",
+                  borderColor: isActive ? "var(--border-strong)" : "transparent",
+                  background: isActive ? item.activeBg : "transparent",
+                }}
+              >
+                {isActive ? <span className="absolute -left-[13px] h-5 w-0.5 rounded-full" style={{ background: item.accent }} /> : null}
+                <Icon size={18} strokeWidth={1.8} className="shrink-0" />
+                {!collapsed ? <span className={`text-sm ${isActive ? "font-medium text-white/90" : "text-muted"}`}>{item.label}</span> : null}
               </Link>
             );
           })}
         </nav>
 
-        {/* User + logout */}
-        <div className="px-3 pb-4 space-y-1 border-t border-white/[0.06] pt-3">
-          <div className={["flex items-center rounded-xl px-2 py-2", collapsed ? "justify-center" : "gap-2.5"].join(" ")}>
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 border border-white/10 flex items-center justify-center flex-shrink-0">
-              <User size={13} className="text-white/60" />
-            </div>
-            {!collapsed && <span className="text-xs text-white/40 truncate flex-1">{userName ?? "…"}</span>}
+        {!collapsed ? (
+          <div className="mx-3 mb-3 rounded-xl border px-3 py-3" style={{ borderColor: "var(--border)", background: "rgba(255,255,255,0.018)" }}>
+            <p className="ob-eyebrow">Oggi</p>
+            <p className="mt-1.5 text-xs capitalize text-white/70" suppressHydrationWarning>{formatToday()}</p>
           </div>
-          <button
-            onClick={togglePrivacy}
-            title={collapsed ? (isPrivate ? "Privacy Mode attiva" : "Attiva Privacy Mode") : undefined}
-            className={["flex items-center w-full rounded-xl px-2 py-2 transition-all duration-200", "border", isPrivate ? "text-orange-400 bg-orange-500/10 border-orange-500/20" : "text-white/30 hover:text-white/60 hover:bg-white/[0.04] border-transparent hover:border-white/[0.06]", collapsed ? "justify-center" : "gap-2.5"].join(" ")}
-          >
-            {isPrivate ? <EyeOff size={15} className="flex-shrink-0" /> : <Eye size={15} className="flex-shrink-0" />}
-            {!collapsed && (
-              <span className="text-xs font-medium flex-1">
-                {isPrivate ? "Privato" : "Privacy Mode"}
-              </span>
-            )}
-            {!collapsed && isPrivate && (
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0" />
-            )}
-          </button>
-          <button onClick={handleLogout} title={collapsed ? "Logout" : undefined} className={["flex items-center w-full rounded-xl px-2 py-2 transition-all duration-200", "text-white/30 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20", collapsed ? "justify-center" : "gap-2.5"].join(" ")}>
-            <LogOut size={15} className="flex-shrink-0" />
-            {!collapsed && <span className="text-xs font-medium">Logout</span>}
-          </button>
+        ) : null}
+
+        <div className={`border-t py-3 ${collapsed ? "px-3" : "px-3"}`} style={{ borderColor: "var(--border)" }}>
+          {!collapsed ? (
+            <Link href="/profile" className="mb-2 flex items-center gap-3 rounded-xl px-2 py-2 hover:bg-white/[0.03]">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full border text-muted" style={{ borderColor: "var(--border)" }}><User size={14} /></div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-medium text-white/80">{userName ?? "…"}</p>
+                <p className="text-[10px] text-muted">Profilo personale</p>
+              </div>
+            </Link>
+          ) : (
+            <button onClick={() => setCollapsed(false)} className="ob-icon-button mb-2 w-full border-transparent" title="Espandi navigazione"><ChevronRight size={16} /></button>
+          )}
+
+          <div className={`flex gap-1 ${collapsed ? "flex-col" : "items-center"}`}>
+            <button onClick={togglePrivacy} className={`ob-icon-button border-transparent ${collapsed ? "w-full" : "flex-1"}`} title={isPrivate ? "Disattiva privacy" : "Attiva privacy"}>
+              {isPrivate ? <EyeOff size={16} className="text-fitness" /> : <Eye size={16} />}
+              {!collapsed ? <span className="ml-2 text-xs">{isPrivate ? "Privato" : "Privacy"}</span> : null}
+            </button>
+            <button onClick={handleLogout} className={`ob-icon-button border-transparent hover:text-red-400 ${collapsed ? "w-full" : ""}`} title="Esci"><LogOut size={16} /></button>
+          </div>
         </div>
       </aside>
 
-      {/* ── Top navbar (mobile) ───────────────────────────────── */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 flex items-center justify-between px-4 border-b border-white/[0.06] bg-[#0a0a0f]/80 backdrop-blur-2xl">
-        {/* Logo + page title */}
-        <div className="flex items-center gap-2.5">
-          <Image src="/icons/icon-192x192.png" alt="Ottoboard" width={28} height={28} className="rounded-lg flex-shrink-0" />
-          <span className="text-sm font-semibold text-white/80" suppressHydrationWarning>Ottoboard</span>
+      <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b bg-[#061114]/95 px-4 backdrop-blur md:hidden" style={{ borderColor: "var(--border)" }}>
+        <div className="flex items-center gap-3">
+          <Image src="/icons/icon-192x192.png" alt="Ottoboard" width={32} height={32} className="rounded-lg" priority />
+          <div>
+            <p className="text-sm font-semibold">{activeItem.label}</p>
+            <p className="text-[10px] capitalize text-muted" suppressHydrationWarning>{formatToday()}</p>
+          </div>
         </div>
-
-        {/* User + logout */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={togglePrivacy}
-            title={isPrivate ? "Privacy Mode attiva — tocca per disattivare" : "Attiva Privacy Mode"}
-            className={["w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-200 relative", isPrivate ? "text-orange-400 bg-orange-500/10" : "text-white/30 hover:text-white/60 hover:bg-white/[0.06]"].join(" ")}
-          >
-            {isPrivate ? <EyeOff size={15} /> : <Eye size={15} />}
-            {isPrivate && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-orange-400" />}
-          </button>
-          <Link href="/profile" className="flex items-center gap-2 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] transition-colors">
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center">
-              <User size={11} className="text-white/60" />
-            </div>
-            <span className="text-xs text-white/40 max-w-[80px] truncate">{userName ?? "…"}</span>
-          </Link>
-          <button onClick={handleLogout} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200" title="Logout">
-            <LogOut size={15} />
-          </button>
-        </div>
+        <button onClick={togglePrivacy} className="ob-icon-button" title={isPrivate ? "Disattiva privacy" : "Attiva privacy"}>{isPrivate ? <EyeOff size={16} className="text-fitness" /> : <Eye size={16} />}</button>
       </header>
 
-      {/* ── Bottom nav (mobile) ───────────────────────────────── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around h-16 border-t border-white/[0.06] bg-[#0a0a0f]/80 backdrop-blur-2xl px-2">
-        {NAV_ITEMS.filter((item) => item.module !== "profile").map((item) => {
-          const isActive = activeModule === item.module;
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-[68px] grid-cols-4 border-t bg-[#061114]/95 px-2 backdrop-blur md:hidden" style={{ borderColor: "var(--border)" }} aria-label="Navigazione mobile">
+        {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
+          const isActive = item.module === activeModule;
           return (
-            <Link key={item.href} href={item.href} className={["flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200", isActive ? item.activeBg : ""].join(" ")}>
-              <Icon size={20} className={isActive ? item.color : "text-white/30"} />
-              <span className={["text-[10px] font-medium", isActive ? "text-white/80" : "text-white/25"].join(" ")}>{item.label}</span>
+            <Link key={item.href} href={item.href} className="flex flex-col items-center justify-center gap-1 text-[10px] font-medium" style={{ color: isActive ? item.accent : "var(--muted-soft)" }}>
+              <Icon size={19} strokeWidth={1.8} />
+              {item.label}
             </Link>
           );
         })}
       </nav>
 
-      {/* ── Main content ─────────────────────────────────────── */}
-      <main className={["flex-1 min-h-screen min-w-0 overflow-x-clip transition-all duration-300", "pt-14 pb-16 md:pt-0 md:pb-0", collapsed ? "md:ml-[72px]" : "md:ml-[220px]"].join(" ")}>{children}</main>
+      <main className={`min-h-screen min-w-0 pt-16 pb-[68px] md:py-0 ${collapsed ? "md:ml-[72px]" : "md:ml-[240px]"} transition-[margin] duration-300`}>{children}</main>
     </div>
   );
 }

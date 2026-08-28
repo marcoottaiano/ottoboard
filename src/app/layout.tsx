@@ -46,10 +46,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="it" className="dark">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0a0a0f]`}
-      >
+    <html lang="it" className={`${geistSans.variable} ${geistMono.variable} dark`}>
+      <body className="antialiased">
         <Providers>
           <GlobalLoadingBar />
           <ConditionalSidebar>{children}</ConditionalSidebar>
@@ -58,9 +56,9 @@ export default function RootLayout({
             position="bottom-right"
             toastOptions={{
               style: {
-                background: '#1a1a2e',
-                border: '1px solid rgba(255,255,255,0.1)',
-                color: '#e2e8f0',
+                background: '#102428',
+                border: '1px solid rgba(197,224,216,0.14)',
+                color: '#f3f0e8',
               },
             }}
           />

@@ -65,6 +65,7 @@ const WIDGET_CATALOGUE: WidgetEntry[] = [
 interface AddWidgetModalProps {
   onClose: () => void
   existingTypes: WidgetType[]
+  allowedTypes?: WidgetType[]
 }
 
 const SINGLETON_TYPES: WidgetType[] = [
@@ -75,13 +76,14 @@ const SINGLETON_TYPES: WidgetType[] = [
   'reminders',
 ]
 
-export function AddWidgetModal({ onClose, existingTypes }: AddWidgetModalProps) {
+export function AddWidgetModal({ onClose, existingTypes, allowedTypes }: AddWidgetModalProps) {
   const [selected, setSelected] = useState<WidgetType | null>(null)
   const [goalId, setGoalId] = useState('')
   const addWidget = useAddWidget()
   const { data: goals = [] } = useFinancialGoals()
 
   const visibleCatalogue = WIDGET_CATALOGUE.filter((w) => {
+    if (allowedTypes && !allowedTypes.includes(w.type)) return false
     if (SINGLETON_TYPES.includes(w.type)) {
       return !existingTypes.includes(w.type)
     }

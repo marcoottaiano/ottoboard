@@ -22,7 +22,7 @@ export default async function FitnessPage() {
 
   if (!connected) {
     return (
-      <main className="flex-1 p-6">
+      <main className="ob-page">
         <StravaConnect mode="full" />
       </main>
     );

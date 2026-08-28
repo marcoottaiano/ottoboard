@@ -33,7 +33,7 @@ export function WidgetShell({ widgetId, href, configurable, onConfigure, childre
     <div
       ref={setNodeRef}
       style={style}
-      className="rounded-xl bg-white/5 border border-white/10 group flex flex-col"
+      className="ob-panel group flex flex-col overflow-hidden"
     >
       {/* Widget content — no overflow-hidden so Select dropdowns can escape */}
       <div className="flex-1 min-h-0">{children}</div>
