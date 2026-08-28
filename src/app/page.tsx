@@ -27,7 +27,6 @@ import { WeekStatsCard } from '@/components/fitness/WeekStatsCard'
 import { MonthFinanceWidget } from '@/components/home/MonthFinanceWidget'
 import { TotalBalanceWidget } from '@/components/home/TotalBalanceWidget'
 import { RemindersWidget } from '@/components/home/RemindersWidget'
-import { HabitsWidget } from '@/components/home/HabitsWidget'
 import { FinancialGoalWidget } from '@/components/home/FinancialGoalWidget'
 import { WeeklyReviewModal } from '@/components/home/WeeklyReviewModal'
 import { getIsoWeekday, toLocalDateStr } from '@/lib/dateUtils'
@@ -39,7 +38,6 @@ export const dynamic = 'force-dynamic'
 function getWidgetHref(type: WidgetType): string | undefined {
   if (type === 'month-finance' || type === 'total-balance' || type === 'financial-goal') return '/finance'
   if (type === 'reminders') return undefined
-  if (type === 'habits') return '/habits'
   return '/fitness'
 }
 
@@ -55,8 +53,6 @@ function WidgetRenderer({ widget }: { widget: DashboardWidget }) {
       return <TotalBalanceWidget bare />
     case 'reminders':
       return <RemindersWidget />
-    case 'habits':
-      return <HabitsWidget />
     case 'financial-goal':
       return <FinancialGoalWidget goalId={widget.config.goalId ?? ''} />
     default:

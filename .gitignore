@@ -46,3 +46,6 @@ next-env.d.ts
 # MCP
 /.playwright-mcp
 .claude/worktrees/
+
+# Supabase CLI local state
+/supabase/.temp/

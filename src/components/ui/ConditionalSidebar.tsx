@@ -5,6 +5,6 @@ import Sidebar from './Sidebar'
 
 export default function ConditionalSidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  if (pathname.startsWith('/auth') || pathname.startsWith('/shared/') || pathname.startsWith('/wishlist/')) return <>{children}</>
+  if (pathname.startsWith('/auth')) return <>{children}</>
   return <Sidebar>{children}</Sidebar>
 }

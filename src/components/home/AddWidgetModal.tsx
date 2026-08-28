@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { X, Activity, BarChart2, Wallet, PiggyBank, BellRing, Target, TrendingUp } from 'lucide-react'
+import { X, Activity, BarChart2, Wallet, PiggyBank, BellRing, TrendingUp } from 'lucide-react'
 import { useFinancialGoals } from '@/hooks/useFinancialGoals'
 import { Select } from '@/components/ui/Select'
 import {
@@ -53,12 +53,6 @@ const WIDGET_CATALOGUE: WidgetEntry[] = [
     description: 'Lista promemoria e scadenze',
   },
   {
-    type: 'habits',
-    icon: <Target size={20} />,
-    label: 'Abitudini',
-    description: 'Abitudini di oggi con checklist',
-  },
-  {
     type: 'financial-goal',
     icon: <TrendingUp size={20} />,
     label: 'Obiettivo risparmio',
@@ -79,7 +73,6 @@ const SINGLETON_TYPES: WidgetType[] = [
   'month-finance',
   'total-balance',
   'reminders',
-  'habits',
 ]
 
 export function AddWidgetModal({ onClose, existingTypes }: AddWidgetModalProps) {

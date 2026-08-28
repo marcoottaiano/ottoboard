@@ -1,11 +1,10 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { X, Dumbbell, Target, Wallet } from 'lucide-react'
+import { X, Dumbbell, Wallet } from 'lucide-react'
 import {
   useWeeklyReviewSummary,
   type FitnessSummary,
-  type HabitSummaryItem,
   type FinanceSummary,
 } from '@/hooks/useWeeklyReviewSummary'
 
@@ -45,36 +44,6 @@ function FitnessSection({ data }: { data: FitnessSummary }) {
         value={data.totalCalories > 0 ? `${data.totalCalories} kcal` : '—'}
       />
     </div>
-  )
-}
-
-function HabitsSection({ habits }: { habits: HabitSummaryItem[] }) {
-  if (habits.length === 0) {
-    return <p className="text-sm text-gray-500">No habits scheduled last week</p>
-  }
-  return (
-    <ul className="space-y-2">
-      {habits.map((h) => (
-        <li key={h.id} className="flex items-center gap-2">
-          <span className="w-4 text-sm">{h.icon ?? '•'}</span>
-          <span className="flex-1 text-sm text-gray-300 truncate">{h.name}</span>
-          <span
-            className={`text-xs font-medium tabular-nums ${
-              h.completionPct >= 80
-                ? 'text-teal-400'
-                : h.completionPct >= 50
-                ? 'text-orange-400'
-                : 'text-red-400'
-            }`}
-          >
-            {h.completionPct}%
-          </span>
-          <span className="text-xs text-gray-600">
-            ({h.completed}/{h.scheduled})
-          </span>
-        </li>
-      ))}
-    </ul>
   )
 }
 
@@ -184,13 +153,6 @@ export function WeeklyReviewModal({ onClose }: Props) {
                     }
                   }
                 />
-              </div>
-
-              <div className="border-t border-white/5" />
-
-              <div>
-                <SectionHeader icon={<Target size={13} />} title="Habits" />
-                <HabitsSection habits={data?.habits ?? []} />
               </div>
 
               <div className="border-t border-white/5" />

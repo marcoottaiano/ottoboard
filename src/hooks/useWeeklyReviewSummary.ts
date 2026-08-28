@@ -2,22 +2,13 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import { toLocalDateStr, getIsoWeekday, getPreviousWeekBounds } from '@/lib/dateUtils'
+import { toLocalDateStr, getPreviousWeekBounds } from '@/lib/dateUtils'
 
 export interface FitnessSummary {
   count: number
   totalKm: number
   totalCalories: number
   totalMinutes: number
-}
-
-export interface HabitSummaryItem {
-  id: string
-  name: string
-  icon: string | null
-  completionPct: number
-  completed: number
-  scheduled: number
 }
 
 export interface FinanceSummary {
@@ -30,7 +21,6 @@ export interface FinanceSummary {
 
 export interface WeeklyReviewSummary {
   fitness: FitnessSummary
-  habits: HabitSummaryItem[]
   finance: FinanceSummary
   weekStart: string
   weekEnd: string
@@ -55,8 +45,6 @@ export function useWeeklyReviewSummary() {
 
       const [
         { data: activities, error: actErr },
-        { data: habits, error: habErr },
-        { data: completions, error: compErr },
         { data: transactions, error: txErr },
         { data: ppTransactions, error: ppTxErr },
       ] = await Promise.all([
@@ -66,15 +54,6 @@ export function useWeeklyReviewSummary() {
           .select('distance, moving_time, calories')
           .gte('start_date', prevStart.toISOString())
           .lte('start_date', prevEnd.toISOString()),
-        supabase
-          .from('habits')
-          .select('id, name, icon, target_days')
-          .eq('archived', false),
-        supabase
-          .from('habit_completions')
-          .select('habit_id, date')
-          .gte('date', prevStartStr)
-          .lte('date', prevEndStr),
         supabase
           .from('transactions')
           .select('amount, type, category:categories(name)')
@@ -88,8 +67,6 @@ export function useWeeklyReviewSummary() {
       ])
 
       if (actErr) throw actErr
-      if (habErr) throw habErr
-      if (compErr) throw compErr
       if (txErr) throw txErr
       if (ppTxErr) throw ppTxErr
 
@@ -100,37 +77,6 @@ export function useWeeklyReviewSummary() {
         totalKm: acts.reduce((s, a) => s + (a.distance ?? 0) / 1000, 0),
         totalCalories: acts.reduce((s, a) => s + (a.calories ?? 0), 0),
         totalMinutes: acts.reduce((s, a) => s + Math.round(a.moving_time / 60), 0),
-      }
-
-      // ── Habits ────────────────────────────────────────────────────────────────
-      const completedSet = new Set(
-        (completions ?? []).map((c) => `${c.habit_id}|${c.date}`)
-      )
-      const habitsResult: HabitSummaryItem[] = []
-
-      for (const h of habits ?? []) {
-        const scheduledDates: string[] = []
-        const cursor = new Date(prevStart)
-        while (cursor <= prevEnd) {
-          if ((h.target_days as number[]).includes(getIsoWeekday(cursor))) {
-            scheduledDates.push(toLocalDateStr(cursor))
-          }
-          cursor.setDate(cursor.getDate() + 1)
-        }
-        if (scheduledDates.length === 0) continue
-
-        const completed = scheduledDates.filter((d) =>
-          completedSet.has(`${h.id}|${d}`)
-        ).length
-
-        habitsResult.push({
-          id: h.id,
-          name: h.name,
-          icon: h.icon,
-          completionPct: Math.round((completed / scheduledDates.length) * 100),
-          completed,
-          scheduled: scheduledDates.length,
-        })
       }
 
       // ── Finance ───────────────────────────────────────────────────────────────
@@ -170,7 +116,6 @@ export function useWeeklyReviewSummary() {
 
       return {
         fitness,
-        habits: habitsResult,
         finance: { totalIncome, totalExpense, topCategory, expenseDelta },
         weekStart: prevStartStr,
         weekEnd: prevEndStr,
