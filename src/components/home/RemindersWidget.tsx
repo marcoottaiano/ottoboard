@@ -1,66 +1,82 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Plus, CheckSquare } from 'lucide-react'
-import { usePendingReminders, useCompleteReminder, useCompletedReminders } from '@/hooks/useReminders'
-import { ReminderRow } from './ReminderRow'
-import { ReminderCreateModal } from './ReminderCreateModal'
-import { ReminderEditModal } from './ReminderEditModal'
-import { CompletedRemindersModal } from './CompletedRemindersModal'
-import type { Reminder } from '@/types'
+import { DataError } from "@/components/ui/DataError";
+import { Button } from "@/components/watermelon-ui/button";
+import { useState, useRef } from "react";
+import { Plus, CheckSquare } from "lucide-react";
+import { usePendingReminders, useCompleteReminder, useCompletedReminders } from "@/hooks/useReminders";
+import { ReminderRow } from "./ReminderRow";
+import { ReminderCreateModal } from "./ReminderCreateModal";
+import { ReminderEditModal } from "./ReminderEditModal";
+import { CompletedRemindersModal } from "./CompletedRemindersModal";
+import type { Reminder } from "@/types";
 
 export function RemindersWidget() {
-  const { data: pending = [], isLoading } = usePendingReminders()
-  const { data: completed = [] } = useCompletedReminders()
-  const completeReminder = useCompleteReminder()
+  const { data: pending = [], isLoading, isError, refetch } = usePendingReminders();
+  const { data: completed = [] } = useCompletedReminders();
+  const completing = useRef(false);
+  const completeReminder = useCompleteReminder();
 
-  const [showCreate, setShowCreate] = useState(false)
-  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null)
-  const [showCompleted, setShowCompleted] = useState(false)
+  const [showCreate, setShowCreate] = useState(false);
+  const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
 
+  if (isError) return <DataError onRetry={() => void refetch()} />;
   return (
     <div className="p-5 flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <CheckSquare size={15} className="text-purple-400" />
-          <h3 className="text-sm font-semibold text-white/80">Promemoria</h3>
+          <CheckSquare size={15} className="text-wm-primary" />
+          <h3 className="text-sm font-semibold text-wm-foreground">Promemoria</h3>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="auto"
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1 text-xs text-gray-600 hover:text-purple-400 transition-colors"
+          className="flex items-center gap-1 text-xs text-wm-muted-foreground hover:text-wm-primary transition-colors"
         >
           <Plus size={13} />
           Aggiungi
-        </button>
+        </Button>
       </div>
 
       {/* List */}
       {isLoading ? (
         <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-7 bg-white/5 rounded animate-pulse" />
+            <div key={i} className="h-7 bg-wm-muted rounded animate-pulse" />
           ))}
         </div>
       ) : pending.length === 0 ? (
         <div className="flex flex-col items-start gap-2">
-          <p className="text-xs text-gray-600">Nessun promemoria in scadenza</p>
-          <button
+          <p className="text-xs text-wm-muted-foreground">Nessun promemoria in scadenza</p>
+          <Button
+            variant="ghost"
+            size="auto"
             onClick={() => setShowCreate(true)}
-            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+            className="text-xs text-wm-primary hover:text-wm-primary transition-colors"
           >
             + Aggiungi promemoria
-          </button>
+          </Button>
         </div>
       ) : (
-        <div className="max-h-64 overflow-y-auto divide-y divide-white/5">
+        <div className="max-h-64 overflow-y-auto divide-y divide-wm-border">
           {pending.map((r) => (
             <ReminderRow
               key={r.id}
               reminder={r}
+              disabled={completeReminder.isPending}
               onComplete={(id) => {
-                const reminder = pending.find(p => p.id === id)
-                if (reminder) completeReminder.mutate(reminder)
+                const reminder = pending.find((p) => p.id === id);
+                if (reminder && !completing.current) {
+                  completing.current = true;
+                  completeReminder.mutate(reminder, {
+                    onSettled: () => {
+                      completing.current = false;
+                    },
+                  });
+                }
               }}
               onEdit={setEditingReminder}
             />
@@ -69,23 +85,20 @@ export function RemindersWidget() {
       )}
 
       {/* Footer */}
-      {completed.length > 0 && (
-        <button
+      {
+        <Button
+          variant="ghost"
+          size="auto"
           onClick={() => setShowCompleted(true)}
-          className="text-xs text-gray-600 hover:text-gray-400 transition-colors self-start"
+          className="text-xs text-wm-muted-foreground hover:text-wm-muted-foreground transition-colors self-start"
         >
-          {completed.length} completat{completed.length === 1 ? 'o' : 'i'} →
-        </button>
-      )}
+          Promemoria completati ({completed.length})
+        </Button>
+      }
 
       {showCreate && <ReminderCreateModal onClose={() => setShowCreate(false)} />}
-      {editingReminder && (
-        <ReminderEditModal
-          reminder={editingReminder}
-          onClose={() => setEditingReminder(null)}
-        />
-      )}
+      {editingReminder && <ReminderEditModal reminder={editingReminder} onClose={() => setEditingReminder(null)} />}
       {showCompleted && <CompletedRemindersModal onClose={() => setShowCompleted(false)} />}
     </div>
-  )
+  );
 }

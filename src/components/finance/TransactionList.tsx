@@ -1,381 +1,416 @@
 "use client";
 
+import { useRef, useState } from "react";
+import { Lock, Pencil, Search } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useCategories } from "@/hooks/useCategories";
 import { useBulkDeleteTransactions, useBulkRecategorizeTransactions } from "@/hooks/useFinanceMutations";
-import { Select, SelectOption } from "@/components/ui/Select";
-import { TransactionType, TransactionWithCategory } from "@/types";
-import { Lock } from "lucide-react";
+import { type TransactionType, type TransactionWithCategory } from "@/types";
+import { Button } from "@/components/watermelon-ui/button";
+import { Card } from "@/components/watermelon-ui/card";
+import { Input } from "@/components/watermelon-ui/input";
+import { Checkbox } from "@/components/watermelon-ui/checkbox";
+import { Skeleton } from "@/components/watermelon-ui/skeleton";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/watermelon-ui/table";
 import { PrivacyValue } from "@/components/ui/PrivacyValue";
-import { useEffect, useRef, useState } from "react";
+import { formatEur } from "@/lib/finance/presentation";
+import { Select } from "@/components/ui/Select";
 import { TransactionEditModal } from "./TransactionEditModal";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
+import { DataError } from "@/components/ui/DataError";
 
 const PAGE_SIZE = 20;
-
-const TYPE_OPTIONS: SelectOption[] = [
+type TypeFilter = TransactionType | "all";
+const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
   { value: "all", label: "Tutte" },
   { value: "income", label: "Entrate" },
   { value: "expense", label: "Uscite" },
 ];
-
-function formatEur(n: number) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
+function dateLabel(value: string) {
+  return new Date(value + "T12:00:00").toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" });
 }
-
-interface Props {
-  month: string;
+function CategoryLabel({ transaction, wrap = false }: { transaction: TransactionWithCategory; wrap?: boolean }) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-wm-muted px-2 py-1 text-xs text-wm-foreground">
+      <span className={wrap ? "break-words whitespace-normal" : "truncate"}>
+        {transaction.category?.icon} {transaction.category?.name ?? "Senza categoria"}
+      </span>
+      {transaction.category_locked && (
+        <Lock size={12} className="shrink-0 text-wm-warning" aria-label="Categoria bloccata" />
+      )}
+    </span>
+  );
 }
-
-export function TransactionList({ month }: Props) {
-  const [typeFilter, setTypeFilter] = useState<TransactionType | "all">("all");
+function Amount({ transaction }: { transaction: TransactionWithCategory }) {
+  return (
+    <PrivacyValue
+      className={`whitespace-nowrap font-mono text-sm font-medium ${transaction.type === "income" ? "text-wm-primary" : "text-wm-destructive"}`}
+    >
+      {transaction.type === "income" ? "+" : "−"}
+      {formatEur(transaction.amount)}
+    </PrivacyValue>
+  );
+}
+export function TransactionList({ month }: { month: string }) {
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<TransactionWithCategory | null>(null);
-
-  // Multi-select state
-  const [isMultiSelect, setIsMultiSelect] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const hasEverSelectedRef = useRef(false);
-
-  // Bulk action UI state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showCategorySelector, setShowCategorySelector] = useState(false);
-  // P7: two-step recategorize — user selects category first, then confirms
-  const [pendingCategoryId, setPendingCategoryId] = useState("");
-  // P11: prevent double-submit on bulk delete
-  const isSubmittingDeleteRef = useRef(false);
-
-  const { data: transactions, isLoading } = useTransactions({
-    month,
-    type: typeFilter === "all" ? undefined : typeFilter,
-  });
-  const { data: categories } = useCategories();
-
-  const bulkDelete = useBulkDeleteTransactions();
-  const bulkRecategorize = useBulkRecategorizeTransactions();
-
-  const filtered = (transactions ?? []).filter((t) => !search || t.description?.toLowerCase().includes(search.toLowerCase()));
-  const paginated = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const [multiSelect, setMultiSelect] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [changingCategory, setChangingCategory] = useState(false);
+  const [categoryId, setCategoryId] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const recategorizing = useRef(false);
+  const transactions = useTransactions({ month, type: typeFilter === "all" ? undefined : typeFilter });
+  const categories = useCategories();
+  const remove = useBulkDeleteTransactions();
+  const recategorize = useBulkRecategorizeTransactions();
+  const filtered = (transactions.data ?? []).filter(
+    (t) => !search || t.description?.toLocaleLowerCase("it-IT").includes(search.toLocaleLowerCase("it-IT")),
+  );
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-
-  // AC 4: Auto-exit multi-select when selection becomes empty (only after items were selected)
-  useEffect(() => {
-    if (isMultiSelect && hasEverSelectedRef.current && selectedIds.size === 0) {
-      setIsMultiSelect(false);
-      hasEverSelectedRef.current = false;
-    }
-  }, [isMultiSelect, selectedIds]);
-
-  // P10: clear selection when filter/search/month changes to prevent stale-ID operations
-  useEffect(() => {
-    if (isMultiSelect) {
-      setIsMultiSelect(false);
-      setSelectedIds(new Set());
-      hasEverSelectedRef.current = false;
-      setShowDeleteConfirm(false);
-      setShowCategorySelector(false);
-      setPendingCategoryId("");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeFilter, search, month]);
-
-  function enterMultiSelect() {
-    setIsMultiSelect(true);
+  const currentPage = Math.min(page, Math.max(0, totalPages - 1));
+  const rows = filtered.slice(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE);
+  const selection = (transactions.data ?? []).filter((t) => selectedIds.has(t.id));
+  const allPageSelected = rows.length > 0 && rows.every((t) => selectedIds.has(t.id));
+  const somePageSelected = rows.some((t) => selectedIds.has(t.id));
+  const unlocked = selection.filter((t) => !t.category_locked);
+  const categoryOptions = (categories.data ?? [])
+    .filter((c) => unlocked.every((t) => c.type === t.type || c.type === "both"))
+    .map((c) => ({ value: c.id, label: `${c.icon ?? ""} ${c.name}` }));
+  const busy = remove.isPending || recategorize.isPending;
+  function resetSelection() {
+    setMultiSelect(false);
     setSelectedIds(new Set());
-    hasEverSelectedRef.current = false;
-    setShowDeleteConfirm(false);
-    setShowCategorySelector(false);
-    setPendingCategoryId("");
+    setConfirmDelete(false);
+    setChangingCategory(false);
+    setCategoryId("");
+    setError(null);
   }
-
-  function exitMultiSelect() {
-    setIsMultiSelect(false);
-    setSelectedIds(new Set());
-    hasEverSelectedRef.current = false;
-    setShowDeleteConfirm(false);
-    setShowCategorySelector(false);
-    setPendingCategoryId("");
-    isSubmittingDeleteRef.current = false;
-  }
-
   function toggleId(id: string) {
     const next = new Set(selectedIds);
-    if (next.has(id)) {
-      next.delete(id);
-    } else {
-      next.add(id);
-      hasEverSelectedRef.current = true;
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+    if (next.size === 0) resetSelection();
+  }
+  function togglePage() {
+    const next = new Set(selectedIds);
+    for (const row of rows) {
+      if (allPageSelected) next.delete(row.id);
+      else next.add(row.id);
     }
     setSelectedIds(next);
+    if (next.size === 0) resetSelection();
   }
-
-  function toggleSelectAllPage() {
-    const pageIds = paginated.map((t) => t.id);
-    const allSelected = pageIds.every((id) => selectedIds.has(id));
-    if (allSelected) {
-      const next = new Set(selectedIds);
-      pageIds.forEach((id) => next.delete(id));
-      setSelectedIds(next);
-    } else {
-      const next = new Set(selectedIds);
-      pageIds.forEach((id) => next.add(id));
-      // P15: set ref once outside the loop, not once per ID
-      hasEverSelectedRef.current = true;
-      setSelectedIds(next);
+  async function changeCategory() {
+    if (recategorizing.current || !unlocked.length || !categoryOptions.some((c) => c.value === categoryId)) return;
+    recategorizing.current = true;
+    setError(null);
+    try {
+      await recategorize.mutateAsync({ ids: selection.map((t) => t.id), categoryId });
+      resetSelection();
+    } catch {
+      setError("Ricategorizzazione non riuscita. Riprova.");
+    } finally {
+      recategorizing.current = false;
     }
   }
-
-  function handleConfirmDelete() {
-    // P11: prevent double-submit if user clicks rapidly before isPending transitions
-    if (isSubmittingDeleteRef.current || bulkDelete.isPending) return;
-    isSubmittingDeleteRef.current = true;
-    const ids = Array.from(selectedIds);
-    bulkDelete.mutate(ids, {
-      onSuccess: () => {
-        exitMultiSelect();
-      },
-      onSettled: () => {
-        isSubmittingDeleteRef.current = false;
-      },
-    });
-  }
-
-  function handleConfirmRecategorize() {
-    if (!pendingCategoryId || bulkRecategorize.isPending) return;
-    const ids = Array.from(selectedIds);
-    bulkRecategorize.mutate(
-      { ids, categoryId: pendingCategoryId },
-      {
-        onSuccess: () => {
-          exitMultiSelect();
-        },
-      },
-    );
-  }
-
-  const allPageSelected = paginated.length > 0 && paginated.every((t) => selectedIds.has(t.id));
-  const somePageSelected = paginated.some((t) => selectedIds.has(t.id));
-
-  // P13: derive category options dynamically based on selected transaction types
-  const selectedTransactionTypes = new Set(
-    Array.from(selectedIds)
-      .map((id) => (transactions ?? []).find((t) => t.id === id)?.type)
-      .filter((type): type is TransactionType => type !== undefined),
-  );
-  const allSelectedAreIncome = selectedTransactionTypes.size === 1 && selectedTransactionTypes.has("income");
-  const categoryOptions: SelectOption[] = (categories ?? [])
-    .filter((c) => {
-      if (allSelectedAreIncome) return c.type === "income" || c.type === "both";
-      return c.type === "expense" || c.type === "both";
-    })
-    .map((c) => ({ value: c.id, label: `${c.icon ?? ""} ${c.name}`.trim() }));
-
   return (
-    <div className="finance-card p-5">
-      {/* Header row */}
-      <div className="flex flex-col gap-2 mb-4">
-        {/* Title + action button */}
-        <div className="flex items-center justify-between">
-          <h3 className="ob-card-title">Transazioni</h3>
-          {!isMultiSelect ? (
-            <button onClick={enterMultiSelect} className="ob-secondary-action">
-              Seleziona
-            </button>
-          ) : (
-            <button onClick={exitMultiSelect} className="ob-secondary-action">
-              Annulla
-            </button>
+    <Card className="min-w-0 p-3 sm:p-4 md:p-6">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="wm-card-title">Transazioni</h2>
+          <p className="mt-1 text-xs text-wm-muted-foreground">{filtered.length} movimenti nel periodo</p>
+        </div>
+        <Button
+          variant="outline"
+          size="auto"
+          disabled={busy}
+          onClick={() => (multiSelect ? resetSelection() : setMultiSelect(true))}
+        >
+          {multiSelect ? "Annulla selezione" : "Seleziona"}
+        </Button>
+      </div>
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row">
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-wm-muted-foreground"
+            size={18}
+            aria-hidden="true"
+          />
+          <Input
+            aria-label="Cerca nella descrizione delle transazioni"
+            placeholder="Cerca un movimento..."
+            value={search}
+            disabled={busy}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+              resetSelection();
+            }}
+            className="h-11 pl-10"
+          />
+        </div>
+        <div
+          role="group"
+          aria-label="Filtra per tipo"
+          className="grid grid-cols-3 gap-1 rounded-lg bg-wm-muted p-1 sm:shrink-0"
+        >
+          {TYPE_OPTIONS.map(({ value, label }) => (
+            <Button
+              key={value}
+              variant="ghost"
+              size="auto"
+              disabled={busy}
+              aria-pressed={typeFilter === value}
+              className={
+                typeFilter === value
+                  ? "bg-wm-card text-wm-primary shadow-xs ring-1 ring-wm-border"
+                  : "text-wm-muted-foreground"
+              }
+              onClick={() => {
+                setTypeFilter(value);
+                setPage(0);
+                resetSelection();
+              }}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
+      {multiSelect && selection.length > 0 && (
+        <div className="mb-4 rounded-lg border border-wm-border bg-wm-secondary p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="mr-auto text-sm font-medium">{selection.length} selezionate</p>
+            <Button
+              variant="outline"
+              size="auto"
+              className="w-full sm:w-auto"
+              disabled={busy || !unlocked.length}
+              onClick={() => {
+                setChangingCategory((value) => !value);
+                setCategoryId("");
+              }}
+            >
+              Cambia categoria
+            </Button>
+            <Button
+              variant="destructive"
+              size="auto"
+              className="w-full sm:w-auto"
+              disabled={busy}
+              onClick={() => setConfirmDelete(true)}
+            >
+              Elimina selezionati
+            </Button>
+          </div>
+          {changingCategory && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-wm-muted-foreground">
+                Le categorie bloccate sono escluse. Per tipi misti sono disponibili solo categorie compatibili con
+                entrambi.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Select
+                  aria-label="Nuova categoria"
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  options={categoryOptions}
+                  disabled={busy || categories.isError}
+                  className="min-h-11 min-w-0 w-full sm:min-w-40 sm:flex-1"
+                />
+                <Button
+                  size="auto"
+                  className="w-full sm:w-auto"
+                  disabled={busy || !categoryId || !unlocked.length || categories.isError}
+                  onClick={changeCategory}
+                >
+                  {recategorize.isPending ? "Aggiornamento..." : "Conferma categoria"}
+                </Button>
+              </div>
+            </div>
           )}
         </div>
-        {/* Search + filter */}
-        {!isMultiSelect && (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(0);
-              }}
-              placeholder="Cerca..."
-              className="ob-field min-w-0 flex-1 text-xs placeholder-white/20"
-            />
-            <Select
-              value={typeFilter}
-              onChange={(v) => {
-                setTypeFilter(v as TransactionType | "all");
-                setPage(0);
-              }}
-              options={TYPE_OPTIONS}
-              showPlaceholder={false}
-              className="w-28 flex-shrink-0"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* P12: Bulk action toolbar — fixed bottom on mobile, inline on desktop */}
-      {isMultiSelect && selectedIds.size > 0 && (
-        <div className="fixed bottom-16 left-0 right-0 z-40 px-4 md:relative md:bottom-auto md:left-auto md:right-auto md:z-auto md:px-0 md:mb-3">
-          <div className="p-3 bg-gray-900/95 md:bg-emerald-500/10 border border-emerald-500/20 rounded-lg shadow-lg md:shadow-none">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-emerald-300 font-medium flex-1">
-                {selectedIds.size} selezionat{selectedIds.size === 1 ? "a" : "e"}
-              </span>
-
-              {/* Delete inline confirm */}
-              {!showDeleteConfirm ? (
-                <button
-                  onClick={() => {
-                    setShowDeleteConfirm(true);
-                    setShowCategorySelector(false);
-                    setPendingCategoryId("");
-                  }}
-                  className="text-xs px-2.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors"
-                >
-                  Elimina selezionati
-                </button>
-              ) : (
-                <>
-                  <button onClick={handleConfirmDelete} disabled={bulkDelete.isPending} className="text-xs px-2.5 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors">
-                    {bulkDelete.isPending ? "Eliminazione..." : "Conferma eliminazione"}
-                  </button>
-                  <button onClick={() => setShowDeleteConfirm(false)} className="text-xs px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-gray-200 transition-colors">
-                    Annulla
-                  </button>
-                </>
-              )}
-
-              {/* Change category button */}
-              {!showDeleteConfirm && (
-                <button
-                  onClick={() => {
-                    setShowCategorySelector((v) => !v);
-                    setPendingCategoryId("");
-                  }}
-                  className="text-xs px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:border-white/20 transition-colors"
-                >
-                  Cambia categoria
-                </button>
-              )}
-            </div>
-
-            {/* P7: two-step recategorize — select category, then confirm */}
-            {showCategorySelector && !showDeleteConfirm && (
-              <div className="mt-2 space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">Nuova categoria:</span>
-                  <Select
-                    value={pendingCategoryId}
-                    onChange={(v) => {
-                      if (v) setPendingCategoryId(v);
-                    }}
-                    options={categoryOptions}
-                    placeholder="Seleziona categoria..."
-                    showPlaceholder={true}
-                    className="flex-1 max-w-xs"
-                  />
-                </div>
-                {pendingCategoryId && (
-                  <div className="flex items-center gap-2">
-                    <button onClick={handleConfirmRecategorize} disabled={bulkRecategorize.isPending} className="text-xs px-2.5 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-50 transition-colors">
-                      {bulkRecategorize.isPending ? "Aggiornamento..." : "Conferma categoria"}
-                    </button>
-                    <button onClick={() => setPendingCategoryId("")} className="text-xs px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-gray-200 transition-colors">
-                      Annulla
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
       )}
-
-      {isLoading ? (
+      {error && (
+        <p role="alert" className="mb-4 text-sm text-wm-destructive">
+          {error}
+        </p>
+      )}
+      {categories.isError && changingCategory && (
+        <DataError onRetry={() => void categories.refetch()} message="Impossibile caricare le categorie." />
+      )}
+      {transactions.isError ? (
+        <DataError onRetry={() => void transactions.refetch()} />
+      ) : transactions.isLoading ? (
         <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="h-11 bg-white/5 rounded animate-pulse" />
+          {[0, 1, 2, 3, 4].map((item) => (
+            <Skeleton key={item} className="h-12" />
           ))}
         </div>
-      ) : paginated.length === 0 ? (
-        <div className="py-10 text-center text-gray-600 text-sm">Nessuna transazione trovata</div>
+      ) : !rows.length ? (
+        <p className="py-12 text-center text-sm text-wm-muted-foreground">Nessuna transazione trovata.</p>
       ) : (
-        <div className="space-y-0.5">
-          {/* Header — desktop only */}
-          <div className="hidden md:grid md:grid-cols-[auto_1fr_1fr_auto] items-center gap-3 px-2 pb-2 border-b border-white/[0.06] text-xs text-white/25 font-normal">
-            {isMultiSelect && (
-              <input
-                type="checkbox"
-                checked={allPageSelected}
-                ref={(el) => {
-                  if (el) el.indeterminate = somePageSelected && !allPageSelected;
-                }}
-                onChange={toggleSelectAllPage}
-                className="w-3.5 h-3.5 rounded accent-emerald-500 cursor-pointer"
-              />
+        <>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {multiSelect && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        aria-label="Seleziona la pagina"
+                        checked={allPageSelected ? true : somePageSelected ? "indeterminate" : false}
+                        onCheckedChange={togglePage}
+                        disabled={busy}
+                      />
+                    </TableHead>
+                  )}
+                  <TableHead>Data</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Descrizione</TableHead>
+                  <TableHead className="text-right">Importo</TableHead>
+                  <TableHead>
+                    <span className="sr-only">Azioni</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((t) => (
+                  <TableRow key={t.id} data-state={selectedIds.has(t.id) ? "selected" : undefined}>
+                    {multiSelect && (
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Seleziona ${t.description || t.category?.name || "movimento"} del ${dateLabel(t.date)}`}
+                          checked={selectedIds.has(t.id)}
+                          onCheckedChange={() => toggleId(t.id)}
+                          disabled={busy}
+                        />
+                      </TableCell>
+                    )}
+                    <TableCell className="text-xs text-wm-muted-foreground">{dateLabel(t.date)}</TableCell>
+                    <TableCell>
+                      <CategoryLabel transaction={t} />
+                    </TableCell>
+                    <TableCell className="max-w-64 truncate text-sm">{t.description || "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <Amount transaction={t} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        disabled={busy}
+                        aria-label={`Modifica ${t.description || "transazione"} del ${dateLabel(t.date)}`}
+                        onClick={() => setSelected(t)}
+                      >
+                        <Pencil size={14} />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="space-y-2 md:hidden">
+            {multiSelect && (
+              <label className="mb-3 flex min-h-11 items-center gap-3 text-sm">
+                <Checkbox
+                  checked={allPageSelected ? true : somePageSelected ? "indeterminate" : false}
+                  onCheckedChange={togglePage}
+                  disabled={busy}
+                />
+                Seleziona questa pagina
+              </label>
             )}
-            <span>Data · Categoria</span>
-            <span>Descrizione</span>
-            <span className="text-right">Importo</span>
-          </div>
-
-          {paginated.map((t) => (
-            <div key={t.id} onClick={() => (isMultiSelect ? toggleId(t.id) : setSelected(t))} className={`flex items-center gap-3 px-2 py-3 rounded-xl cursor-pointer transition-colors border border-transparent hover:bg-white/[0.04] hover:border-white/[0.06] ${isMultiSelect && selectedIds.has(t.id) ? "bg-emerald-500/[0.06] border-emerald-500/20" : ""}`}>
-              {/* Checkbox (multi-select) */}
-              {isMultiSelect && (
-                <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
-                  <input type="checkbox" checked={selectedIds.has(t.id)} onChange={() => toggleId(t.id)} className="w-3.5 h-3.5 rounded accent-emerald-500 cursor-pointer" />
-                </div>
-              )}
-
-              {/* Date */}
-              <span className="flex-shrink-0 text-xs text-white/30 w-10 tabular-nums">{new Date(t.date).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })}</span>
-
-              {/* Category + description */}
-              <div className="flex-1 min-w-0 flex flex-col gap-0.5 md:flex-row md:items-center md:gap-2">
-                {t.category ? (
-                  <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-md w-fit flex-shrink-0" style={{ background: `${t.category.color}20`, color: t.category.color ?? undefined }}>
-                    <span className="flex-shrink-0">{t.category.icon}</span>
-                    <span className="whitespace-nowrap">{t.category.name}</span>
-                    {t.category_locked && <Lock size={10} className="shrink-0 text-amber-400" />}
-                  </span>
-                ) : (
-                  <span className="text-xs text-white/20 flex-shrink-0">—</span>
+            {rows.map((t) => (
+              <div
+                key={t.id}
+                className={`flex min-w-0 items-center rounded-xl border ${selectedIds.has(t.id) ? "border-wm-primary bg-wm-primary/5" : "border-wm-border"}`}
+              >
+                {multiSelect && (
+                  <label className="flex min-h-11 min-w-11 items-center justify-center self-stretch">
+                    <Checkbox
+                      checked={selectedIds.has(t.id)}
+                      onCheckedChange={() => toggleId(t.id)}
+                      disabled={busy}
+                      aria-label={`Seleziona ${t.description || t.category?.name || "movimento"} del ${dateLabel(t.date)}`}
+                    />
+                  </label>
                 )}
-                {t.description && <span className="text-xs text-white/40 truncate">{t.description}</span>}
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => (multiSelect ? toggleId(t.id) : setSelected(t))}
+                  aria-pressed={multiSelect ? selectedIds.has(t.id) : undefined}
+                  className="block min-h-11 min-w-0 flex-1 space-y-2.5 rounded-xl p-3 text-left transition-colors hover:bg-wm-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-wm-ring disabled:opacity-50"
+                >
+                  <span className="flex items-center justify-between gap-2 text-xs text-wm-muted-foreground">
+                    <time dateTime={t.date}>{dateLabel(t.date)}</time>
+                    {!multiSelect && (
+                      <span className="inline-flex items-center gap-1">
+                        <Pencil size={12} aria-hidden="true" />
+                        Modifica
+                      </span>
+                    )}
+                    {multiSelect && <span>{selectedIds.has(t.id) ? "Selezionato" : "Seleziona"}</span>}
+                  </span>
+                  <span className="block break-words text-sm font-medium leading-relaxed text-wm-foreground">
+                    {t.description || t.category?.name || "Movimento senza descrizione"}
+                  </span>
+                  <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <CategoryLabel transaction={t} wrap />
+                    <span className="ml-auto">
+                      <Amount transaction={t} />
+                    </span>
+                  </span>
+                </button>
               </div>
-
-              {/* Amount */}
-              <span className={`flex-shrink-0 text-sm font-semibold tabular-nums ${t.type === "income" ? "text-emerald-400" : "text-red-400"}`}>
-                <PrivacyValue>
-                  {t.type === "income" ? "+" : ""}
-                  {formatEur(t.amount)}
-                </PrivacyValue>
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
-
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 text-xs text-gray-500">
-          <span>{filtered.length} transazioni</span>
-          <div className="flex gap-1">
-            <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} className="px-2 py-1 rounded hover:bg-white/10 disabled:opacity-30 transition-colors">
-              ←
-            </button>
-            <span className="px-2 py-1 text-gray-400">
-              {page + 1} / {totalPages}
-            </span>
-            <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1} className="px-2 py-1 rounded hover:bg-white/10 disabled:opacity-30 transition-colors">
-              →
-            </button>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-sm text-wm-muted-foreground">
+          <span>
+            Pagina {currentPage + 1} di {totalPages}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="auto"
+              disabled={currentPage === 0 || busy}
+              onClick={() => setPage(currentPage - 1)}
+            >
+              Precedente
+            </Button>
+            <Button
+              variant="outline"
+              size="auto"
+              disabled={currentPage >= totalPages - 1 || busy}
+              onClick={() => setPage(currentPage + 1)}
+            >
+              Successiva
+            </Button>
           </div>
         </div>
       )}
-
+      <ConfirmDeleteDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Elimina i movimenti selezionati"
+        description={`Verranno eliminate definitivamente ${selection.length} transazioni.`}
+        onConfirm={async () => {
+          if (!selection.length) return;
+          await remove.mutateAsync(selection.map((t) => t.id));
+          resetSelection();
+        }}
+      />
       {selected && <TransactionEditModal transaction={selected} onClose={() => setSelected(null)} />}
-    </div>
+    </Card>
   );
 }

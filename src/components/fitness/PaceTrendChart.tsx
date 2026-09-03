@@ -1,9 +1,15 @@
 "use client";
+import { ResponsiveChart } from "@/components/ui/ResponsiveChart";
+import { DataError } from "@/components/ui/DataError";
+import { Card } from "@/components/watermelon-ui/card";
+import { Button } from "@/components/watermelon-ui/button";
+import { usePrivacyMode } from "@/hooks/usePrivacyMode";
+import { useCurrentTime } from "@/hooks/useCurrentTime";
 
 import { useActivities } from "@/hooks/useActivities";
 import { Activity } from "@/types";
 import { useState } from "react";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
 
 const PERIODS = [
   { value: 30, label: "30g" },
@@ -13,8 +19,9 @@ const PERIODS = [
 ];
 
 function formatPaceLabel(sec: number) {
-  const m = Math.floor(sec / 60);
-  const s = Math.round(sec % 60);
+  const seconds = Math.round(sec);
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
@@ -46,64 +53,122 @@ function buildChartData(activities: Activity[]) {
 
   return points.map((p) => ({
     ...p,
-    trend: Math.round(m * p.index + b),
+    trend: points.length > 1 ? Math.round(m * p.index + b) : undefined,
   }));
 }
 
 export function PaceTrendChart() {
+  const now = useCurrentTime();
+  const isPrivate = usePrivacyMode((state) => state.isPrivate);
   const [period, setPeriod] = useState(90);
 
-  const afterStr = new Date(Date.now() - period * 86400000).toISOString().slice(0, 10);
+  const afterStr = new Date(now - period * 86400000).toISOString().slice(0, 10);
 
-  const { data: activities, isLoading } = useActivities({ after: afterStr });
+  const { data: activities, isLoading, isError, refetch } = useActivities({ after: afterStr });
 
   const chartData = activities ? buildChartData(activities) : [];
 
   // Calcola dominio Y adattivo con buffer di 30 secondi
-  const paceValues = chartData.flatMap((d) => [d.pace, d.trend].filter(Boolean));
+  const paceValues = chartData.flatMap((d) => [d.pace, ...(d.trend === undefined ? [] : [d.trend])]);
   const minPace = paceValues.length > 0 ? Math.min(...paceValues) - 30 : 0;
   const maxPace = paceValues.length > 0 ? Math.max(...paceValues) + 30 : 600;
 
+  if (isError) return <DataError onRetry={() => void refetch()} />;
   return (
-    <div className="ob-panel-flat h-full min-h-[270px] overflow-hidden p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <Card className="wm-panel-flat h-full min-h-[390px] overflow-hidden p-5 sm:p-6">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="ob-eyebrow">Ritmo</p>
-          <h3 className="ob-card-title mt-2">Pace corsa</h3>
+          <p className="wm-eyebrow">Ritmo</p>
+          <h3 className="wm-card-title mt-2">Passo di corsa</h3>
+          <p className="mt-1 text-xs text-wm-muted-foreground">Ultime 20 corse oltre 500 m · min/km</p>
         </div>
         <div className="flex gap-1">
           {PERIODS.map((p) => (
-            <button key={p.value} onClick={() => setPeriod(p.value)} className={`rounded-md px-2 py-1 text-xs transition-colors ${period === p.value ? "bg-fitness/20 text-fitness" : "text-gray-500 hover:text-gray-300"}`}>
+            <Button
+              variant="ghost"
+              size="auto"
+              key={p.value}
+              aria-pressed={period === p.value}
+              aria-label={`Ultimi ${p.value} giorni`}
+              onClick={() => setPeriod(p.value)}
+              className={`rounded-md px-2 py-1 text-xs transition-colors ${period === p.value ? "bg-fitness/20 text-fitness" : "text-wm-muted-foreground hover:text-wm-foreground"}`}
+            >
               {p.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="h-48 bg-white/5 rounded animate-pulse" />
+      <div className="mb-4 flex flex-wrap gap-4 text-xs text-wm-muted-foreground">
+        <span className="inline-flex items-center gap-2">
+          <span className="size-2 rounded-full bg-wm-fitness" />
+          Passo reale
+        </span>
+        <span className="inline-flex items-center gap-2">
+          <span className="w-4 border-t-2 border-dashed border-wm-chart-purple" />
+          Tendenza
+        </span>
+        <span>Più in alto = passo più veloce</span>
+      </div>
+      {isPrivate ? (
+        <div className="flex h-[260px] items-center justify-center text-sm text-wm-muted-foreground">
+          Grafico nascosto in modalità privacy
+        </div>
+      ) : isLoading ? (
+        <div className="h-[260px] bg-wm-muted rounded animate-pulse" />
       ) : chartData.length === 0 ? (
-        <div className="h-48 flex items-center justify-center text-gray-600 text-sm">Nessuna corsa nel periodo</div>
+        <div className="h-[260px] flex items-center justify-center text-wm-muted-foreground text-sm">
+          Nessuna corsa nel periodo
+        </div>
       ) : (
-        <ResponsiveContainer width="100%" height={180}>
+        <ResponsiveChart width="100%" height={260}>
           <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#6b7280" }} tickLine={false} axisLine={false} />
-            <YAxis reversed domain={[minPace, maxPace]} tick={{ fontSize: 10, fill: "#6b7280" }} tickLine={false} axisLine={false} tickFormatter={formatPaceLabel} />
+            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--wm-border)" />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              reversed
+              domain={[minPace, maxPace]}
+              tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={formatPaceLabel}
+            />
             <Tooltip
               contentStyle={{
-                background: "#1a1a2e",
-                border: "1px solid rgba(255,255,255,0.1)",
+                background: "var(--wm-popover)",
+                border: "1px solid var(--wm-border)",
                 borderRadius: "8px",
                 fontSize: "12px",
               }}
               formatter={(v, name) => [formatPaceLabel(Number(v)), name === "pace" ? "Pace reale" : "Tendenza"]}
             />
-            <Line type="monotone" dataKey="pace" name="pace" stroke="#ff6b4a" strokeWidth={2} dot={{ r: 3, fill: "#ff6b4a" }} activeDot={{ r: 5 }} />
-            <Line type="monotone" dataKey="trend" name="trend" stroke="#ff6b4a60" strokeWidth={1.5} dot={false} strokeDasharray="4 2" activeDot={false} />
+            <Line
+              type="monotone"
+              dataKey="pace"
+              name="pace"
+              stroke="var(--wm-fitness)"
+              strokeWidth={2}
+              dot={{ r: 3, fill: "var(--wm-fitness)" }}
+              activeDot={{ r: 5 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="trend"
+              name="trend"
+              stroke="var(--wm-chart-purple)"
+              strokeWidth={1.5}
+              dot={false}
+              strokeDasharray="4 2"
+              activeDot={false}
+            />
           </LineChart>
-        </ResponsiveContainer>
+        </ResponsiveChart>
       )}
-    </div>
+    </Card>
   );
 }

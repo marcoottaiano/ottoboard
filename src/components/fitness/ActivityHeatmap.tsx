@@ -1,5 +1,9 @@
 "use client";
 
+import { DataError } from "@/components/ui/DataError";
+import { Card } from "@/components/watermelon-ui/card";
+import { Button } from "@/components/watermelon-ui/button";
+import { usePrivacyMode } from "@/hooks/usePrivacyMode";
 import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useActivities } from "@/hooks/useActivities";
@@ -17,7 +21,7 @@ function getIntensity(movingTime: number | undefined): 0 | 1 | 2 | 3 | 4 {
   return 4;
 }
 
-const INTENSITY_CLASSES = ["bg-white/5", "bg-fitness/20", "bg-fitness/40", "bg-fitness/[0.65]", "bg-fitness"];
+const INTENSITY_CLASSES = ["bg-wm-muted", "bg-fitness/20", "bg-fitness/40", "bg-fitness/[0.65]", "bg-fitness"];
 
 // "Lun 15 Gen 2025" per il tooltip
 function formatCellDate(iso: string): string {
@@ -96,22 +100,29 @@ interface TooltipState {
 }
 
 export function ActivityHeatmap() {
+  const isPrivate = usePrivacyMode((state) => state.isPrivate);
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(currentYear);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   // Filtra strettamente per anno — evita che attività di altri anni inquinino la mappa
-  const { data: activities, isLoading } = useActivities({
+  const {
+    data: activities,
+    isLoading,
+    isError,
+    refetch,
+  } = useActivities({
     after: `${year}-01-01`,
     before: `${year}-12-31T23:59:59`,
   });
 
+  if (isError) return <DataError onRetry={() => void refetch()} />;
   if (isLoading) {
     return (
-      <div className="ob-panel-flat animate-pulse p-5">
-        <div className="h-4 bg-white/10 rounded w-32 mb-4" />
-        <div className="h-28 bg-white/5 rounded" />
-      </div>
+      <Card className="wm-panel-flat animate-pulse p-5">
+        <div className="h-4 bg-wm-muted rounded w-32 mb-4" />
+        <div className="h-28 bg-wm-muted rounded" />
+      </Card>
     );
   }
 
@@ -120,30 +131,45 @@ export function ActivityHeatmap() {
   const monthStartCols = getMonthStartCols(cells, year);
 
   return (
-    <div className="ob-panel-flat overflow-hidden p-5">
+    <Card className="wm-panel-flat overflow-hidden p-5 sm:p-6">
       {/* Header: titolo + legenda + navigazione anno */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="ob-eyebrow">Continuità</p>
-          <h3 className="ob-card-title mt-2">Calendario attività · {year}</h3>
+          <p className="wm-eyebrow">Continuità</p>
+          <h3 className="wm-card-title mt-2">Calendario attività · {year}</h3>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {/* Legenda intensità */}
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-gray-600">Meno</span>
+            <span className="text-[10px] text-wm-muted-foreground">Meno</span>
             {INTENSITY_CLASSES.map((cls, i) => (
               <div key={i} className={`w-3 h-3 rounded-[2px] ${cls}`} />
             ))}
-            <span className="text-[10px] text-gray-600">Più</span>
+            <span className="text-[10px] text-wm-muted-foreground">Più</span>
           </div>
           {/* Anno precedente / successivo */}
           <div className="flex items-center gap-0.5">
-            <button onClick={() => setYear((y) => y - 1)} className="ob-icon-button size-8" title="Anno precedente">
+            <Button
+              aria-label="Anno precedente"
+              variant="ghost"
+              size="auto"
+              onClick={() => setYear((y) => y - 1)}
+              className="wm-icon-button size-8"
+              title="Anno precedente"
+            >
               <ChevronLeft size={14} />
-            </button>
-            <button onClick={() => setYear((y) => y + 1)} disabled={year >= currentYear} className="ob-icon-button size-8 disabled:cursor-not-allowed disabled:opacity-30" title="Anno successivo">
+            </Button>
+            <Button
+              aria-label="Anno successivo"
+              variant="ghost"
+              size="auto"
+              onClick={() => setYear((y) => y + 1)}
+              disabled={year >= currentYear}
+              className="wm-icon-button size-8 disabled:cursor-not-allowed disabled:opacity-30"
+              title="Anno successivo"
+            >
               <ChevronRight size={14} />
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -153,63 +179,77 @@ export function ActivityHeatmap() {
         forza implicitamente overflow-y: auto (spec CSS), generando uno scroll verticale
         indesiderato. Con overflow-y-hidden lo blocchiamo esplicitamente.
       */}
-      <div className="overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-white/5 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
-        <div className="inline-flex gap-1 min-w-max">
-          {/* Colonna etichette giorni (L M M G V S D) con spacer per la riga mesi */}
-          <div className="flex flex-col gap-1">
-            {/* Riga mesi: spacer vuoto, allineato in altezza con le label mesi nelle colonne */}
-            <div className="h-[14px]" />
-            {DAYS.map((d, i) => (
-              <span key={i} className="text-[10px] text-gray-600 h-3 flex items-center pr-1">
-                {i % 2 === 0 ? d : ""}
-              </span>
-            ))}
-          </div>
-
-          {/* Colonne settimane — ogni colonna porta la sua etichetta mese se è la prima di quel mese */}
-          {Array.from({ length: numWeeks }).map((_, weekIdx) => {
-            const monthLabel = monthStartCols.get(weekIdx);
-            return (
-              <div key={weekIdx} className="flex flex-col gap-1">
-                {/* Etichetta mese (o spazio vuoto) — sempre presente per mantenere l'allineamento */}
-                <div className="h-[14px] flex items-end pb-0.5">{monthLabel && <span className="text-[10px] text-gray-500 leading-none whitespace-nowrap">{monthLabel}</span>}</div>
-
-                {/* 7 celle giorni */}
-                {Array.from({ length: 7 }).map((_, dayIdx) => {
-                  const cellIdx = weekIdx * 7 + dayIdx;
-                  const cell = cells[cellIdx];
-                  if (!cell) return <div key={dayIdx} className="w-3 h-3" />;
-
-                  return (
-                    <div
-                      key={dayIdx}
-                      className={`w-3 h-3 rounded-[2px] cursor-default ${INTENSITY_CLASSES[cell.intensity]} ${cell.isFuture ? "opacity-25" : ""}`}
-                      onMouseEnter={(e) =>
-                        setTooltip({
-                          label: formatCellDate(cell.date),
-                          name: cell.activity?.name,
-                          x: e.clientX,
-                          y: e.clientY,
-                        })
-                      }
-                      onMouseMove={(e) => setTooltip((t) => (t ? { ...t, x: e.clientX, y: e.clientY } : null))}
-                      onMouseLeave={() => setTooltip(null)}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })}
+      {isPrivate ? (
+        <div className="flex h-32 items-center justify-center text-sm text-wm-muted-foreground">
+          Calendario nascosto in modalità privacy
         </div>
-      </div>
+      ) : (
+        <div className="overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-wm-muted [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-wm-muted [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb:hover]:bg-wm-muted">
+          <div className="inline-flex gap-1 min-w-max">
+            {/* Colonna etichette giorni (L M M G V S D) con spacer per la riga mesi */}
+            <div className="flex flex-col gap-1">
+              {/* Riga mesi: spacer vuoto, allineato in altezza con le label mesi nelle colonne */}
+              <div className="h-[14px]" />
+              {DAYS.map((d, i) => (
+                <span key={i} className="text-[10px] text-wm-muted-foreground h-3 flex items-center pr-1">
+                  {i % 2 === 0 ? d : ""}
+                </span>
+              ))}
+            </div>
 
-      {/* Tooltip floating */}
-      {tooltip && (
-        <div className="fixed z-50 pointer-events-none px-2.5 py-1.5 rounded-lg bg-[#1a1a2e] border border-white/10 text-xs shadow-xl whitespace-nowrap" style={{ left: tooltip.x + 12, top: tooltip.y - 38 }}>
-          <span className="font-medium text-white">{tooltip.label}</span>
-          {tooltip.name && <span className="text-gray-400"> · {tooltip.name}</span>}
+            {/* Colonne settimane — ogni colonna porta la sua etichetta mese se è la prima di quel mese */}
+            {Array.from({ length: numWeeks }).map((_, weekIdx) => {
+              const monthLabel = monthStartCols.get(weekIdx);
+              return (
+                <div key={weekIdx} className="flex flex-col gap-1">
+                  {/* Etichetta mese (o spazio vuoto) — sempre presente per mantenere l'allineamento */}
+                  <div className="h-[14px] flex items-end pb-0.5">
+                    {monthLabel && (
+                      <span className="text-[10px] text-wm-muted-foreground leading-none whitespace-nowrap">
+                        {monthLabel}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 7 celle giorni */}
+                  {Array.from({ length: 7 }).map((_, dayIdx) => {
+                    const cellIdx = weekIdx * 7 + dayIdx;
+                    const cell = cells[cellIdx];
+                    if (!cell) return <div key={dayIdx} className="w-3 h-3" />;
+
+                    return (
+                      <div
+                        key={dayIdx}
+                        className={`w-3 h-3 rounded-[2px] cursor-default ${INTENSITY_CLASSES[cell.intensity]} ${cell.isFuture ? "opacity-25" : ""}`}
+                        onMouseEnter={(e) =>
+                          setTooltip({
+                            label: formatCellDate(cell.date),
+                            name: cell.activity?.name,
+                            x: e.clientX,
+                            y: e.clientY,
+                          })
+                        }
+                        onMouseMove={(e) => setTooltip((t) => (t ? { ...t, x: e.clientX, y: e.clientY } : null))}
+                        onMouseLeave={() => setTooltip(null)}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
-    </div>
+      {/* Tooltip floating */}
+      {tooltip && !isPrivate && (
+        <div
+          className="fixed z-50 pointer-events-none px-2.5 py-1.5 rounded-lg bg-wm-background border border-wm-border text-xs shadow-xl whitespace-nowrap"
+          style={{ left: tooltip.x + 12, top: tooltip.y - 38 }}
+        >
+          <span className="font-medium text-wm-foreground">{tooltip.label}</span>
+          {tooltip.name && <span className="text-wm-muted-foreground"> · {tooltip.name}</span>}
+        </div>
+      )}
+    </Card>
   );
 }

@@ -1,43 +1,43 @@
-import { decodePolyline, polylineToSvgPath } from '@/lib/strava/polyline'
-import { MapPin } from 'lucide-react'
+import { decodePolyline, polylineToSvgPath } from "@/lib/strava/polyline";
+import { MapPin } from "lucide-react";
 
 interface PolylineMapProps {
-  polyline: string | null
-  className?: string
-  width?: number
-  height?: number
+  polyline: string | null;
+  className?: string;
+  width?: number;
+  height?: number;
 }
 
-export function PolylineMap({ polyline, className = '', width = 200, height = 120 }: PolylineMapProps) {
+export function PolylineMap({ polyline, className = "", width = 200, height = 120 }: PolylineMapProps) {
   if (!polyline) {
     return (
       <div
-        className={`flex items-center justify-center rounded-lg bg-white/5 border border-white/10 ${className}`}
-        style={{ width, height }}
+        className={`flex items-center justify-center rounded-lg bg-wm-muted border border-wm-border ${className}`}
+        style={{ width: "100%", maxWidth: width, height }}
       >
-        <MapPin className="text-gray-600" size={24} />
+        <MapPin className="text-wm-muted-foreground" size={24} />
       </div>
-    )
+    );
   }
 
-  const points = decodePolyline(polyline)
-  const pathD = polylineToSvgPath(points, width, height)
+  const points = decodePolyline(polyline);
+  const pathD = polylineToSvgPath(points, width, height);
 
   return (
     <div
-      className={`rounded-lg overflow-hidden bg-white/5 border border-white/10 ${className}`}
-      style={{ width, height }}
+      className={`rounded-lg overflow-hidden bg-wm-muted border border-wm-border ${className}`}
+      style={{ width: "100%", maxWidth: width, height }}
     >
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+      <svg role="img" aria-label="Percorso dell’attività" width="100%" height="100%" viewBox={`0 0 ${width} ${height}`}>
         <path
           d={pathD}
           fill="none"
-          stroke="#f97316"
+          stroke="var(--wm-fitness)"
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       </svg>
     </div>
-  )
+  );
 }

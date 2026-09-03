@@ -1,213 +1,241 @@
 "use client";
-
+import { useRef, useState } from "react";
+import { HelpCircle, Plus, Trash2 } from "lucide-react";
 import { useBudgets } from "@/hooks/useBudgets";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useCategories } from "@/hooks/useCategories";
 import { useUpsertBudget, useDeleteBudget } from "@/hooks/useFinanceMutations";
+import { Button } from "@/components/watermelon-ui/button";
+import { Card } from "@/components/watermelon-ui/card";
+import { Input } from "@/components/watermelon-ui/input";
+import { Progress } from "@/components/watermelon-ui/progress";
+import { Skeleton } from "@/components/watermelon-ui/skeleton";
+import { PrivacyValue } from "@/components/ui/PrivacyValue";
+import { usePrivacyMode } from "@/hooks/usePrivacyMode";
+import { formatEur } from "@/lib/finance/presentation";
 import { Select } from "@/components/ui/Select";
-import { useState } from "react";
-import { Check, HelpCircle, Plus, Trash2, X } from "lucide-react";
-
-function formatEur(n: number) {
-  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
-}
-
-interface Props {
-  month: string;
-}
-
-export function BudgetTracker({ month }: Props) {
-  const { data: budgets, isLoading: loadingBudgets } = useBudgets(month);
-  const { data: transactions, isLoading: loadingTx } = useTransactions({ month, type: "expense" });
-  const { data: categories } = useCategories();
-  const upsertBudget = useUpsertBudget();
-  const deleteBudget = useDeleteBudget();
-
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
+import { DataError } from "@/components/ui/DataError";
+export function BudgetTracker({ month }: { month: string }) {
+  const budgets = useBudgets(month);
+  const transactions = useTransactions({ month, type: "expense" });
+  const categories = useCategories();
+  const save = useUpsertBudget();
+  const remove = useDeleteBudget();
+  const { isPrivate } = usePrivacyMode();
+  const submitting = useRef(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState("");
-  const [showHelp, setShowHelp] = useState(false);
+  const [help, setHelp] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  // New budget form
-  const [addingBudget, setAddingBudget] = useState(false);
-  const [newBudgetCategoryId, setNewBudgetCategoryId] = useState("");
-  const [newBudgetAmount, setNewBudgetAmount] = useState("");
-
-  const isLoading = loadingBudgets || loadingTx;
-
-  if (isLoading) {
-    return (
-      <div className="finance-card p-5 animate-pulse">
-        <div className="h-4 bg-white/10 rounded w-32 mb-4" />
-        <div className="space-y-3">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-10 bg-white/5 rounded" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
+  const [adding, setAdding] = useState(false);
+  const [categoryId, setCategoryId] = useState("");
+  const [newAmount, setNewAmount] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const assigned = new Set((budgets.data ?? []).map((b) => b.category_id));
+  const options = (categories.data ?? [])
+    .filter((c) => (c.type === "expense" || c.type === "both") && !assigned.has(c.id))
+    .map((c) => ({ value: c.id, label: `${c.icon ?? ""} ${c.name}` }));
   const spentByCategory = new Map<string, number>();
-  for (const t of transactions ?? []) {
-    if (t.category_id) {
-      spentByCategory.set(t.category_id, (spentByCategory.get(t.category_id) ?? 0) + t.amount);
+  for (const transaction of transactions.data ?? [])
+    spentByCategory.set(
+      transaction.category_id,
+      (spentByCategory.get(transaction.category_id) ?? 0) + transaction.amount,
+    );
+  async function saveBudget(id: string, rawAmount: string) {
+    const amount = Number(rawAmount);
+    if (submitting.current) return;
+    if (!id || !Number.isFinite(amount) || amount <= 0) {
+      setError("Seleziona una categoria e inserisci un importo maggiore di zero.");
+      return;
+    }
+    submitting.current = true;
+    setError(null);
+    try {
+      await save.mutateAsync({ category_id: id, amount, month });
+      setEditingId(null);
+      setAdding(false);
+      setCategoryId("");
+      setNewAmount("");
+    } catch {
+      setError("Salvataggio non riuscito. Riprova.");
+    } finally {
+      submitting.current = false;
     }
   }
-
-  const handleSaveEdit = (categoryId: string) => {
-    const amount = parseFloat(editAmount);
-    if (!amount || amount <= 0) return;
-    upsertBudget.mutate({ category_id: categoryId, amount, month });
-    setEditingId(null);
-  };
-
-  const handleAddBudget = () => {
-    const amount = parseFloat(newBudgetAmount);
-    if (!newBudgetCategoryId || !amount || amount <= 0) return;
-    upsertBudget.mutate({ category_id: newBudgetCategoryId, amount, month });
-    setAddingBudget(false);
-    setNewBudgetCategoryId("");
-    setNewBudgetAmount("");
-  };
-
-  const handleDeleteBudget = (id: string) => {
-    deleteBudget.mutate(id);
-    setDeletingId(null);
-  };
-
-  const budgetedCategoryIds = new Set((budgets ?? []).map((b) => b.category_id));
-  const unbudgetedCategories = (categories ?? []).filter((c) => (c.type === "expense" || c.type === "both") && !budgetedCategoryIds.has(c.id));
-
-  const categoryOptions = unbudgetedCategories.map((c) => ({
-    value: c.id,
-    label: `${c.icon ?? ""} ${c.name}`,
-  }));
-
+  if (budgets.isError || transactions.isError || categories.isError)
+    return (
+      <DataError
+        onRetry={() => {
+          void budgets.refetch();
+          void transactions.refetch();
+          void categories.refetch();
+        }}
+        message="Impossibile caricare i budget."
+      />
+    );
+  if (budgets.isLoading || transactions.isLoading || categories.isLoading) return <Skeleton className="h-64" />;
   return (
-    <div className="finance-card p-5">
-      <div className="flex items-center justify-between mb-1">
+    <Card className="p-5">
+      <div className="mb-5 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h3 className="ob-card-title">Budget mensile</h3>
-          <button type="button" onClick={() => setShowHelp((v) => !v)} className="ob-icon-button size-7 border-0 bg-transparent" aria-label="Informazioni sui budget">
-            <HelpCircle size={13} />
-          </button>
+          <h2 className="wm-card-title">Budget mensile</h2>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Informazioni sui budget"
+            aria-expanded={help}
+            onClick={() => setHelp((value) => !value)}
+          >
+            <HelpCircle size={15} />
+          </Button>
         </div>
-        {unbudgetedCategories.length > 0 && (
-          <button type="button" onClick={() => setAddingBudget((v) => !v)} className={addingBudget ? "ob-action" : "ob-secondary-action"}>
-            <Plus size={12} /> Aggiungi
-          </button>
+        {options.length > 0 && (
+          <Button variant="outline" size="sm" onClick={() => setAdding((value) => !value)} disabled={save.isPending}>
+            <Plus size={14} />
+            Aggiungi
+          </Button>
         )}
       </div>
-
-      {showHelp && (
-        <div className="mb-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-          <p className="text-xs text-blue-300 leading-relaxed">
-            I <strong>budget</strong> ti permettono di impostare un limite mensile per ogni categoria di spesa. La barra mostra quanto hai già speso: <span className="text-emerald-400">verde</span> = ok, <span className="text-amber-400">ambra</span> = quasi al limite, <span className="text-red-400">rosso</span> = sforato. Clicca l&apos;importo per modificarlo.
-          </p>
-        </div>
+      {help && (
+        <p className="mb-4 rounded-lg bg-wm-secondary p-3 text-xs text-wm-secondary-foreground">
+          Imposta un limite per categoria. Verde: sotto l’80%; ambra: vicino al limite; rosso: budget esaurito.
+          Seleziona il limite per modificarlo.
+        </p>
       )}
-
-      {addingBudget && (
-        <div className="mb-3 p-3 bg-black/20 border border-white/10 rounded-lg flex flex-wrap items-center gap-2">
-          <Select value={newBudgetCategoryId} onChange={setNewBudgetCategoryId} options={categoryOptions} placeholder="Seleziona categoria..." className="flex-1 min-w-[140px]" />
-          <div className="flex items-center gap-1">
-            <input type="number" placeholder="0.00" value={newBudgetAmount} onChange={(e) => setNewBudgetAmount(e.target.value)} className="ob-field w-24" />
-            <span className="text-xs text-gray-500">€/mese</span>
+      {adding && (
+        <form
+          className="mb-4 flex flex-wrap items-end gap-2 rounded-lg bg-wm-muted p-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void saveBudget(categoryId, newAmount);
+          }}
+        >
+          <div className="min-w-40 flex-1">
+            <Select aria-label="Categoria del budget" value={categoryId} onChange={setCategoryId} options={options} />
           </div>
-          <button type="button" onClick={handleAddBudget} disabled={!newBudgetCategoryId || !newBudgetAmount} className="ob-action">
+          <Input
+            aria-label="Importo del nuovo budget"
+            type="number"
+            min="0.01"
+            step="0.01"
+            required
+            value={newAmount}
+            onChange={(e) => setNewAmount(e.target.value)}
+            className="w-28"
+          />
+          <Button type="submit" disabled={save.isPending || !categoryId}>
             Salva
-          </button>
-          <button type="button" onClick={() => setAddingBudget(false)} className="ob-secondary-action border-0 bg-transparent">
+          </Button>
+          <Button variant="ghost" disabled={save.isPending} onClick={() => setAdding(false)}>
             Annulla
-          </button>
-        </div>
+          </Button>
+        </form>
       )}
-
-      {!budgets || budgets.length === 0 ? (
-        <div className="py-6 text-center space-y-2">
-          <p className="text-gray-600 text-sm">Nessun budget impostato</p>
-          <p className="text-gray-700 text-xs">Clicca &quot;+ Aggiungi&quot; per impostare un limite mensile per le tue categorie di spesa</p>
-        </div>
+      {error && (
+        <p role="alert" className="mb-4 text-sm text-wm-destructive">
+          {error}
+        </p>
+      )}
+      {!budgets.data?.length ? (
+        <p className="py-8 text-center text-sm text-wm-muted-foreground">Nessun budget impostato per questo mese.</p>
       ) : (
-        <div className="space-y-3">
-          {budgets.map((budget) => {
+        <div className="space-y-5">
+          {budgets.data.map((budget) => {
             const spent = spentByCategory.get(budget.category_id) ?? 0;
-            const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-            const barColor = pct < 80 ? "bg-emerald-500" : pct < 100 ? "bg-amber-500" : "bg-red-500";
-            const isEditing = editingId === budget.category_id;
-            const isConfirmingDelete = deletingId === budget.id;
-
+            const percent = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
             return (
-              <div key={budget.id} className="group">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-white">
+              <div key={budget.id}>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-medium">
                     {budget.category?.icon} {budget.category?.name}
                   </span>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-gray-400">{formatEur(spent)}</span>
-                    <span className="text-gray-600">/</span>
-                    {isEditing ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          value={editAmount}
-                          onChange={(e) => setEditAmount(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSaveEdit(budget.category_id);
-                            if (e.key === "Escape") setEditingId(null);
-                          }}
-                          className="ob-field min-h-7 w-20 px-1.5 py-0.5 text-xs"
+                  <div className="flex min-w-0 flex-wrap items-center justify-end gap-1">
+                    <PrivacyValue className="text-xs text-wm-muted-foreground">{formatEur(spent)} /</PrivacyValue>
+                    {editingId === budget.category_id ? (
+                      <form
+                        className="flex flex-wrap gap-1"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void saveBudget(budget.category_id, editAmount);
+                        }}
+                      >
+                        <Input
                           autoFocus
+                          aria-label="Nuovo limite mensile"
+                          className="h-8 w-24"
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          required
+                          value={editAmount}
+                          onChange={(event) => setEditAmount(event.target.value)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Escape" && !save.isPending) setEditingId(null);
+                          }}
                         />
-                        <button onClick={() => handleSaveEdit(budget.category_id)} className="text-emerald-400 hover:text-emerald-300" aria-label="Salva budget">
-                          <Check size={13} />
-                        </button>
-                        <button onClick={() => setEditingId(null)} className="text-gray-500 hover:text-gray-400" aria-label="Annulla modifica">
-                          <X size={13} />
-                        </button>
-                      </div>
+                        <Button size="sm" type="submit" disabled={save.isPending}>
+                          Salva
+                        </Button>
+                        <Button size="sm" variant="ghost" disabled={save.isPending} onClick={() => setEditingId(null)}>
+                          Annulla
+                        </Button>
+                      </form>
                     ) : (
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Modifica budget ${budget.category?.name ?? ""}`}
+                        disabled={save.isPending}
                         onClick={() => {
                           setEditingId(budget.category_id);
                           setEditAmount(String(budget.amount));
                         }}
-                        className="text-gray-300 hover:text-white transition-colors"
-                        title="Clicca per modificare"
                       >
-                        {formatEur(budget.amount)}
-                      </button>
+                        <PrivacyValue>{formatEur(budget.amount)}</PrivacyValue>
+                      </Button>
                     )}
-                    {pct > 100 && <span className="text-red-400 font-medium">+{formatEur(spent - budget.amount)}</span>}
-
-                    {/* Delete confirm */}
-                    {isConfirmingDelete ? (
-                      <div className="flex items-center gap-1 ml-1">
-                        <span className="text-gray-500">Elimina?</span>
-                        <button onClick={() => handleDeleteBudget(budget.id)} className="text-red-400 hover:text-red-300 font-medium">
-                          Sì
-                        </button>
-                        <button onClick={() => setDeletingId(null)} className="text-gray-500 hover:text-gray-400">
-                          No
-                        </button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setDeletingId(budget.id)} className="opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-400 transition-all ml-1" title="Elimina budget">
-                        <Trash2 size={12} />
-                      </button>
-                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={`Elimina budget ${budget.category?.name ?? ""}`}
+                      disabled={save.isPending || remove.isPending}
+                      onClick={() => setDeletingId(budget.id)}
+                    >
+                      <Trash2 size={13} />
+                    </Button>
                   </div>
                 </div>
-                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${Math.min(pct, 100)}%` }} />
-                </div>
-                {pct >= 100 && <p className="text-red-400 text-xs mt-0.5">Sforato di €{(spent - budget.amount).toFixed(2)}</p>}
+                {!isPrivate && (
+                  <Progress
+                    aria-label={`Budget utilizzato: ${budget.category?.name ?? "categoria"}`}
+                    value={percent}
+                    indicatorClassName={
+                      percent < 80 ? "bg-wm-primary" : percent < 100 ? "bg-wm-warning" : "bg-wm-destructive"
+                    }
+                  />
+                )}
+                {percent > 100 && (
+                  <p className="mt-2 text-xs text-wm-destructive">
+                    Sforato di <PrivacyValue>{formatEur(spent - budget.amount)}</PrivacyValue>
+                  </p>
+                )}
               </div>
             );
           })}
         </div>
       )}
-    </div>
+      <ConfirmDeleteDialog
+        open={deletingId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeletingId(null);
+        }}
+        title="Elimina budget"
+        description="Il limite mensile verrà rimosso. Le transazioni restano disponibili."
+        onConfirm={async () => {
+          if (deletingId) await remove.mutateAsync(deletingId);
+        }}
+      />
+    </Card>
   );
 }

@@ -1,107 +1,69 @@
-'use client'
-
-import { useState } from 'react'
-import Link from 'next/link'
-import { Trash2, Settings, GripVertical, ArrowUpRight } from 'lucide-react'
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { useRemoveWidget } from '@/hooks/useDashboardWidgets'
-
+"use client";
+import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import { Trash2, Settings, GripVertical, ArrowUpRight } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useRemoveWidget } from "@/hooks/useDashboardWidgets";
+import { Card } from "@/components/watermelon-ui/card";
+import { Button } from "@/components/watermelon-ui/button";
+import { ConfirmDeleteDialog } from "@/components/ui/ConfirmDeleteDialog";
 interface Props {
-  widgetId: string
-  href?: string
-  configurable?: boolean
-  onConfigure?: () => void
-  children: React.ReactNode
+  widgetId: string;
+  href?: string;
+  configurable?: boolean;
+  onConfigure?: () => void;
+  children: ReactNode;
 }
-
 export function WidgetShell({ widgetId, href, configurable, onConfigure, children }: Props) {
-  const [confirming, setConfirming] = useState(false)
-  const removeWidget = useRemoveWidget()
-
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: widgetId,
-  })
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  }
-
+  const [confirming, setConfirming] = useState(false);
+  const remove = useRemoveWidget();
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: widgetId });
   return (
-    <div
+    <Card
       ref={setNodeRef}
-      style={style}
-      className="ob-panel group flex flex-col overflow-hidden"
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+      className="flex min-w-0 flex-col overflow-hidden"
     >
-      {/* Widget content — no overflow-hidden so Select dropdowns can escape */}
-      <div className="flex-1 min-h-0">{children}</div>
-
-      {/* Action bar — always visible on mobile, hover-only on md+ */}
-      <div className="border-t border-white/5 px-3 py-2 flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-        {/* Drag handle */}
-        <button
+      <div className="min-h-0 flex-1">{children}</div>
+      <div className="flex flex-wrap items-center gap-1 border-t border-wm-border px-3 py-2">
+        <Button
+          variant="ghost"
+          size="icon"
           {...listeners}
           {...attributes}
-          className="p-1.5 rounded text-gray-700 hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none"
-          title="Trascina per riordinare"
+          className="min-h-11 min-w-11 touch-none cursor-grab active:cursor-grabbing"
+          aria-label="Riordina widget"
         >
-          <GripVertical size={15} />
-        </button>
-
-        {/* Navigate link */}
-        {href && !confirming && (
+          <GripVertical size={16} />
+        </Button>
+        {href && (
           <Link
             href={href}
-            className="flex-1 flex items-center gap-1 px-2 py-1 rounded text-xs text-gray-600 hover:text-gray-400 hover:bg-white/5 transition-colors"
+            className="flex min-h-11 min-w-0 flex-1 items-center gap-1 rounded-lg px-2 text-xs text-wm-muted-foreground hover:text-wm-primary"
           >
-            Vai alla sezione <ArrowUpRight size={11} />
+            Vai alla sezione
+            <ArrowUpRight size={14} />
           </Link>
         )}
-
-        {/* Spacer when confirming */}
-        {confirming && <div className="flex-1" />}
-
-        {/* Configure */}
-        {configurable && onConfigure && !confirming && (
-          <button
-            onClick={onConfigure}
-            className="p-1.5 rounded text-gray-700 hover:text-gray-400 hover:bg-white/5 transition-colors"
-            title="Configura widget"
-          >
-            <Settings size={15} />
-          </button>
+        {configurable && onConfigure && (
+          <Button variant="ghost" size="icon" onClick={onConfigure} aria-label="Configura widget">
+            <Settings size={16} />
+          </Button>
         )}
-
-        {/* Remove */}
-        {confirming ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Rimuovere?</span>
-            <button
-              onClick={() => removeWidget.mutate(widgetId)}
-              disabled={removeWidget.isPending}
-              className="px-3 py-1 text-xs text-red-400 bg-red-500/15 border border-red-500/25 rounded-md font-medium hover:bg-red-500/25 transition-colors"
-            >
-              Sì
-            </button>
-            <button
-              onClick={() => setConfirming(false)}
-              className="px-3 py-1 text-xs text-gray-400 bg-white/5 border border-white/10 rounded-md hover:bg-white/10 transition-colors"
-            >
-              No
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setConfirming(true)}
-            className="p-1.5 rounded text-gray-700 hover:text-red-400 hover:bg-white/5 transition-colors"
-            title="Rimuovi widget"
-          >
-            <Trash2 size={15} />
-          </button>
-        )}
+        <Button variant="ghost" size="icon" onClick={() => setConfirming(true)} aria-label="Rimuovi widget">
+          <Trash2 size={16} />
+        </Button>
       </div>
-    </div>
-  )
+      <ConfirmDeleteDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title="Rimuovere il widget?"
+        description="Verrà rimosso dalla Home. I dati associati rimarranno disponibili."
+        confirmLabel="Rimuovi"
+        pendingLabel="Rimozione..."
+        onConfirm={() => remove.mutateAsync(widgetId)}
+      />
+    </Card>
+  );
 }

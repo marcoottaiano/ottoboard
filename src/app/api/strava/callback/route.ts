@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
   const tokenData = await tokenRes.json();
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -1,212 +1,213 @@
 "use client";
-
-import { Suspense, useState } from "react";
+import { Suspense, useId, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, CheckCircle, AlertCircle, Mail } from "lucide-react";
+import { Eye, EyeOff, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import Image from "next/image";
+import { Card } from "@/components/watermelon-ui/card";
+import { Button } from "@/components/watermelon-ui/button";
+import { Input } from "@/components/watermelon-ui/input";
+import { Skeleton } from "@/components/watermelon-ui/skeleton";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/watermelon-ui/tabs";
 
-type Tab = "login" | "register";
-
-function InputField({ label, type, value, onChange, placeholder, showToggle }: { label: string; type: "email" | "password" | "text"; value: string; onChange: (v: string) => void; placeholder: string; showToggle?: boolean }) {
+type AuthTab = "login" | "register";
+function InputField({
+  label,
+  type,
+  value,
+  onChange,
+  autoComplete,
+}: {
+  label: string;
+  type: "email" | "password";
+  value: string;
+  onChange: (value: string) => void;
+  autoComplete: string;
+}) {
+  const id = useId();
   const [show, setShow] = useState(false);
-  const inputType = showToggle ? (show ? "text" : "password") : type;
-
   return (
-    <div>
-      {label && <label className="text-xs text-white/40 mb-1.5 block">{label}</label>}
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </label>
       <div className="relative">
-        <input type={inputType} value={value} onChange={(e) => onChange(e.target.value)} required placeholder={placeholder} className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-white/20 focus:bg-white/[0.07] transition-all pr-10" />
-        {showToggle && (
-          <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
-            {show ? <EyeOff size={15} /> : <Eye size={15} />}
-          </button>
+        <Input
+          id={id}
+          type={type === "password" && show ? "text" : type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required
+          autoComplete={autoComplete}
+          className={type === "password" ? "min-h-11 pr-12" : "min-h-11"}
+        />
+        {type === "password" && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-0 top-0 min-h-11 min-w-11"
+            aria-label={show ? "Nascondi password" : "Mostra password"}
+            aria-pressed={show}
+            onClick={() => setShow(!show)}
+          >
+            {show ? <EyeOff size={17} /> : <Eye size={17} />}
+          </Button>
         )}
       </div>
     </div>
   );
 }
-
 function LoginContent() {
-  const [tab, setTab] = useState<Tab>("login");
+  const [tab, setTab] = useState<AuthTab>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [registerSent, setRegisterSent] = useState(false);
+  const submitting = useRef(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const resetSuccess = searchParams.get("reset") === "success";
-
-  const resetForm = () => {
+  const search = useSearchParams();
+  function changeTab(value: string) {
+    if (submitting.current || (value !== "login" && value !== "register")) return;
+    setTab(value);
     setEmail("");
     setPassword("");
     setConfirm("");
     setError(null);
     setRegisterSent(false);
-  };
-
-  const switchTab = (t: Tab) => {
-    setTab(t);
-    resetForm();
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  }
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting.current) return;
     setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError("Email o password non corretti.");
-    } else {
-      router.push("/");
-      router.refresh();
-    }
-    setLoading(false);
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (password.length < 8) {
+    if (tab === "register" && password.length < 8) {
       setError("La password deve essere di almeno 8 caratteri.");
       return;
     }
-    if (password !== confirm) {
+    if (tab === "register" && password !== confirm) {
       setError("Le password non coincidono.");
       return;
     }
-
+    submitting.current = true;
     setLoading(true);
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signUp({ email, password });
-
-    if (error) {
-      setError(error.message);
-    } else if (data.session) {
-      // Email confirmation disabled — session active immediately
-      router.push("/onboarding");
-      router.refresh();
-    } else {
-      // Email confirmation enabled — tell user to check inbox
-      setRegisterSent(true);
+    try {
+      const supabase = createClient();
+      if (tab === "login") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          setError("Email o password non corretti.");
+          return;
+        }
+        router.push("/");
+        router.refresh();
+      } else {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) {
+          setError(error.message);
+          return;
+        }
+        if (data.session) {
+          router.push("/onboarding");
+          router.refresh();
+        } else setRegisterSent(true);
+      }
+    } catch {
+      setError("Operazione non riuscita. Riprova.");
+    } finally {
+      submitting.current = false;
+      setLoading(false);
     }
-    setLoading(false);
-  };
-
+  }
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-32 -left-32 w-80 h-80 rounded-full bg-orange-600/8 blur-3xl" />
-        <div className="absolute -bottom-32 -right-32 w-80 h-80 rounded-full bg-purple-600/8 blur-3xl" />
+    <div className="mx-auto flex min-h-[calc(100dvh-4rem)] w-full max-w-md flex-col justify-center px-4 py-10">
+      <div className="mb-6 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {tab === "login" ? "Bentornato" : "Crea il tuo account"}
+        </h1>
+        <p className="mt-2 text-sm text-wm-muted-foreground">Il tuo spazio per finanze e benessere.</p>
       </div>
-
-      <div className="w-full max-w-sm relative">
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-8 justify-center">
-          <Image src="/icons/icon-192x192.png" alt="Ottoboard" width={32} height={32} className="rounded-lg flex-shrink-0" />
-          <span className="text-lg font-semibold text-white/90 tracking-wide">Ottoboard</span>
-        </div>
-
-        <div className="bg-white/[0.04] backdrop-blur-2xl border border-white/[0.08] rounded-2xl overflow-hidden">
-          {/* Tabs */}
-          <div className="flex border-b border-white/[0.06]">
-            {(["login", "register"] as Tab[]).map((t) => (
-              <button key={t} onClick={() => switchTab(t)} className={["flex-1 py-3 text-sm font-medium transition-all duration-200", tab === t ? "text-white border-b-2 border-white/40 bg-white/[0.04]" : "text-white/30 hover:text-white/60"].join(" ")}>
-                {t === "login" ? "Accedi" : "Registrati"}
-              </button>
-            ))}
-          </div>
-
-          <div className="p-6">
-            {/* Reset password success banner */}
-            {resetSuccess && tab === "login" && (
-              <div className="flex items-center gap-2 text-emerald-400 text-xs bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2 mb-4">
-                <CheckCircle size={13} className="flex-shrink-0" />
+      <Card className="p-5 md:p-7">
+        <Tabs value={tab} onValueChange={changeTab}>
+          <TabsList aria-label="Accesso account" className="mb-6 w-full">
+            <TabsTrigger value="login" disabled={loading} className="flex-1">
+              Accedi
+            </TabsTrigger>
+            <TabsTrigger value="register" disabled={loading} className="flex-1">
+              Registrati
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value={tab}>
+            {search.get("reset") === "success" && tab === "login" && (
+              <p role="status" className="mb-4 rounded-lg bg-wm-success/10 p-3 text-sm text-wm-success">
                 Password aggiornata. Accedi con la nuova password.
-              </div>
+              </p>
             )}
-
-            {/* Login form */}
-            {tab === "login" && (
-              <form onSubmit={handleLogin} className="space-y-3">
-                <InputField label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" />
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-xs text-white/40">Password</label>
-                    <Link href="/auth/forgot-password" className="text-xs text-white/30 hover:text-white/60 transition-colors">
+            {registerSent ? (
+              <div className="space-y-3 py-4 text-center" role="status">
+                <Mail className="mx-auto text-wm-success" size={28} />
+                <h2 className="font-semibold">Controlla la tua email</h2>
+                <p className="break-words text-sm text-wm-muted-foreground">
+                  Apri il link inviato a {email} per confermare il tuo account.
+                </p>
+                <Button variant="outline" onClick={() => changeTab("login")}>
+                  Torna al login
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={submit}>
+                <fieldset disabled={loading} className="min-w-0 space-y-4">
+                  <InputField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
+                  <InputField
+                    label="Password"
+                    type="password"
+                    value={password}
+                    onChange={setPassword}
+                    autoComplete={tab === "login" ? "current-password" : "new-password"}
+                  />
+                  {tab === "register" && (
+                    <InputField
+                      label="Conferma password"
+                      type="password"
+                      value={confirm}
+                      onChange={setConfirm}
+                      autoComplete="new-password"
+                    />
+                  )}
+                  {tab === "login" && (
+                    <Link
+                      href="/auth/forgot-password"
+                      className="inline-flex min-h-11 items-center rounded text-sm text-wm-primary"
+                    >
                       Hai dimenticato la password?
                     </Link>
-                  </div>
-                  <InputField label="" type="password" value={password} onChange={setPassword} placeholder="••••••••" showToggle />
-                </div>
-
-                {error && (
-                  <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-                    <AlertCircle size={13} className="flex-shrink-0" />
-                    {error}
-                  </div>
-                )}
-
-                <button type="submit" disabled={loading} className="w-full bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.1] text-white/80 hover:text-white text-sm font-medium rounded-xl py-2.5 transition-all duration-200 disabled:opacity-40 mt-1">
-                  {loading ? "Accesso…" : "Accedi"}
-                </button>
+                  )}
+                  {error && (
+                    <p role="alert" className="rounded-lg bg-wm-destructive/10 p-3 text-sm text-wm-destructive">
+                      {error}
+                    </p>
+                  )}
+                  <Button type="submit" size="auto" className="w-full" disabled={loading}>
+                    {loading ? "Attendi..." : tab === "login" ? "Accedi" : "Crea account"}
+                  </Button>
+                </fieldset>
               </form>
             )}
-
-            {/* Register form */}
-            {tab === "register" && !registerSent && (
-              <form onSubmit={handleRegister} className="space-y-3">
-                <InputField label="Email" type="email" value={email} onChange={setEmail} placeholder="you@example.com" />
-                <InputField label="Password" type="password" value={password} onChange={setPassword} placeholder="Minimo 8 caratteri" showToggle />
-                <InputField label="Conferma password" type="password" value={confirm} onChange={setConfirm} placeholder="Ripeti la password" showToggle />
-
-                {error && (
-                  <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
-                    <AlertCircle size={13} className="flex-shrink-0" />
-                    {error}
-                  </div>
-                )}
-
-                <button type="submit" disabled={loading} className="w-full bg-white/[0.08] hover:bg-white/[0.12] border border-white/[0.1] text-white/80 hover:text-white text-sm font-medium rounded-xl py-2.5 transition-all duration-200 disabled:opacity-40 mt-1">
-                  {loading ? "Registrazione…" : "Crea account"}
-                </button>
-              </form>
-            )}
-
-            {/* Register: check email */}
-            {tab === "register" && registerSent && (
-              <div className="text-center space-y-4 py-2">
-                <div className="flex justify-center">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                    <Mail size={22} className="text-emerald-400" />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-white/80 mb-1">Controlla la tua email</p>
-                  <p className="text-xs text-white/40">
-                    Ti abbiamo inviato un link di conferma a <span className="text-white/60">{email}</span>
-                  </p>
-                </div>
-                <button onClick={() => switchTab("login")} className="text-xs text-white/30 hover:text-white/60 transition-colors">
-                  ← Torna al login
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+          </TabsContent>
+        </Tabs>
+      </Card>
     </div>
   );
 }
-
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-md p-6">
+          <Skeleton className="h-96" />
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );

@@ -1,7 +1,10 @@
 "use client";
 
+import { ResponsiveChart } from "@/components/ui/ResponsiveChart";
+import { Card } from "@/components/watermelon-ui/card";
+import { Button } from "@/components/watermelon-ui/button";
 import { useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import type { BodyMeasurement } from "@/types";
 import { usePrivacyMode } from "@/hooks/usePrivacyMode";
 
@@ -10,13 +13,13 @@ interface Props {
 }
 
 const SITES: { field: keyof BodyMeasurement; label: string; color: string }[] = [
-  { field: "skinfold_chest", label: "Petto", color: "#ff6b4a" },
-  { field: "skinfold_abdomen", label: "Addome", color: "#ff9b84" },
-  { field: "skinfold_thigh", label: "Coscia", color: "#ffc1b3" },
-  { field: "skinfold_tricep", label: "Tricipite", color: "#14b8a6" },
-  { field: "skinfold_suprailiac", label: "Soprailiaca", color: "#2dd4bf" },
-  { field: "skinfold_subscapular", label: "Sottoscapolare", color: "#5eead4" },
-  { field: "skinfold_midaxillary", label: "Ascellare", color: "#d8f06a" },
+  { field: "skinfold_chest", label: "Petto", color: "var(--wm-fitness)" },
+  { field: "skinfold_abdomen", label: "Addome", color: "var(--wm-chart-pink)" },
+  { field: "skinfold_thigh", label: "Coscia", color: "var(--wm-chart-purple)" },
+  { field: "skinfold_tricep", label: "Tricipite", color: "var(--wm-chart-teal)" },
+  { field: "skinfold_suprailiac", label: "Soprailiaca", color: "var(--wm-chart-blue)" },
+  { field: "skinfold_subscapular", label: "Sottoscapolare", color: "var(--wm-success)" },
+  { field: "skinfold_midaxillary", label: "Ascellare", color: "var(--wm-warning)" },
 ];
 
 export function SkinfoldsTrendChart({ measurements }: Props) {
@@ -27,9 +30,9 @@ export function SkinfoldsTrendChart({ measurements }: Props) {
 
   if (filtered.length === 0) {
     return (
-      <div className="ob-panel-flat flex h-56 items-center justify-center p-5">
-        <p className="text-xs text-gray-500">Nessuna plicometria disponibile</p>
-      </div>
+      <Card className="wm-panel-flat flex h-56 items-center justify-center p-5">
+        <p className="text-xs text-wm-muted-foreground">Nessuna plicometria disponibile</p>
+      </Card>
     );
   }
 
@@ -44,22 +47,61 @@ export function SkinfoldsTrendChart({ measurements }: Props) {
   });
 
   return (
-    <div className="ob-panel-flat h-full space-y-3 p-5">
+    <Card className="wm-panel-flat h-full space-y-3 p-5">
       <div className="flex items-center justify-between">
-        <h3 className="ob-card-title">Pliche nel tempo</h3>
-        <button onClick={() => setShowIndividual((v) => !v)} className="ob-secondary-action">
+        <h3 className="wm-card-title">Pliche nel tempo</h3>
+        <Button
+          variant="ghost"
+          size="auto"
+          onClick={() => setShowIndividual((v) => !v)}
+          className="wm-secondary-action"
+        >
           {showIndividual ? "Mostra somma" : "Dettaglio siti"}
-        </button>
+        </Button>
       </div>
-      <ResponsiveContainer width="100%" height={180}>
+      <ResponsiveChart width="100%" height={180}>
         <LineChart data={data} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-          <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#6b7280" }} />
-          <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={(v) => (isPrivate ? "••" : `${v}`)} />
-          <Tooltip contentStyle={{ background: "#12121f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }} formatter={(v, name) => [isPrivate ? "••••" : `${v} mm`, name === "sum" ? "Σ pliche" : String(name)]} labelStyle={{ color: "#9ca3af" }} />
-          {!showIndividual ? <Line type="monotone" dataKey="sum" stroke="#ff6b4a" strokeWidth={2} dot={{ r: 3, fill: "#ff6b4a" }} connectNulls /> : SITES.map((s) => <Line key={s.field as string} type="monotone" dataKey={s.field as string} stroke={s.color} strokeWidth={1.5} dot={false} name={s.label} connectNulls />)}
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--wm-border)" />
+          <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }} />
+          <YAxis
+            tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }}
+            tickFormatter={(v) => (isPrivate ? "••" : `${v}`)}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "var(--wm-popover)",
+              border: "1px solid var(--wm-border)",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            formatter={(v, name) => [isPrivate ? "••••" : `${v} mm`, name === "sum" ? "Σ pliche" : String(name)]}
+            labelStyle={{ color: "var(--wm-muted-foreground)" }}
+          />
+          {!showIndividual ? (
+            <Line
+              type="monotone"
+              dataKey="sum"
+              stroke="var(--wm-fitness)"
+              strokeWidth={2}
+              dot={{ r: 3, fill: "var(--wm-fitness)" }}
+              connectNulls
+            />
+          ) : (
+            SITES.map((s) => (
+              <Line
+                key={s.field as string}
+                type="monotone"
+                dataKey={s.field as string}
+                stroke={s.color}
+                strokeWidth={1.5}
+                dot={false}
+                name={s.label}
+                connectNulls
+              />
+            ))
+          )}
         </LineChart>
-      </ResponsiveContainer>
-    </div>
+      </ResponsiveChart>
+    </Card>
   );
 }

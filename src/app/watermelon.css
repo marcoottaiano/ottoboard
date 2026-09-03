@@ -1,0 +1,120 @@
+:root {
+  --wm-background: #f8faf9;
+  --wm-foreground: #172b24;
+  --wm-card: #ffffff;
+  --wm-card-foreground: var(--wm-foreground);
+  --wm-popover: #ffffff;
+  --wm-popover-foreground: var(--wm-foreground);
+  --wm-primary: #15764f;
+  --wm-success: #15764f;
+  --wm-fitness: #b74416;
+  --wm-chart-teal: #087f8c;
+  --wm-chart-purple: #7b43b5;
+  --wm-chart-pink: #b93882;
+  --wm-chart-blue: #2563a3;
+  --wm-body-fill: #e2e9e5;
+  --wm-body-stroke: #758d80;
+  --wm-primary-foreground: #ffffff;
+  --wm-secondary: #e8f1ec;
+  --wm-secondary-foreground: #245e43;
+  --wm-muted: #edf1ee;
+  --wm-muted-foreground: #5e7067;
+  --wm-accent: #e5eee8;
+  --wm-accent-foreground: #153d2b;
+  --wm-destructive: #b42335;
+  --wm-destructive-foreground: #ffffff;
+  --wm-border: #dce4df;
+  --wm-input: #d1ddd5;
+  --wm-ring: #25875d;
+  --wm-warning: #966500;
+  --wm-info: #2563a3;
+  --wm-radius: 0.75rem;
+  color-scheme: light;
+  background: var(--wm-background);
+  color: var(--wm-foreground);
+}
+:root[data-theme="dark"] {
+  --wm-background: #141a18;
+  --wm-foreground: #edf4ef;
+  --wm-card: #1c2520;
+  --wm-popover: #202b24;
+  --wm-primary: #78d7a6;
+  --wm-success: #78d7a6;
+  --wm-fitness: #ff9b70;
+  --wm-chart-teal: #56ccd3;
+  --wm-chart-purple: #c49af4;
+  --wm-chart-pink: #ee91c6;
+  --wm-chart-blue: #91bff5;
+  --wm-body-fill: #293c35;
+  --wm-body-stroke: #78968a;
+  --wm-primary-foreground: #10251a;
+  --wm-secondary: #263d2f;
+  --wm-secondary-foreground: #c4e7d1;
+  --wm-muted: #29332d;
+  --wm-muted-foreground: #a0b3a6;
+  --wm-accent: #2d3b31;
+  --wm-accent-foreground: #e3f3e8;
+  --wm-destructive: #ff8791;
+  --wm-destructive-foreground: #301014;
+  --wm-border: #344137;
+  --wm-input: #415146;
+  --wm-ring: #78d7a6;
+  --wm-warning: #edc369;
+  --wm-info: #91bff5;
+  color-scheme: dark;
+}
+@layer base {
+  .wm-theme *,
+  .wm-theme ::before,
+  .wm-theme ::after {
+    border-color: var(--wm-border);
+  }
+}
+.wm-theme input[type="date"],
+.wm-theme input[type="datetime-local"],
+.wm-theme input[type="time"] {
+  color-scheme: inherit;
+}
+.wm-theme input::-webkit-calendar-picker-indicator {
+  filter: none;
+  opacity: 0.8;
+}
+.wm-theme input,
+.wm-theme textarea {
+  color: var(--wm-foreground);
+}
+.wm-theme :focus-visible {
+  outline-color: var(--wm-ring);
+}
+.wm-theme [data-slot="button"] {
+  white-space: normal;
+}
+.wm-theme [data-slot="select-trigger"] {
+  text-align: left;
+}
+
+.wm-theme[data-ui-accent="fitness"] {
+  --wm-primary: var(--wm-fitness);
+  --wm-ring: var(--wm-fitness);
+  --wm-primary-foreground: #fff;
+}
+:root[data-theme="dark"] .wm-theme[data-ui-accent="fitness"] {
+  --wm-primary-foreground: #32190d;
+}
+:root {
+  --background: var(--wm-background);
+  --background-deep: var(--wm-background);
+  --foreground: var(--wm-foreground);
+  --surface: var(--wm-card);
+  --surface-raised: var(--wm-popover);
+  --surface-subtle: var(--wm-muted);
+  --border: var(--wm-border);
+  --border-strong: var(--wm-input);
+  --muted: var(--wm-muted-foreground);
+  --muted-soft: var(--wm-muted-foreground);
+  --brand: var(--wm-success);
+  --fitness: var(--wm-fitness);
+  --signal: var(--wm-success);
+  --danger: var(--wm-destructive);
+  --radius: var(--wm-radius);
+}

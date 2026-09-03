@@ -1,10 +1,27 @@
 "use client";
 
+import { Button } from "@/components/watermelon-ui/button";
+import { Card } from "@/components/watermelon-ui/card";
+
+import { DataError } from "@/components/ui/DataError";
 import { useState } from "react";
 import { Plus, Target } from "lucide-react";
 import { toast } from "sonner";
-import { DndContext, DragEndEvent, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  KeyboardSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
 import { useFinancialGoals, useReorderFinancialGoals } from "@/hooks/useFinancialGoals";
 import { useTransactions } from "@/hooks/useTransactions";
 import { computeWaterfall } from "@/lib/finance/waterfall";
@@ -15,13 +32,22 @@ import { GoalEditModal } from "./GoalEditModal";
 import { FinancialGoal } from "@/types";
 
 export function GoalsSection() {
-  const { data: goals = [], isLoading } = useFinancialGoals();
+  const { data: goals = [], isLoading, isError: goalsError, refetch: refetchGoals } = useFinancialGoals();
   const reorderMutation = useReorderFinancialGoals();
-  const { data: allTransactions = [], isLoading: transactionsLoading, error: transactionsError } = useTransactions({});
+  const {
+    data: allTransactions = [],
+    isLoading: transactionsLoading,
+    error: transactionsError,
+    refetch: refetchTransactions,
+  } = useTransactions({});
   const [showCreate, setShowCreate] = useState(false);
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
 
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }));
+  const sensors = useSensors(
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  );
 
   const activeGoals = goals.filter((g) => !g.completed);
   const completedGoals = goals.filter((g) => g.completed);
@@ -36,6 +62,7 @@ export function GoalsSection() {
 
     const oldIndex = activeGoals.findIndex((g) => g.id === active.id);
     const newIndex = activeGoals.findIndex((g) => g.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
     const reordered = arrayMove(activeGoals, oldIndex, newIndex);
     const newOrder = reordered.map((g, i) => ({ id: g.id, position: i }));
     reorderMutation.mutate(newOrder, {
@@ -45,56 +72,57 @@ export function GoalsSection() {
 
   if (isLoading || transactionsLoading) {
     return (
-      <div className="finance-card p-5 animate-pulse">
-        <div className="h-4 bg-white/10 rounded w-32 mb-4" />
+      <Card className="wm-card p-5 animate-pulse">
+        <div className="h-4 bg-wm-muted rounded w-32 mb-4" />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[...Array(2)].map((_, i) => (
-            <div key={i} className="h-28 bg-white/5 rounded-xl" />
+            <div key={i} className="h-28 bg-wm-muted rounded-xl" />
           ))}
         </div>
-      </div>
+      </Card>
     );
   }
 
-  if (transactionsError) {
+  if (transactionsError || goalsError)
     return (
-      <div className="finance-card p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <Target size={15} className="text-emerald-400" />
-          <h3 className="ob-card-title">Obiettivi di risparmio</h3>
-        </div>
-        <p className="text-sm text-gray-500">Impossibile calcolare l&apos;allocazione in questo momento. Riprova tra poco.</p>
-      </div>
+      <DataError
+        onRetry={() => {
+          void refetchGoals();
+          void refetchTransactions();
+        }}
+        message="Impossibile caricare gli obiettivi."
+      />
     );
-  }
 
   return (
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Target size={15} className="text-emerald-400" />
-          <h3 className="ob-card-title">Obiettivi di risparmio</h3>
+          <Target size={15} className="text-wm-primary" />
+          <h3 className="wm-card-title">Obiettivi di risparmio</h3>
           {goals.length > 0 && (
-            <span className="text-xs text-gray-600">
+            <span className="text-xs text-wm-muted-foreground">
               {activeGoals.length} attivi
               {completedGoals.length > 0 && ` · ${completedGoals.length} completati`}
             </span>
           )}
         </div>
-        <button onClick={() => setShowCreate(true)} className="ob-secondary-action">
+        <Button variant="ghost" size="sm" onClick={() => setShowCreate(true)} className="wm-secondary-action">
           <Plus size={12} /> Nuovo
-        </button>
+        </Button>
       </div>
 
       {/* Empty state */}
       {goals.length === 0 && (
         <div className="py-8 text-center space-y-2">
-          <p className="text-gray-600 text-sm">Nessun obiettivo creato</p>
-          <p className="text-gray-700 text-xs">Imposta un obiettivo di risparmio e monitora il tuo progresso</p>
-          <button onClick={() => setShowCreate(true)} className="ob-action mt-2">
+          <p className="text-wm-muted-foreground text-sm">Nessun obiettivo creato</p>
+          <p className="text-wm-muted-foreground text-xs">
+            Imposta un obiettivo di risparmio e monitora il tuo progresso
+          </p>
+          <Button variant="ghost" size="sm" onClick={() => setShowCreate(true)} className="wm-action mt-2">
             Crea il primo obiettivo →
-          </button>
+          </Button>
         </div>
       )}
 
@@ -104,7 +132,13 @@ export function GoalsSection() {
           <SortableContext items={activeGoals.map((g) => g.id)} strategy={verticalListSortingStrategy}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {activeGoals.map((goal) => (
-                <SortableGoalCard key={goal.id} goal={goal} allocatedAmount={waterfallMap.get(goal.id) ?? 0} onEdit={() => setEditingGoal(goal)} isDraggable={activeGoals.length > 1} />
+                <SortableGoalCard
+                  key={goal.id}
+                  goal={goal}
+                  allocatedAmount={waterfallMap.get(goal.id) ?? 0}
+                  onEdit={() => setEditingGoal(goal)}
+                  isDraggable={activeGoals.length > 1}
+                />
               ))}
             </div>
           </SortableContext>
@@ -114,7 +148,7 @@ export function GoalsSection() {
       {/* Completed goals */}
       {completedGoals.length > 0 && (
         <div className="mt-4">
-          <p className="text-xs text-gray-600 mb-2">Completati</p>
+          <p className="text-xs text-wm-muted-foreground mb-2">Completati</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {completedGoals.map((goal) => (
               <GoalCard key={goal.id} goal={goal} onEdit={() => setEditingGoal(goal)} />

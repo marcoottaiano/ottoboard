@@ -1,12 +1,18 @@
 "use client";
+import { ResponsiveChart } from "@/components/ui/ResponsiveChart";
+import { DataError } from "@/components/ui/DataError";
+import { Card } from "@/components/watermelon-ui/card";
+import { useCurrentTime } from "@/hooks/useCurrentTime";
 
 import { useActivities } from "@/hooks/useActivities";
 import { Activity, ActivityType } from "@/types";
 import { Select, SelectOption } from "@/components/ui/Select";
+import { Button } from "@/components/watermelon-ui/button";
+import { usePrivacyMode } from "@/hooks/usePrivacyMode";
 import { useState } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts";
 
-const ACTIVITY_TYPE_OPTIONS: SelectOption[] = [
+const ACTIVITY_TYPE_OPTIONS: (SelectOption & { value: ActivityType | "all" })[] = [
   { value: "all", label: "Tutti" },
   { value: "Run", label: "Corsa" },
   { value: "WeightTraining", label: "Palestra" },
@@ -53,49 +59,114 @@ function buildWeeklyData(activities: Activity[]) {
 }
 
 export function WeeklyVolumeChart() {
+  const now = useCurrentTime();
+  const isPrivate = usePrivacyMode((state) => state.isPrivate);
+  const [metric, setMetric] = useState<"km" | "ore">("ore");
   const [typeFilter, setTypeFilter] = useState<ActivityType | "all">("all");
 
-  const twelveWeeksAgoStr = new Date(Date.now() - 84 * 86400000).toISOString().slice(0, 10);
+  const twelveWeeksAgoStr = new Date(now - 84 * 86400000).toISOString().slice(0, 10);
 
-  const { data: activities, isLoading } = useActivities({
+  const {
+    data: activities,
+    isLoading,
+    isError,
+    refetch,
+  } = useActivities({
     type: typeFilter === "all" ? undefined : typeFilter,
     after: twelveWeeksAgoStr,
   });
 
   const chartData = activities ? buildWeeklyData(activities) : [];
 
+  if (isError) return <DataError onRetry={() => void refetch()} />;
   return (
-    <div className="ob-panel-flat h-full min-h-[270px] overflow-hidden p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
+    <Card className="wm-panel-flat h-full min-h-[390px] overflow-hidden p-5 sm:p-6">
+      <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="ob-eyebrow">Carico</p>
-          <h3 className="ob-card-title mt-2">Volume settimanale</h3>
+          <p className="wm-eyebrow">Il tuo ritmo</p>
+          <h3 className="wm-card-title mt-2">Volume settimanale</h3>
+          <p className="mt-1 text-xs text-wm-muted-foreground">Ultime 12 settimane · ogni barra parte da lunedì</p>
         </div>
-        <Select value={typeFilter} onChange={(v) => setTypeFilter(v as ActivityType | "all")} options={ACTIVITY_TYPE_OPTIONS} showPlaceholder={false} className="w-32" />
+        <Select
+          value={typeFilter}
+          onChange={(value) => {
+            const option = ACTIVITY_TYPE_OPTIONS.find((item) => item.value === value);
+            if (option) setTypeFilter(option.value);
+          }}
+          aria-label="Tipo di attività del grafico"
+          options={ACTIVITY_TYPE_OPTIONS}
+          showPlaceholder={false}
+          className="w-32"
+        />
       </div>
 
-      {isLoading ? (
-        <div className="h-48 bg-white/5 rounded animate-pulse" />
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div className="inline-flex rounded-lg bg-wm-muted p-1" role="group" aria-label="Metrica del volume">
+          <Button
+            size="auto"
+            variant="ghost"
+            aria-pressed={metric === "ore"}
+            onClick={() => setMetric("ore")}
+            className={metric === "ore" ? "bg-wm-card text-wm-primary shadow-xs" : "text-wm-muted-foreground"}
+          >
+            Durata
+          </Button>
+          <Button
+            size="auto"
+            variant="ghost"
+            aria-pressed={metric === "km"}
+            onClick={() => setMetric("km")}
+            className={metric === "km" ? "bg-wm-card text-wm-primary shadow-xs" : "text-wm-muted-foreground"}
+          >
+            Distanza
+          </Button>
+        </div>
+        <span className="text-xs text-wm-muted-foreground">
+          {metric === "km" ? "Distanza in chilometri" : "Tempo in ore"}
+        </span>
+      </div>
+      {isPrivate ? (
+        <div className="flex h-[240px] items-center justify-center text-sm text-wm-muted-foreground">
+          Grafico nascosto in modalità privacy
+        </div>
+      ) : isLoading ? (
+        <div className="h-[240px] bg-wm-muted rounded animate-pulse" />
+      ) : !activities?.length ? (
+        <div className="flex h-[240px] items-center justify-center text-sm text-wm-muted-foreground">
+          Nessuna attività nel periodo per questo sport
+        </div>
       ) : (
-        <ResponsiveContainer width="100%" height={180}>
+        <ResponsiveChart width="100%" height={240}>
           <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: "#6b7280" }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: "#6b7280" }} tickLine={false} axisLine={false} />
+            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--wm-border)" />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }} tickLine={false} axisLine={false} />
             <Tooltip
-              contentStyle={{ background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", fontSize: "12px" }}
-              labelStyle={{ color: "#9ca3af" }}
+              contentStyle={{
+                background: "var(--wm-popover)",
+                border: "1px solid var(--wm-border)",
+                borderRadius: "8px",
+                fontSize: "12px",
+              }}
+              labelStyle={{ color: "var(--wm-muted-foreground)" }}
               formatter={(value, name) => {
                 const n = Number(value) || 0;
-                const label = name === "km" ? `${n.toFixed(2)} km` : `${Math.floor(n)}h ${Math.round((n % 1) * 60)}m`;
+                const label =
+                  name === "km"
+                    ? `${n.toFixed(2)} km`
+                    : `${Math.floor(Math.round(n * 60) / 60)}h ${Math.round(n * 60) % 60}m`;
                 return [label, name === "km" ? "Distanza" : "Durata"];
               }}
             />
-            <Bar dataKey="km" name="km" fill="#ff6b4a" radius={[3, 3, 0, 0]} maxBarSize={20} />
-            <Bar dataKey="ore" name="ore" fill="#ff6b4a70" radius={[3, 3, 0, 0]} maxBarSize={20} />
+            <Bar dataKey={metric} name={metric} fill="var(--wm-fitness)" radius={[5, 5, 0, 0]} maxBarSize={32} />
           </BarChart>
-        </ResponsiveContainer>
+        </ResponsiveChart>
       )}
-    </div>
+    </Card>
   );
 }

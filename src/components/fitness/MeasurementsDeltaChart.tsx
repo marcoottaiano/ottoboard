@@ -1,6 +1,8 @@
 "use client";
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from "recharts";
+import { ResponsiveChart } from "@/components/ui/ResponsiveChart";
+import { Card } from "@/components/watermelon-ui/card";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell, ReferenceLine } from "recharts";
 import type { BodyMeasurement } from "@/types";
 import { usePrivacyMode } from "@/hooks/usePrivacyMode";
 
@@ -30,9 +32,9 @@ export function MeasurementsDeltaChart({ measurements }: Props) {
 
   if (!first || first === last) {
     return (
-      <div className="ob-panel-flat flex h-56 items-center justify-center p-5">
-        <p className="text-xs text-gray-500">Servono almeno 2 sessioni per vedere le variazioni</p>
-      </div>
+      <Card className="wm-panel-flat flex h-56 items-center justify-center p-5">
+        <p className="text-xs text-wm-muted-foreground">Servono almeno 2 sessioni per vedere le variazioni</p>
+      </Card>
     );
   }
 
@@ -48,34 +50,52 @@ export function MeasurementsDeltaChart({ measurements }: Props) {
 
   if (data.length === 0) {
     return (
-      <div className="ob-panel-flat flex h-56 items-center justify-center p-5">
-        <p className="text-xs text-gray-500">Nessuna variazione tra la prima e l&apos;ultima sessione</p>
-      </div>
+      <Card className="wm-panel-flat flex h-56 items-center justify-center p-5">
+        <p className="text-xs text-wm-muted-foreground">Nessuna variazione tra la prima e l&apos;ultima sessione</p>
+      </Card>
     );
   }
 
   return (
-    <div className="ob-panel-flat h-full space-y-3 p-5">
+    <Card className="wm-panel-flat h-full space-y-3 p-5">
       <div className="flex items-center justify-between">
-        <h3 className="ob-card-title">Variazioni dalla prima sessione</h3>
-        <span className="text-[10px] text-gray-500">
+        <h3 className="wm-card-title">Variazioni dalla prima sessione</h3>
+        <span className="text-[10px] text-wm-muted-foreground">
           {first.measured_at} → {last.measured_at}
         </span>
       </div>
-      <ResponsiveContainer width="100%" height={Math.max(180, data.length * 28)}>
+      <ResponsiveChart width="100%" height={Math.max(180, data.length * 28)}>
         <BarChart data={data} layout="vertical" margin={{ top: 4, right: 40, left: 60, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={(v) => (isPrivate ? "••" : `${v}`)} />
-          <YAxis type="category" dataKey="label" tick={{ fontSize: 10, fill: "#9ca3af" }} width={56} />
-          <ReferenceLine x={0} stroke="rgba(255,255,255,0.2)" />
-          <Tooltip contentStyle={{ background: "#12121f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }} formatter={(v) => [isPrivate ? "••••" : `${Number(v) > 0 ? "+" : ""}${v}`, "Variazione"]} labelStyle={{ color: "#9ca3af" }} />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--wm-border)" horizontal={false} />
+          <XAxis
+            type="number"
+            tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }}
+            tickFormatter={(v) => (isPrivate ? "••" : `${v}`)}
+          />
+          <YAxis
+            type="category"
+            dataKey="label"
+            tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }}
+            width={56}
+          />
+          <ReferenceLine x={0} stroke="var(--wm-border)" />
+          <Tooltip
+            contentStyle={{
+              background: "var(--wm-popover)",
+              border: "1px solid var(--wm-border)",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            formatter={(v) => [isPrivate ? "••••" : `${Number(v) > 0 ? "+" : ""}${v}`, "Variazione"]}
+            labelStyle={{ color: "var(--wm-muted-foreground)" }}
+          />
           <Bar dataKey="delta" radius={[0, 3, 3, 0]}>
             {data.map((entry, i) => (
-              <Cell key={i} fill={entry.isGood ? "#22c55e" : "#ef4444"} fillOpacity={0.7} />
+              <Cell key={i} fill={entry.isGood ? "var(--wm-success)" : "var(--wm-destructive)"} fillOpacity={0.7} />
             ))}
           </Bar>
         </BarChart>
-      </ResponsiveContainer>
-    </div>
+      </ResponsiveChart>
+    </Card>
   );
 }

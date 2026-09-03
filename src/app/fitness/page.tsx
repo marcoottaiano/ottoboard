@@ -5,13 +5,13 @@ import { FitnessContent } from "./FitnessContent";
 export const dynamic = "force-dynamic";
 
 async function isStravaConnected(userId: string): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase.from("strava_tokens").select("user_id").eq("user_id", userId).single();
   return !!data;
 }
 
 export default async function FitnessPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -22,9 +22,9 @@ export default async function FitnessPage() {
 
   if (!connected) {
     return (
-      <main className="ob-page">
+      <div className="wm-page">
         <StravaConnect mode="full" />
-      </main>
+      </div>
     );
   }
 

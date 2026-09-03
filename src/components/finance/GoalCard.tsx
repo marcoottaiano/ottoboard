@@ -1,5 +1,10 @@
 "use client";
 
+import { PrivacyValue } from "@/components/ui/PrivacyValue";
+import { Progress } from "@/components/watermelon-ui/progress";
+import { Button } from "@/components/watermelon-ui/button";
+import { Card } from "@/components/watermelon-ui/card";
+
 import { Pencil, CheckCircle2, Clock } from "lucide-react";
 import { FinancialGoal } from "@/types";
 
@@ -28,18 +33,25 @@ export function GoalCard({ goal, allocatedAmount, onEdit }: Props) {
   const remaining = goal.target_amount - displayAmount;
   const barColor = goal.color ?? "#22c55e";
   const days = goal.deadline ? daysUntil(goal.deadline) : null;
-  const state = !goal.completed && allocatedAmount !== undefined ? (allocatedAmount >= goal.target_amount ? { label: "Raggiunto", classes: "text-emerald-400 bg-emerald-400/10" } : allocatedAmount > 0 ? { label: "In corso", classes: "text-amber-400 bg-amber-400/10" } : { label: "Non avviato", classes: "text-gray-500 bg-white/5" }) : null;
+  const state =
+    !goal.completed && allocatedAmount !== undefined
+      ? allocatedAmount >= goal.target_amount
+        ? { label: "Raggiunto", classes: "text-wm-primary bg-wm-success/10" }
+        : allocatedAmount > 0
+          ? { label: "In corso", classes: "text-wm-warning bg-wm-warning/10" }
+          : { label: "Non avviato", classes: "text-wm-muted-foreground bg-wm-muted" }
+      : null;
 
   return (
-    <div className={`finance-card flex flex-col gap-3 p-5 transition-all ${goal.completed ? "border-emerald-500/20" : ""}`}>
+    <Card className={`wm-card flex flex-col gap-3 p-5 transition-all ${goal.completed ? "border-wm-success/20" : ""}`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           {goal.icon && <span className="text-xl flex-shrink-0">{goal.icon}</span>}
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-white truncate">{goal.name}</h3>
+            <h3 className="text-sm font-semibold text-wm-foreground truncate">{goal.name}</h3>
             {goal.completed && (
-              <span className="inline-flex items-center gap-1 text-xs text-emerald-400 mt-0.5">
+              <span className="inline-flex items-center gap-1 text-xs text-wm-primary mt-0.5">
                 <CheckCircle2 size={11} /> Completato
               </span>
             )}
@@ -47,38 +59,61 @@ export function GoalCard({ goal, allocatedAmount, onEdit }: Props) {
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button onClick={onEdit} title="Modifica obiettivo" className="ob-icon-button size-8">
+          <Button
+            aria-label="Modifica obiettivo"
+            variant="ghost"
+            size="sm"
+            onClick={onEdit}
+            title="Modifica obiettivo"
+            className="wm-icon-button size-8"
+          >
             <Pencil size={13} />
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Progress bar */}
       <div>
         <div className="flex items-baseline justify-between mb-1.5 text-xs">
-          <span className="text-white font-medium">{formatEur(displayAmount)}</span>
-          <span className="text-gray-500">di {formatEur(goal.target_amount)}</span>
+          <span className="text-wm-foreground font-medium">
+            <PrivacyValue>{formatEur(displayAmount)}</PrivacyValue>
+          </span>
+          <span className="text-wm-muted-foreground">
+            di <PrivacyValue>{formatEur(goal.target_amount)}</PrivacyValue>
+          </span>
         </div>
-        <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: barColor }} />
-        </div>
+        <Progress indicatorStyle={{ backgroundColor: barColor }} value={pct} aria-label={`Avanzamento ${goal.name}`} />
         <div className="flex items-center justify-between mt-1.5 text-xs">
           <span className="font-medium" style={{ color: barColor }}>
             {pct.toFixed(0)}%
           </span>
-          {!goal.completed && remaining > 0 && <span className="text-gray-600">mancano {formatEur(remaining)}</span>}
+          {!goal.completed && remaining > 0 && (
+            <span className="text-wm-muted-foreground">
+              mancano <PrivacyValue>{formatEur(remaining)}</PrivacyValue>
+            </span>
+          )}
         </div>
 
-        {state && <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${state.classes}`}>{state.label}</span>}
+        {state && (
+          <span className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${state.classes}`}>
+            {state.label}
+          </span>
+        )}
       </div>
 
       {/* Deadline */}
       {goal.deadline && days !== null && !goal.completed && (
-        <div className={`flex items-center gap-1.5 text-xs ${days < 0 ? "text-red-400" : days <= 7 ? "text-yellow-400" : "text-gray-500"}`}>
+        <div
+          className={`flex items-center gap-1.5 text-xs ${days < 0 ? "text-wm-destructive" : days <= 7 ? "text-wm-warning" : "text-wm-muted-foreground"}`}
+        >
           <Clock size={11} />
-          {days < 0 ? `Scaduto ${Math.abs(days)} giorni fa` : days === 0 ? "Scade oggi" : `${days} giorni alla scadenza`}
+          {days < 0
+            ? `Scaduto ${Math.abs(days)} giorni fa`
+            : days === 0
+              ? "Scade oggi"
+              : `${days} giorni alla scadenza`}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

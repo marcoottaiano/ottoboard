@@ -1,215 +1,307 @@
 "use client";
-
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import { useRef } from "react";
-import { useFinancialGoals } from "@/hooks/useFinancialGoals";
+import { ResponsiveChart } from "@/components/ui/ResponsiveChart";
+import { ArrowDownLeft, ArrowUpRight, Wallet, TrendingUp, TrendingDown, Minus, Target } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useMonthStats } from "@/hooks/useMonthStats";
+import { useFinancialGoals } from "@/hooks/useFinancialGoals";
+import { usePrivacyMode } from "@/hooks/usePrivacyMode";
+import { Card } from "@/components/watermelon-ui/card";
+import { Progress } from "@/components/watermelon-ui/progress";
+import { Skeleton } from "@/components/watermelon-ui/skeleton";
 import { PrivacyValue } from "@/components/ui/PrivacyValue";
-import { buildCsvString, downloadCsv } from "@/lib/finance/exportCsv";
+import { DataError } from "@/components/ui/DataError";
+import { formatEur } from "@/lib/finance/presentation";
 
-interface FinanceCommandCenterProps {
-  selectedMonth: string;
-  onMonthChange: (month: string) => void;
-}
-
-function formatEur(value: number) {
-  return new Intl.NumberFormat("it-IT", {
-    style: "currency",
-    currency: "EUR",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
-function formatCompactEur(value: number) {
-  return new Intl.NumberFormat("it-IT", { notation: "compact", maximumFractionDigits: 1 }).format(value);
-}
-
-function monthLabel(month: string) {
-  const [year, value] = month.split("-").map(Number);
-  return new Date(year, value - 1, 1).toLocaleDateString("it-IT", { month: "long", year: "numeric" });
-}
-
-function shiftMonth(month: string, amount: number) {
-  const [year, value] = month.split("-").map(Number);
-  const date = new Date(year, value - 1 + amount, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
-
-export function FinanceCommandCenter({ selectedMonth, onMonthChange }: FinanceCommandCenterProps) {
-  const { data: monthTransactions = [], isLoading: monthLoading, isFetching: monthFetching } = useTransactions({ month: selectedMonth });
-  const { data: allTransactions = [], isLoading: allLoading } = useTransactions({});
-  const { data: goals = [] } = useFinancialGoals();
-  const isExporting = useRef(false);
-
-  const monthIncome = monthTransactions.filter((transaction) => transaction.type === "income").reduce((sum, transaction) => sum + transaction.amount, 0);
-  const monthExpense = monthTransactions.filter((transaction) => transaction.type === "expense").reduce((sum, transaction) => sum + transaction.amount, 0);
-  const monthNet = monthIncome - monthExpense;
-  const totalBalance = allTransactions.reduce((sum, transaction) => sum + (transaction.type === "income" ? transaction.amount : -transaction.amount), 0);
-
-  const [year, monthValue] = selectedMonth.split("-").map(Number);
-  const daysInMonth = new Date(year, monthValue, 0).getDate();
-  const dailyTotals = new Map<number, { income: number; expense: number }>();
-  for (const transaction of monthTransactions) {
-    const day = Number(transaction.date.slice(8, 10));
-    const current = dailyTotals.get(day) ?? { income: 0, expense: 0 };
-    if (transaction.type === "income") current.income += transaction.amount;
-    else current.expense += transaction.amount;
-    dailyTotals.set(day, current);
+function MetricTrend({
+  value,
+  average,
+  lowerIsBetter = false,
+}: {
+  value: number;
+  average: number | null;
+  lowerIsBetter?: boolean;
+}) {
+  if (average === null || (average === 0 && value !== 0)) {
+    return (
+      <p className="mt-2 text-xs text-wm-muted-foreground">
+        {average === null ? "Media non disponibile" : "Confronto % non disponibile: media zero"}
+      </p>
+    );
   }
 
-  let cumulativeIncome = 0;
-  let cumulativeExpense = 0;
-  const cashFlow = Array.from({ length: daysInMonth }, (_, index) => {
-    const day = index + 1;
-    const totals = dailyTotals.get(day);
-    cumulativeIncome += totals?.income ?? 0;
-    cumulativeExpense += totals?.expense ?? 0;
-    return { day, income: cumulativeIncome, expense: cumulativeExpense, net: cumulativeIncome - cumulativeExpense };
-  });
-
-  const categoryTotals = new Map<string, { name: string; icon: string | null; total: number }>();
-  for (const transaction of monthTransactions) {
-    if (transaction.type !== "expense") continue;
-    const key = transaction.category_id;
-    const current = categoryTotals.get(key);
-    if (current) current.total += transaction.amount;
-    else categoryTotals.set(key, { name: transaction.category?.name ?? "Senza categoria", icon: transaction.category?.icon ?? null, total: transaction.amount });
-  }
-  const categories = Array.from(categoryTotals.values())
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 5);
-  const maxCategory = categories[0]?.total ?? 1;
-  const primaryGoal = goals.find((goal) => !goal.completed) ?? goals[0];
-  const goalProgress = primaryGoal ? Math.min((primaryGoal.current_amount / primaryGoal.target_amount) * 100, 100) : 0;
-  const isLoading = monthLoading || allLoading;
-  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-
-  const handleExport = () => {
-    if (monthTransactions.length === 0 || isExporting.current) return;
-    isExporting.current = true;
-    const [exportYear, exportMonth] = selectedMonth.split("-");
-    downloadCsv(buildCsvString(monthTransactions), `ottoboard-finance-${exportMonth}-${exportYear}.csv`);
-    isExporting.current = false;
-  };
-
-  if (isLoading) return <div className="ob-panel h-[560px] animate-pulse" />;
+  const percent = average === 0 ? 0 : Math.round(((value - average) / Math.abs(average)) * 1000) / 10;
+  const favorable = lowerIsBetter ? percent < 0 : percent > 0;
+  const color = percent === 0 ? "text-wm-muted-foreground" : favorable ? "text-wm-primary" : "text-wm-destructive";
+  const Icon = percent === 0 ? Minus : percent > 0 ? TrendingUp : TrendingDown;
+  const formattedPercent = new Intl.NumberFormat("it-IT", {
+    maximumFractionDigits: 1,
+    signDisplay: "exceptZero",
+  }).format(percent);
 
   return (
-    <section className="ob-panel overflow-hidden">
-      <div className="flex items-center justify-between border-b px-5 py-3" style={{ borderColor: "var(--border)" }}>
-        <p className="ob-section-title capitalize">{monthLabel(selectedMonth)}</p>
-        <div className="flex items-center gap-1">
-          <button type="button" onClick={handleExport} disabled={monthTransactions.length === 0 || monthFetching} className="ob-secondary-action mr-1">
-            <Download size={13} />
-            <span className="hidden sm:inline">Esporta CSV</span>
-          </button>
-          <button onClick={() => onMonthChange(shiftMonth(selectedMonth, -1))} className="ob-icon-button size-8" aria-label="Mese precedente">
-            <ChevronLeft size={15} />
-          </button>
-          <button onClick={() => onMonthChange(shiftMonth(selectedMonth, 1))} disabled={selectedMonth >= currentMonth} className="ob-icon-button size-8 disabled:cursor-not-allowed disabled:opacity-30" aria-label="Mese successivo">
-            <ChevronRight size={15} />
-          </button>
-        </div>
-      </div>
+    <p
+      className={`mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs ${color}`}
+      title="Confronto con la media mensile dei mesi con movimenti, escluso quello selezionato."
+    >
+      <span className="inline-flex items-center gap-1 font-medium tabular-nums">
+        <Icon size={14} aria-hidden="true" />
+        {formattedPercent}%
+      </span>
+      <span className="text-wm-muted-foreground">vs media</span>
+      <span className="sr-only">
+        {percent === 0 ? "Andamento invariato" : favorable ? "Andamento favorevole" : "Andamento sfavorevole"}
+      </span>
+    </p>
+  );
+}
 
-      <div className="grid border-b sm:grid-cols-2 xl:grid-cols-4" style={{ borderColor: "var(--border)" }}>
-        {[
-          { label: "Saldo totale", value: totalBalance, accent: "text-white" },
-          { label: "Entrate", value: monthIncome, accent: "text-brand" },
-          { label: "Uscite", value: monthExpense, accent: "text-white/75" },
-          { label: "Netto", value: monthNet, accent: monthNet >= 0 ? "text-brand" : "text-red-400" },
-        ].map((metric) => (
-          <div key={metric.label} className="border-b p-5 last:border-b-0 sm:border-r sm:[&:nth-child(2)]:border-r-0 xl:border-b-0 xl:[&:nth-child(2)]:border-r xl:last:border-r-0" style={{ borderColor: "var(--border)" }}>
-            <p className="ob-metric-label">{metric.label}</p>
-            <p className={`mt-2 font-mono text-2xl tabular-nums ${metric.accent}`}>
-              <PrivacyValue>{formatEur(metric.value)}</PrivacyValue>
+export function FinanceCommandCenter({ selectedMonth }: { selectedMonth: string }) {
+  const monthQuery = useTransactions({ month: selectedMonth });
+  const allQuery = useTransactions({});
+  const { average } = useMonthStats(selectedMonth);
+  const goalsQuery = useFinancialGoals();
+  const { isPrivate } = usePrivacyMode();
+  if (monthQuery.isError || allQuery.isError)
+    return (
+      <DataError
+        onRetry={() => {
+          void monthQuery.refetch();
+          void allQuery.refetch();
+        }}
+      />
+    );
+  if (monthQuery.isLoading || allQuery.isLoading)
+    return (
+      <div className="space-y-5" aria-label="Caricamento panoramica">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((item) => (
+            <Skeleton key={item} className="h-32" />
+          ))}
+        </div>
+        <Skeleton className="h-80" />
+      </div>
+    );
+  const transactions = monthQuery.data ?? [];
+  const income = transactions.filter((t) => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+  const expense = transactions.filter((t) => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+  const balance = (allQuery.data ?? []).reduce((sum, t) => sum + (t.type === "income" ? t.amount : -t.amount), 0);
+  const metrics = [
+    { label: "Saldo totale", value: balance, icon: Wallet, hint: "Intero storico", average: undefined },
+    {
+      label: "Entrate",
+      value: income,
+      icon: ArrowDownLeft,
+      hint: "Nel mese selezionato",
+      average: average?.totalIncome ?? null,
+    },
+    {
+      label: "Uscite",
+      value: expense,
+      icon: ArrowUpRight,
+      hint: "Nel mese selezionato",
+      average: average?.totalExpense ?? null,
+      lowerIsBetter: true,
+    },
+    {
+      label: "Saldo mensile",
+      value: income - expense,
+      icon: TrendingUp,
+      hint: "Entrate meno uscite",
+      average: average?.balance ?? null,
+    },
+  ];
+  const [year, month] = selectedMonth.split("-").map(Number);
+  const daily = new Map<number, { income: number; expense: number }>();
+  const categories = new Map<string, { name: string; icon: string | null; total: number }>();
+  for (const transaction of transactions) {
+    const day = Number(transaction.date.slice(8, 10));
+    const totals = daily.get(day) ?? { income: 0, expense: 0 };
+    totals[transaction.type] += transaction.amount;
+    daily.set(day, totals);
+    if (transaction.type === "expense") {
+      const key = transaction.category_id ?? "uncategorized";
+      const category = categories.get(key) ?? {
+        name: transaction.category?.name ?? "Senza categoria",
+        icon: transaction.category?.icon ?? null,
+        total: 0,
+      };
+      category.total += transaction.amount;
+      categories.set(key, category);
+    }
+  }
+  const series: { day: number; income: number; expense: number }[] = [];
+  for (let day = 1; day <= new Date(year, month, 0).getDate(); day++) {
+    const previous = series.at(-1);
+    const amounts = daily.get(day);
+    series.push({
+      day,
+      income: (previous?.income ?? 0) + (amounts?.income ?? 0),
+      expense: (previous?.expense ?? 0) + (amounts?.expense ?? 0),
+    });
+  }
+  const topCategories = [...categories.entries()].sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+  const goals = goalsQuery.data ?? [];
+  const primaryGoal = goals.find((goal) => !goal.completed) ?? goals[0];
+  const progress =
+    primaryGoal && primaryGoal.target_amount > 0 ? (primaryGoal.current_amount / primaryGoal.target_amount) * 100 : 0;
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {metrics.map(({ label, value, icon: Icon, hint, average: metricAverage, lowerIsBetter }) => (
+          <Card key={label} className="p-4 md:p-5">
+            <div className="mb-5 flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-wm-muted-foreground">{label}</span>
+              <Icon size={17} className="text-wm-primary" />
+            </div>
+            <p className="wm-metric-value break-words">
+              <PrivacyValue>{formatEur(value)}</PrivacyValue>
             </p>
-          </div>
+            <p className="mt-2 text-xs text-wm-muted-foreground">{hint}</p>
+            {metricAverage !== undefined &&
+              (isPrivate ? (
+                <p className="mt-2 text-xs text-wm-muted-foreground">Confronto nascosto</p>
+              ) : (
+                <MetricTrend value={value} average={metricAverage} lowerIsBetter={lowerIsBetter} />
+              ))}
+          </Card>
         ))}
       </div>
-
-      <div className="grid xl:grid-cols-[1.35fr_1fr_.9fr]">
-        <div className="border-b p-5 xl:border-b-0 xl:border-r" style={{ borderColor: "var(--border)" }}>
-          <p className="ob-metric-label">Cash flow</p>
-          <div className="mt-4 h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cashFlow} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="financeIncome" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#65d6a6" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#65d6a6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid stroke="rgba(197,224,216,.07)" vertical={false} />
-                <XAxis dataKey="day" tick={{ fill: "#789094", fontSize: 9 }} tickLine={false} axisLine={false} interval={6} />
-                <YAxis tick={{ fill: "#789094", fontSize: 9 }} tickLine={false} axisLine={false} tickFormatter={formatCompactEur} />
-                <Area type="stepAfter" dataKey="income" stroke="#65d6a6" strokeWidth={2} fill="url(#financeIncome)" />
-                <Area type="stepAfter" dataKey="expense" stroke="#789094" strokeWidth={1.5} fill="transparent" />
-              </AreaChart>
-            </ResponsiveContainer>
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+        <Card className="min-w-0 p-5 md:p-6">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="wm-card-title">Andamento del mese</h2>
+              <p className="mt-1 text-xs text-wm-muted-foreground">Entrate e uscite cumulative, giorno per giorno.</p>
+            </div>
+            <div className="flex gap-4 text-xs text-wm-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-wm-primary" />
+                Entrate
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-2 rounded-full bg-wm-info" />
+                Uscite
+              </span>
+            </div>
           </div>
-          <div className="mt-2 flex gap-5 text-[10px] text-muted">
-            <span className="flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-brand" />
-              Entrate
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-1.5 rounded-full bg-muted" />
-              Uscite
-            </span>
-          </div>
-        </div>
-
-        <div className="border-b p-5 xl:border-b-0 xl:border-r" style={{ borderColor: "var(--border)" }}>
-          <p className="ob-metric-label">Categorie di spesa</p>
-          <div className="mt-5 space-y-4">
-            {categories.length === 0 ? (
-              <p className="text-xs text-muted">Nessuna spesa nel mese.</p>
-            ) : (
-              categories.map((category) => (
-                <div key={category.name}>
-                  <div className="flex items-center justify-between gap-3 text-xs">
-                    <span className="truncate text-white/70">
-                      {category.icon} {category.name}
-                    </span>
-                    <span className="font-mono text-muted">
-                      <PrivacyValue>{formatEur(category.total)}</PrivacyValue>
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-1 rounded-full bg-white/[0.04]">
-                    <div className="h-full rounded-full bg-brand" style={{ width: `${(category.total / maxCategory) * 100}%` }} />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="p-5">
-          <p className="ob-metric-label">Obiettivo risparmio</p>
-          {primaryGoal ? (
-            <div className="mt-5">
-              <p className="text-sm text-white/80">
-                {primaryGoal.icon} {primaryGoal.name}
-              </p>
-              <p className="mt-5 font-mono text-2xl text-white">
-                <PrivacyValue>{formatEur(primaryGoal.current_amount)}</PrivacyValue>
-              </p>
-              <p className="mt-1 text-xs text-muted">
-                di <PrivacyValue>{formatEur(primaryGoal.target_amount)}</PrivacyValue>
-              </p>
-              <div className="mt-5 h-1.5 rounded-full bg-white/[0.05]">
-                <div className="h-full rounded-full bg-brand" style={{ width: `${goalProgress}%` }} />
-              </div>
-              <p className="mt-2 text-[10px] text-muted">{Math.round(goalProgress)}% completato</p>
+          {isPrivate ? (
+            <div className="flex h-72 items-center justify-center text-sm text-wm-muted-foreground">
+              Grafico nascosto in modalità privacy
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="flex h-72 items-center justify-center text-sm text-wm-muted-foreground">
+              Nessun movimento nel mese selezionato.
             </div>
           ) : (
-            <p className="mt-5 text-xs text-muted">Nessun obiettivo attivo.</p>
+            <div className="h-72 w-full min-w-0">
+              <ResponsiveChart width="100%" height="100%">
+                <AreaChart data={series} margin={{ top: 10, right: 8, left: -12, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="var(--wm-border)" />
+                  <XAxis
+                    dataKey="day"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "var(--wm-muted-foreground)", fontSize: 11 }}
+                    minTickGap={25}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: "var(--wm-muted-foreground)", fontSize: 11 }}
+                    tickFormatter={(value) => new Intl.NumberFormat("it-IT", { notation: "compact" }).format(value)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--wm-popover)",
+                      color: "var(--wm-foreground)",
+                      border: "1px solid var(--wm-border)",
+                      borderRadius: 10,
+                    }}
+                    formatter={(value) => (typeof value === "number" ? formatEur(value) : String(value ?? ""))}
+                    labelFormatter={(day) => `Giorno ${day}`}
+                  />
+                  <Area
+                    name="Entrate"
+                    type="stepAfter"
+                    dataKey="income"
+                    stroke="var(--wm-primary)"
+                    fill="var(--wm-primary)"
+                    fillOpacity={0.12}
+                    strokeWidth={2}
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    name="Uscite"
+                    type="stepAfter"
+                    dataKey="expense"
+                    stroke="var(--wm-info)"
+                    fill="var(--wm-info)"
+                    fillOpacity={0.06}
+                    strokeWidth={2}
+                    isAnimationActive={false}
+                  />
+                </AreaChart>
+              </ResponsiveChart>
+            </div>
           )}
+        </Card>
+        <div className="space-y-5">
+          <Card className="p-5">
+            <h2 className="wm-card-title">Dove spendi di più</h2>
+            <p className="mb-5 mt-1 text-xs text-wm-muted-foreground">Le cinque categorie principali.</p>
+            <div className="space-y-4">
+              {topCategories.length === 0 ? (
+                <p className="text-sm text-wm-muted-foreground">Nessuna spesa nel mese.</p>
+              ) : (
+                topCategories.map(([id, category]) => (
+                  <div key={id}>
+                    <div className="mb-2 flex items-center justify-between gap-2 text-xs">
+                      <span className="truncate">
+                        {category.icon} {category.name}
+                      </span>
+                      <PrivacyValue className="shrink-0 font-mono">{formatEur(category.total)}</PrivacyValue>
+                    </div>
+                    {!isPrivate && (
+                      <Progress
+                        aria-label={`Quota spese: ${category.name}`}
+                        value={expense > 0 ? (category.total / expense) * 100 : 0}
+                        className="h-1.5"
+                      />
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+          <Card className="p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="wm-card-title">Obiettivo risparmio</h2>
+              <Target size={17} className="text-wm-primary" />
+            </div>
+            {goalsQuery.isError ? (
+              <DataError onRetry={() => void goalsQuery.refetch()} />
+            ) : goalsQuery.isLoading ? (
+              <Skeleton className="h-24" />
+            ) : primaryGoal ? (
+              <>
+                <p className="text-sm">
+                  {primaryGoal.icon} {primaryGoal.name}
+                </p>
+                <p className="my-4 font-mono text-2xl">
+                  <PrivacyValue>{formatEur(primaryGoal.current_amount)}</PrivacyValue>
+                </p>
+                {!isPrivate && <Progress aria-label="Avanzamento obiettivo" value={progress} />}
+                <p className="mt-3 text-xs text-wm-muted-foreground">
+                  Traguardo: <PrivacyValue>{formatEur(primaryGoal.target_amount)}</PrivacyValue>
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-wm-muted-foreground">Crea un obiettivo nella tab Pianificazione.</p>
+            )}
+          </Card>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

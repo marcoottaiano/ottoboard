@@ -1,7 +1,10 @@
 "use client";
 
+import { ResponsiveChart } from "@/components/ui/ResponsiveChart";
+import { Select } from "@/components/ui/Select";
+import { Card } from "@/components/watermelon-ui/card";
 import { useState } from "react";
-import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from "recharts";
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip } from "recharts";
 import type { BodyMeasurement } from "@/types";
 import { usePrivacyMode } from "@/hooks/usePrivacyMode";
 
@@ -29,79 +32,106 @@ export function CircumferencesRadarChart({ measurements }: Props) {
 
   if (withCirc.length === 0) {
     return (
-      <div className="ob-panel-flat flex h-56 items-center justify-center p-5">
-        <p className="text-xs text-gray-500">Nessuna circonferenza disponibile</p>
-      </div>
+      <Card className="wm-panel-flat flex h-56 items-center justify-center p-5">
+        <p className="text-xs text-wm-muted-foreground">Nessuna circonferenza disponibile</p>
+      </Card>
     );
   }
 
-  const mA = withCirc.find((m) => m.measured_at === dateA);
-  const mB = withCirc.find((m) => m.measured_at === dateB);
+  const selectedDateA = withCirc.some((m) => m.measured_at === dateA) ? dateA : withCirc[0].measured_at;
+  const selectedDateB = withCirc.some((m) => m.measured_at === dateB) ? dateB : "";
+  const mA = withCirc.find((m) => m.measured_at === selectedDateA);
+  const mB = withCirc.find((m) => m.measured_at === selectedDateB);
 
   // Calcola max per normalizzazione
   const maxValues: Record<string, number> = {};
   CIRC_FIELDS.forEach(({ field, label }) => {
-    const vals = withCirc.map((m) => m[field] as number | undefined).filter(Boolean) as number[];
+    const vals = withCirc
+      .map((m) => m[field])
+      .filter((value): value is number => typeof value === "number" && value > 0);
     maxValues[label] = vals.length ? Math.max(...vals) : 1;
   });
 
   const radarData = CIRC_FIELDS.map(({ field, label }) => ({
     subject: label,
-    A: mA?.[field] != null ? Math.round(((mA[field] as number) / maxValues[label]) * 100) : null,
-    B: mB?.[field] != null ? Math.round(((mB[field] as number) / maxValues[label]) * 100) : null,
+    A: typeof mA?.[field] === "number" ? Math.round((mA[field] / maxValues[label]) * 100) : null,
+    B: typeof mB?.[field] === "number" ? Math.round((mB[field] / maxValues[label]) * 100) : null,
     rawA: mA?.[field],
     rawB: mB?.[field],
   }));
 
-  const dateOptions = withCirc.map((m) => m.measured_at);
+  const dateOptions = [...new Set(withCirc.map((m) => m.measured_at))];
 
   return (
-    <div className="ob-panel-flat h-full space-y-3 p-5">
+    <Card className="wm-panel-flat h-full space-y-3 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="ob-card-title">Radar circonferenze</h3>
-        <div className="flex gap-2 text-xs">
+        <h3 className="wm-card-title">Radar circonferenze</h3>
+        <div className="flex flex-wrap gap-2 text-xs">
           <div className="flex items-center gap-1">
             <span className="h-2 w-2 rounded-full bg-fitness" />
-            <select value={dateA} onChange={(e) => setDateA(e.target.value)} className="bg-white/5 border border-white/10 rounded px-2 py-0.5 text-white text-xs focus:outline-none">
-              {dateOptions.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
+            <Select
+              aria-label="Prima sessione da confrontare"
+              value={selectedDateA}
+              onChange={setDateA}
+              options={dateOptions.map((date) => ({ value: date, label: date }))}
+              showPlaceholder={false}
+            />
           </div>
           {dateOptions.length > 1 && (
             <div className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-teal-500" />
-              <select value={dateB} onChange={(e) => setDateB(e.target.value)} className="bg-white/5 border border-white/10 rounded px-2 py-0.5 text-white text-xs focus:outline-none">
-                <option value="">—</option>
-                {dateOptions.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
+              <span className="w-2 h-2 rounded-full bg-wm-chart-teal" />
+              <Select
+                aria-label="Seconda sessione da confrontare"
+                value={selectedDateB}
+                onChange={setDateB}
+                options={dateOptions.map((date) => ({ value: date, label: date }))}
+                placeholder="Nessun confronto"
+              />
             </div>
           )}
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={200}>
+      <ResponsiveChart width="100%" height={200}>
         <RadarChart data={radarData} margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
-          <PolarGrid stroke="rgba(255,255,255,0.1)" />
-          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "#9ca3af" }} />
+          <PolarGrid stroke="var(--wm-border)" />
+          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }} />
           <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
-          <Radar name={dateA} dataKey="A" stroke="#ff6b4a" fill="#ff6b4a" fillOpacity={0.2} strokeWidth={2} />
-          {mB && <Radar name={dateB} dataKey="B" stroke="#14b8a6" fill="#14b8a6" fillOpacity={0.15} strokeWidth={2} />}
+          <Radar
+            name={selectedDateA}
+            dataKey="A"
+            stroke="var(--wm-fitness)"
+            fill="var(--wm-fitness)"
+            fillOpacity={0.2}
+            strokeWidth={2}
+          />
+          {mB && (
+            <Radar
+              name={selectedDateB}
+              dataKey="B"
+              stroke="var(--wm-chart-teal)"
+              fill="var(--wm-chart-teal)"
+              fillOpacity={0.15}
+              strokeWidth={2}
+            />
+          )}
           <Tooltip
-            contentStyle={{ background: "#12121f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
+            contentStyle={{
+              background: "var(--wm-popover)",
+              border: "1px solid var(--wm-border)",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
             formatter={(_v, _name, props) => {
-              const raw = _name === dateA ? (props.payload as { rawA?: number })?.rawA : (props.payload as { rawB?: number })?.rawB;
+              const raw =
+                _name === dateA
+                  ? (props.payload as { rawA?: number })?.rawA
+                  : (props.payload as { rawB?: number })?.rawB;
               if (isPrivate) return raw != null ? ["•••• cm", String(_name)] : ["—", String(_name)];
               return raw != null ? [`${raw} cm`, String(_name)] : ["—", String(_name)];
             }}
           />
         </RadarChart>
-      </ResponsiveContainer>
-    </div>
+      </ResponsiveChart>
+    </Card>
   );
 }

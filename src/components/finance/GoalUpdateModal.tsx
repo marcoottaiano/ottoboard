@@ -1,117 +1,133 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { X } from 'lucide-react'
-import { toast } from 'sonner'
-import { FinancialGoal } from '@/types'
-import { useUpdateFinancialGoal } from '@/hooks/useFinancialGoals'
+import { PrivacyValue } from "@/components/ui/PrivacyValue";
+import { AppDialog } from "@/components/ui/AppDialog";
+import { Button } from "@/components/watermelon-ui/button";
+import { Input } from "@/components/watermelon-ui/input";
+import { useState, useRef } from "react";
+import { toast } from "sonner";
+import { FinancialGoal } from "@/types";
+import { useUpdateFinancialGoal } from "@/hooks/useFinancialGoals";
 
 function formatEur(n: number) {
-  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n)
+  return new Intl.NumberFormat("it-IT", { style: "currency", currency: "EUR" }).format(n);
 }
 
 interface Props {
-  goal: FinancialGoal
-  onClose: () => void
+  goal: FinancialGoal;
+  onClose: () => void;
 }
 
 export function GoalUpdateModal({ goal, onClose }: Props) {
-  const [addAmount, setAddAmount] = useState('')
-  const update = useUpdateFinancialGoal()
+  const [addAmount, setAddAmount] = useState("");
+  const update = useUpdateFinancialGoal();
+  const saving = useRef(false);
 
-  const delta = Math.max(parseFloat(addAmount) || 0, 0)
-  const newAmount = Math.min(goal.current_amount + delta, goal.target_amount)
-  const willComplete = newAmount >= goal.target_amount && !goal.completed
+  const delta = Math.max(parseFloat(addAmount) || 0, 0);
+  const newAmount = Math.min(goal.current_amount + delta, goal.target_amount);
+  const willComplete = newAmount >= goal.target_amount && !goal.completed;
 
   const handleSave = () => {
-    if (delta <= 0) return
+    if (saving.current || delta <= 0 || !Number.isFinite(delta)) return;
+    saving.current = true;
     // Merge amount update + completion flag into a single atomic write
     const patch: Parameters<typeof update.mutate>[0] = {
       id: goal.id,
       current_amount: newAmount,
       ...(willComplete ? { completed: true } : {}),
-    }
+    };
     update.mutate(patch, {
+      onSettled: () => {
+        saving.current = false;
+      },
       onSuccess: () => {
-        toast.success(willComplete ? '🎉 Obiettivo raggiunto!' : 'Importo aggiornato')
-        onClose()
+        toast.success(willComplete ? "🎉 Obiettivo raggiunto!" : "Importo aggiornato");
+        onClose();
       },
       onError: () => toast.error("Errore durante l'aggiornamento"),
-    })
-  }
+    });
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-xs bg-[#0f0f1a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
-          <div className="flex items-center gap-2">
-            {goal.icon && <span>{goal.icon}</span>}
-            <h2 className="text-sm font-semibold text-white">{goal.name}</h2>
-          </div>
-          <button onClick={onClose} className="text-gray-600 hover:text-gray-400 transition-colors">
-            <X size={16} />
-          </button>
+    <AppDialog
+      title={goal.name}
+      description="Aggiungi un importo al tuo obiettivo di risparmio."
+      onClose={onClose}
+      busy={update.isPending}
+      className="max-w-lg"
+    >
+      {/* Header */}
+
+      {/* Body */}
+      <div className="p-5 space-y-4">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-wm-muted-foreground">Attuale</span>
+          <span className="text-wm-foreground font-medium">
+            <PrivacyValue>{formatEur(goal.current_amount)}</PrivacyValue>
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-wm-muted-foreground">Target</span>
+          <span className="text-wm-foreground">
+            <PrivacyValue>{formatEur(goal.target_amount)}</PrivacyValue>
+          </span>
         </div>
 
-        {/* Body */}
-        <div className="p-5 space-y-4">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">Attuale</span>
-            <span className="text-white font-medium">{formatEur(goal.current_amount)}</span>
+        <div>
+          <label className="text-xs text-wm-muted-foreground mb-1.5 block">Quanto aggiungi?</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-wm-muted-foreground text-sm">+€</span>
+            <Input
+              aria-label="Quanto aggiungi?"
+              type="number"
+              placeholder="0.00"
+              value={addAmount}
+              onChange={(e) => setAddAmount(e.target.value)}
+              min="0"
+              step="0.01"
+              autoFocus
+              className="w-full bg-wm-muted border border-wm-border rounded-lg pl-8 pr-3 py-2 text-sm text-wm-foreground placeholder:text-wm-muted-foreground focus:outline-none focus:border-wm-border"
+            />
           </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-400">Target</span>
-            <span className="text-gray-300">{formatEur(goal.target_amount)}</span>
-          </div>
+        </div>
 
-          <div>
-            <label className="text-xs text-gray-500 mb-1.5 block">Quanto aggiungi?</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">+€</span>
-              <input
-                type="number"
-                placeholder="0.00"
-                value={addAmount}
-                onChange={(e) => setAddAmount(e.target.value)}
-                min="0"
-                step="0.01"
-                autoFocus
-                className="w-full bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-white/30"
-              />
-            </div>
-          </div>
-
-          {delta > 0 && (
-            <div className={`p-3 rounded-lg text-xs border ${
+        {delta > 0 && (
+          <div
+            className={`p-3 rounded-lg text-xs border ${
               willComplete
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                : 'bg-white/5 border-white/10 text-gray-400'
-            }`}>
+                ? "bg-wm-success/10 border-wm-success/20 text-wm-success"
+                : "bg-wm-muted border-wm-border text-wm-muted-foreground"
+            }`}
+          >
+            <PrivacyValue>
               {willComplete
                 ? `🎉 Raggiungerai l'obiettivo! Nuovo totale: ${formatEur(newAmount)}`
                 : `Nuovo totale: ${formatEur(newAmount)} (${((newAmount / goal.target_amount) * 100).toFixed(0)}%)`}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/5 flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg text-gray-500 hover:text-gray-300 text-sm transition-colors"
-          >
-            Annulla
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={delta <= 0 || update.isPending}
-            className="px-4 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-sm hover:bg-emerald-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {update.isPending ? 'Salvataggio...' : 'Aggiungi'}
-          </button>
-        </div>
+            </PrivacyValue>
+          </div>
+        )}
       </div>
-    </div>
-  )
+
+      {/* Footer */}
+      <div className="px-5 py-4 border-t border-wm-border flex justify-end gap-2">
+        <Button
+          variant="ghost"
+          size="auto"
+          onClick={onClose}
+          className="px-4 py-2 rounded-lg text-wm-muted-foreground hover:text-wm-foreground text-sm transition-colors"
+        >
+          Annulla
+        </Button>
+        <Button
+          variant="default"
+          size="auto"
+          onClick={handleSave}
+          disabled={delta <= 0 || !Number.isFinite(delta) || update.isPending}
+          className="px-4 py-2 rounded-lg border text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {update.isPending ? "Salvataggio..." : "Aggiungi"}
+        </Button>
+      </div>
+    </AppDialog>
+  );
 }

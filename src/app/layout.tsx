@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import ConditionalSidebar from "@/components/ui/ConditionalSidebar";
+import { AppShell } from "@/components/ui/AppShell";
+import { cookies } from "next/headers";
+import { ThemeScope } from "@/components/watermelon-ui/theme-scope";
 import { GlobalLoadingBar } from "@/components/ui/GlobalLoadingBar";
 import { Providers } from "./providers";
-import { Toaster } from "sonner";
+import "./watermelon.css";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -33,35 +35,26 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = {
-  themeColor: "#1a5f6b",
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-};
+export async function generateViewport(): Promise<Viewport> {
+  const light = (await cookies()).get("ottoboard-theme")?.value === "light";
+  return { themeColor: light ? "#f8faf9" : "#141a18", width: "device-width", initialScale: 1 };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const storedTheme = (await cookies()).get("ottoboard-theme")?.value;
+  const theme = storedTheme === "light" ? "light" : "dark";
   return (
-    <html lang="it" className={`${geistSans.variable} ${geistMono.variable} dark`}>
+    <html lang="it" className={`${geistSans.variable} ${geistMono.variable}`} data-theme={theme}>
       <body className="antialiased">
         <Providers>
-          <GlobalLoadingBar />
-          <ConditionalSidebar>{children}</ConditionalSidebar>
-          <Toaster
-            theme="dark"
-            position="bottom-right"
-            toastOptions={{
-              style: {
-                background: '#102428',
-                border: '1px solid rgba(197,224,216,0.14)',
-                color: '#f3f0e8',
-              },
-            }}
-          />
+          <ThemeScope initialTheme={theme}>
+            <GlobalLoadingBar />
+            <AppShell>{children}</AppShell>
+          </ThemeScope>
         </Providers>
       </body>
     </html>

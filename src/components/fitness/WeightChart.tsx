@@ -1,6 +1,8 @@
 "use client";
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ResponsiveChart } from "@/components/ui/ResponsiveChart";
+import { Card } from "@/components/watermelon-ui/card";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import type { BodyMeasurement } from "@/types";
 import { usePrivacyMode } from "@/hooks/usePrivacyMode";
 
@@ -22,9 +24,9 @@ export function WeightChart({ measurements }: Props) {
 
   if (filtered.length === 0) {
     return (
-      <div className="ob-panel-flat flex h-56 items-center justify-center p-5">
-        <p className="text-xs text-gray-500">Nessun dato peso disponibile</p>
-      </div>
+      <Card className="wm-panel-flat flex h-56 items-center justify-center p-5">
+        <p className="text-xs text-wm-muted-foreground">Nessun dato peso disponibile</p>
+      </Card>
     );
   }
 
@@ -38,18 +40,47 @@ export function WeightChart({ measurements }: Props) {
   }));
 
   return (
-    <div className="ob-panel-flat h-full space-y-3 p-5">
-      <h3 className="ob-card-title">Peso nel tempo</h3>
-      <ResponsiveContainer width="100%" height={180}>
+    <Card className="wm-panel-flat h-full space-y-3 p-5">
+      <h3 className="wm-card-title">Peso nel tempo</h3>
+      <ResponsiveChart width="100%" height={180}>
         <LineChart data={data} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-          <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#6b7280" }} />
-          <YAxis domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#6b7280" }} tickFormatter={(v) => (isPrivate ? "••" : `${v}`)} />
-          <Tooltip contentStyle={{ background: "#12121f", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }} formatter={(v, name) => [isPrivate ? "••••" : `${v} kg`, name === "peso" ? "Peso" : "Media 7gg"]} labelStyle={{ color: "#9ca3af" }} />
-          <Line type="monotone" dataKey="peso" stroke="#ff6b4a" strokeWidth={2} dot={{ r: 3, fill: "#ff6b4a" }} name="peso" />
-          <Line type="monotone" dataKey="media" stroke="#ff9b84" strokeWidth={1.5} strokeDasharray="4 2" dot={false} name="media" connectNulls />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--wm-border)" />
+          <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }} />
+          <YAxis
+            domain={["auto", "auto"]}
+            tick={{ fontSize: 10, fill: "var(--wm-muted-foreground)" }}
+            tickFormatter={(v) => (isPrivate ? "••" : `${v}`)}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "var(--wm-popover)",
+              border: "1px solid var(--wm-border)",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            formatter={(v, name) => [isPrivate ? "••••" : `${v} kg`, name === "peso" ? "Peso" : "Media 7gg"]}
+            labelStyle={{ color: "var(--wm-muted-foreground)" }}
+          />
+          <Line
+            type="monotone"
+            dataKey="peso"
+            stroke="var(--wm-fitness)"
+            strokeWidth={2}
+            dot={{ r: 3, fill: "var(--wm-fitness)" }}
+            name="peso"
+          />
+          <Line
+            type="monotone"
+            dataKey="media"
+            stroke="var(--wm-chart-pink)"
+            strokeWidth={1.5}
+            strokeDasharray="4 2"
+            dot={false}
+            name="media"
+            connectNulls
+          />
         </LineChart>
-      </ResponsiveContainer>
-    </div>
+      </ResponsiveChart>
+    </Card>
   );
 }
